@@ -9,4 +9,5 @@ import "./unione.test.js";
 import "./rendiconto.test.js";
 import "./condivisione.test.js";
 import "./ponte.test.js";
+import "./importaUNIO.test.js";
 export { esegui } from "./mini.js";

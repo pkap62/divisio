@@ -136,7 +136,11 @@ Calcolato da tutti i movimenti dell'anno, voce = primi due livelli del codice.
 - Verificato con un test che simula l'import in UNIO di centinaia di movimenti casuali, correzioni comprese:
   il Rendiconto risultante in UNIO è identico a quello di Divisio.
 
-## 16. Per l'anno di prova (Fase 5)
+## 16. Per l'anno di prova (Fase 5) – caricamento fatto il 15/11/2026
+- Impostazioni → "Caricare i movimenti da UNIO": anteprima, registrazioni non valide escluse con spiegazione,
+  sottoconti nuovi creati, nomi di UNIO facoltativi, identificativo fisso `unio-<anno>-<numero>` (nessun doppione), "Togli".
+- Attenzione: il file AMM_ESTRATTOCONTO scaricato il 15/11 contiene SOLO 8 sottoconti delle entrate (filtro in UNIO):
+  serve l'esportazione con TUTTI i conti. Divisio riconosce il file parziale e lo spiega.
 - UNIO esporta i movimenti in partita doppia ("AMM_ESTRATTOCONTO.csv"): UTF-8 con BOM, `;`, colonne
   `Icsc;Azienda;Esercizio;Data registrazione;Numero registrazione;Data documento;Numero documento;Commento;Commento riga;Gruppo;Conto;Sottoconto;Descrizione;Dare;Avere`.
   Servirà per caricare il 2026 in Divisio.

@@ -7,6 +7,7 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 - Fase 1 – registro dei movimenti (entrate/uscite e partita doppia), saldi di apertura, copia di sicurezza, esportazione CSV.
 - Fase 2 – Rendiconto Parrocchiale completo (gestione, patrimoniale, collette, contributo, previsione, analitico), stampa/PDF, CSV nel formato UNIO e confronto voce per voce con il CSV esportato da UNIO.
 - Fase 3 – ponte verso UNIO: per ogni cassa/banca e trimestre un file riepilogativo (una riga per sottoconto, codice all'inizio della descrizione) nel formato dell'"Importazione Prima Nota" di UNIO, foglio guida stampabile, registro delle importazioni e, dopo, solo le differenze; promemoria in Inizio.
+- Fase 5 (in corso) – anno di prova: caricamento dei movimenti già registrati in UNIO (file "AMM_ESTRATTOCONTO", tutti i conti) con anteprima, nomi dei sottoconti di UNIO, nessun doppione e annullamento; poi confronto del Rendiconto con il CSV dei saldi di UNIO.
 - Condivisione – più persone (Mac e Windows) lavorano insieme tramite una cartella "Divisio" nel Google Drive della parrocchia (Google Drive per desktop): ogni computer scrive il proprio file `divisio-<computer>.json` e legge quelli degli altri; per ogni record vince la modifica più recente. Richiede Chrome o Edge.
 
 ## Usarlo

@@ -6,6 +6,7 @@ import { parseEuro, formatDecimale } from "../dominio/importi.js";
 import { GRUPPI, isCassaBanca, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
+import { vistaCard as cardImporta, azioni as azioniImporta, cambia as cambiaImporta } from "./importa.js";
 
 const CAMPI_PARROCCHIA = [
   ["nome", "Nome della parrocchia"], ["icsc", "Codice ICSC"], ["indirizzo", "Indirizzo"], ["comune", "Comune"],
@@ -77,6 +78,8 @@ export function vista(ctx) {
     <div class="riga-bottoni"><button class="btn" data-azione="apSalva">Salva i saldi di apertura</button></div>
   </div>
 
+  ${cardImporta(ctx)}
+
   <div class="card"><h3>Chi usa questo computer</h3>
     <p class="hint">Il nome resta su questo computer e compare accanto ai movimenti che inserisce.</p>
     <input type="text" value="${esc(locale.leggi("autore", ""))}" placeholder="es. don Mario" data-cambia="autore" style="max-width:320px" aria-label="Nome">
@@ -122,6 +125,7 @@ export const input = {
 };
 
 export const cambia = {
+  ...cambiaImporta,
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
   autore(el, ev, ctx) { const n = el.value.trim(); locale.scrivi("autore", n); ctx.arch.impostaAutore(n); toast("Nome salvato ✓"); },
   async parrocchia(el, ev, ctx) {
@@ -165,6 +169,7 @@ function salvaCopia(ctx, suffisso = "") {
 
 export const azioni = {
   ...azioniCondivisione,
+  ...azioniImporta,
   salvaCopia(el, ev, ctx) { salvaCopia(ctx); toast("Copia scaricata ✓ (cartella Download)"); ctx.aggiorna(); },
   apAggiungi(el, ev, ctx) { AP.altre.push({ conto: "", importo: "" }); ctx.aggiorna(); },
   apTogli(el, ev, ctx) { AP.altre.splice(Number(el.dataset.i), 1); ctx.aggiorna(); },
