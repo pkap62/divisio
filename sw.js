@@ -2,9 +2,9 @@
 // Contiene SOLO i file del programma, mai i dati della parrocchia.
 // A ogni nuova versione cambiare VERSIONE (così i computer scaricano i file aggiornati).
 
-const VERSIONE = "divisio-0.5.0";
+const VERSIONE = "divisio-0.5.1";
 const FILE = [
-  "./", "index.html", "manifest.webmanifest", "css/divisio.css",
+  "./", "index.html", "guida.html", "manifest.webmanifest", "css/divisio.css",
   "icone/icona.svg", "icone/icona-192.png", "icone/icona-512.png",
   "js/app.js", "js/dati/db.js", "js/dati/archivio.js", "js/dati/condivisione.js",
   "js/dominio/importi.js", "js/dominio/piano.js", "js/dominio/scritture.js", "js/dominio/saldi.js",

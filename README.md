@@ -11,6 +11,8 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 - Condivisione – più persone (Mac e Windows) lavorano insieme tramite una cartella "Divisio" nel Google Drive della parrocchia (Google Drive per desktop): ogni computer scrive il proprio file `divisio-<computer>.json` e legge quelli degli altri; per ogni record vince la modifica più recente. Richiede Chrome o Edge.
 
 ## Usarlo
+Guida completa (anche da stampare): <https://pkap62.github.io/divisio/guida.html>
+
 Aprire **<https://pkap62.github.io/divisio/>** con Google Chrome o Microsoft Edge (Mac o Windows) e,
 dal menu del browser, scegliere **"Installa Divisio"**: comparirà come un'app sul computer e funzionerà anche senza internet.
 Il sito contiene solo il programma: i dati della parrocchia restano sul computer (e, se attivata, nella cartella condivisa di Google Drive).

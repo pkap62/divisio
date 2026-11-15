@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divisio – Guida</title>
+<style>
+  :root { --blu: #1f4e79; --blu-chiaro: #e7eef6; --oro: #a8761f; --testo: #1f2933; --tenue: #56616b; --linea: #e2ddd2;
+          --verde: #2b7448; --verde-chiaro: #e6f4ec; --arancio: #7d4b00; --arancio-chiaro: #fff3dc; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f5f3ee; color: var(--testo); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .foglio { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; background: #fff; }
+  header { border-bottom: 3px solid var(--blu); padding-bottom: 14px; margin-bottom: 24px; }
+  .marchio { display: inline-flex; align-items: flex-end; font-family: "Avenir Next", Avenir, "Segoe UI", Arial, sans-serif; font-weight: 800;
+             font-size: 44px; line-height: 1; letter-spacing: -.5px; color: var(--blu); }
+  .marchio svg { height: .8em; width: auto; margin-left: .03em; }
+  header p { margin: 6px 0 0; color: var(--tenue); }
+  h1 { font-size: 30px; margin: 18px 0 4px; }
+  h2 { font-size: 23px; color: var(--blu); margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid var(--linea); }
+  h3 { font-size: 19px; margin: 22px 0 6px; }
+  a { color: var(--blu); }
+  .indirizzo { font-size: 22px; font-weight: 700; background: var(--blu-chiaro); padding: 12px 16px; border-radius: 10px; display: block; text-align: center; margin: 10px 0 18px; }
+  ol, ul { padding-left: 24px; } li { margin: 6px 0; }
+  .box { border-radius: 10px; padding: 12px 16px; margin: 14px 0; }
+  .nota { background: var(--blu-chiaro); } .ok { background: var(--verde-chiaro); color: var(--verde); } .attenzione { background: var(--arancio-chiaro); color: var(--arancio); }
+  .indice { columns: 2; column-gap: 28px; background: #faf8f3; border-radius: 10px; padding: 12px 16px 12px 36px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
+  th, td { border-bottom: 1px solid var(--linea); padding: 7px 8px; text-align: left; vertical-align: top; }
+  th { color: var(--tenue); font-size: 13px; text-transform: uppercase; letter-spacing: .3px; }
+  kbd, .bottone { display: inline-block; border: 1px solid #bdb5a4; border-radius: 6px; padding: 0 7px; background: #faf8f3; font: inherit; font-size: .92em; white-space: nowrap; }
+  .chi { display: inline-block; background: var(--blu); color: #fff; border-radius: 999px; padding: 1px 12px; font-size: 14px; font-weight: 600; vertical-align: middle; margin-left: 6px; }
+  footer { margin-top: 40px; color: var(--tenue); font-size: 14px; border-top: 1px solid var(--linea); padding-top: 12px; }
+  @media print {
+    body { background: #fff; font-size: 11pt; } .foglio { padding: 0; max-width: none; }
+    h2 { break-before: auto; break-after: avoid; } h3 { break-after: avoid; } li, .box, tr { break-inside: avoid; } th { break-after: avoid; }
+    a { color: inherit; text-decoration: none; } .indice { columns: 2; }
+  }
+  @page { margin: 16mm 15mm; }
+</style>
+</head>
+<body>
+<div class="foglio">
+<header>
+  <div class="marchio" aria-label="Divisio">Divisi<svg viewBox="0 0 66 80" aria-hidden="true">
+    <ellipse cx="33" cy="41" rx="21" ry="30" transform="rotate(14 33 41)" fill="none" stroke="currentColor" stroke-width="11"/>
+    <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
+  <p>Contabilità parrocchiale semplice · Diocesi di Firenze</p>
+</header>
+
+<h1>Guida per iniziare e per l'uso di ogni giorno</h1>
+<p>Questa guida spiega come far partire Divisio <b>sul computer del parroco</b>, <b>su quelli dei collaboratori</b> e <b>in altre parrocchie</b>,
+e come usarlo durante l'anno. Non servono conoscenze tecniche.</p>
+<span class="indirizzo">pkap62.github.io/divisio</span>
+
+<ol class="indice">
+  <li><a href="#cosa">Che cos'è e cosa serve</a></li>
+  <li><a href="#privacy">Dove stanno i dati</a></li>
+  <li><a href="#installare">Aprire e installare Divisio</a></li>
+  <li><a href="#parroco">Primo avvio del parroco</a></li>
+  <li><a href="#insieme">Lavorare insieme (Google Drive)</a></li>
+  <li><a href="#collaboratori">Collaboratori</a></li>
+  <li><a href="#prova">Anno di prova 2026</a></li>
+  <li><a href="#altre">Altre parrocchie</a></li>
+  <li><a href="#giorno">Uso di ogni giorno</a></li>
+  <li><a href="#trimestre">Ogni trimestre: i dati in UNIO</a></li>
+  <li><a href="#anno">Fine anno: il Rendiconto</a></li>
+  <li><a href="#copie">Copie di sicurezza</a></li>
+  <li><a href="#problemi">Se qualcosa non va</a></li>
+</ol>
+
+<h2 id="cosa">1. Che cos'è e cosa serve</h2>
+<p>Divisio sostituisce la parte "Amministrazione" di UNIO con schermate più semplici: si registrano entrate e uscite con parole proprie
+e Divisio scrive da solo la partita doppia, calcola il <b>Rendiconto Parrocchiale</b> con le stesse voci di UNIO e prepara un file da caricare in UNIO,
+da dove il Rendiconto si invia in Curia come sempre.</p>
+<table>
+  <tr><th>Serve</th><th>Note</th></tr>
+  <tr><td>Un computer <b>Mac o Windows</b></td><td>Non è adatto a telefono o tablet.</td></tr>
+  <tr><td><b>Google Chrome</b> oppure <b>Microsoft Edge</b></td><td>Con Safari o Firefox Divisio si apre, ma non può lavorare insieme agli altri computer.</td></tr>
+  <tr><td><b>Google Drive per desktop</b> con l'account Google della parrocchia</td><td>Solo se più persone devono registrare (capitolo 5).</td></tr>
+  <tr><td>Internet</td><td>Solo la prima volta e per lavorare insieme; per il resto Divisio funziona anche senza.</td></tr>
+</table>
+
+<h2 id="privacy">2. Dove stanno i dati</h2>
+<ul>
+  <li>Il sito <b>pkap62.github.io/divisio</b> contiene <b>solo il programma</b>, uguale per tutti. I conti della parrocchia non passano mai da lì.</li>
+  <li>I dati restano <b>nel computer</b>, dentro il browser (Chrome o Edge) in cui si usa Divisio.</li>
+  <li>Se si attiva il lavoro insieme, sono salvati anche nella cartella <b>Divisio</b> del <b>Google Drive della parrocchia</b>: li può vedere chi ha accesso a quell'account.</li>
+  <li>Nessun altro invio su internet.</li>
+</ul>
+<div class="box attenzione"><b>Importante:</b> i dati stanno nel browser. Se si cancellano "cronologia e dati dei siti" del browser, o si usa una finestra "in incognito",
+i dati di quel computer spariscono. Per questo servono le <a href="#copie">copie di sicurezza</a> (e, se attivata, la cartella di Google Drive, da cui si recupera tutto).</div>
+
+<h2 id="installare">3. Aprire e installare Divisio <span class="chi">tutti</span></h2>
+<ol>
+  <li>Apra <b>Chrome</b> o <b>Edge</b> e scriva nella barra dell'indirizzo: <b>pkap62.github.io/divisio</b></li>
+  <li>Installi Divisio come app, così si apre come un programma qualsiasi e funziona anche senza internet:
+    <ul>
+      <li><b>Chrome</b>: nella barra dell'indirizzo, a destra, clicchi l'icona di installazione (uno schermo con una freccia) e poi <span class="bottone">Installa</span>.
+        Se non la vede: menu <kbd>⋮</kbd> → <i>Trasmetti, salva e condividi</i> → <i>Installa Divisio…</i></li>
+      <li><b>Edge</b>: menu <kbd>…</kbd> → <i>App</i> → <i>Installa Divisio</i>.</li>
+    </ul></li>
+  <li>Da quel momento Divisio si apre dal Launchpad o dal Dock (Mac) oppure dal menu Start (Windows).</li>
+  <li>Alla prima apertura scriva il <b>proprio nome</b> nel riquadro "Benvenuto": comparirà accanto ai movimenti che inserisce.</li>
+</ol>
+<div class="box nota"><b>Aggiornamenti:</b> quando esce una nuova versione, il computer la riceve da solo alla riapertura di Divisio. Non bisogna fare nulla.</div>
+
+<h2 id="parroco">4. Primo avvio del parroco <span class="chi">parroco</span></h2>
+<p>Si fa una volta sola, sul computer del parroco. Tutto si trova nella pagina <b>Impostazioni</b>.</p>
+<ol>
+  <li><b>Dati della parrocchia</b>: nome, codice ICSC, indirizzo, parroco… (servono per l'intestazione del Rendiconto).</li>
+  <li><b>Piano dei conti</b>: è già quello della Diocesi. Può <b>rinominare</b> i sottoconti come in UNIO (per esempio "Banca" con il nome della sua banca),
+    aggiungerne o metterli "fuori uso". Gruppi e voci del Rendiconto non si cambiano.<br>
+    <i>Scorciatoia:</i> caricando i movimenti da UNIO (capitolo 7) Divisio propone da solo i nomi dei sottoconti di UNIO.</li>
+  <li><b>Saldi di apertura</b>: quanto c'era davvero in cassa, in banca e su PayPal il 1° gennaio, più eventuali collette ancora da versare, crediti o debiti.
+    Divisio calcola da solo il patrimonio netto. Si possono inserire anche più tardi.</li>
+  <li><b>Copia di sicurezza</b>: ne faccia subito una (capitolo 12).</li>
+  <li>Se lavorano anche i collaboratori: <b>Lavorare insieme</b> (capitolo 5).</li>
+</ol>
+
+<h2 id="insieme">5. Lavorare insieme con Google Drive <span class="chi">parroco</span><span class="chi">collaboratori</span></h2>
+<p>Più persone possono registrare anche nello stesso momento, ognuna dal proprio computer. Ogni computer scrive il proprio file nella cartella condivisa
+e legge quelli degli altri, ogni 30 secondi e dopo ogni registrazione. Nessuno sovrascrive il lavoro degli altri.</p>
+<h3>Una volta sola, per la parrocchia</h3>
+<ol>
+  <li>Nel <b>Google Drive della parrocchia</b> (drive.google.com, con l'account della parrocchia) crei, dentro "Il mio Drive", una cartella chiamata <b>Divisio</b>.</li>
+</ol>
+<h3>Su ogni computer</h3>
+<ol>
+  <li>Installi <b>Google Drive per desktop</b> (si scarica dal sito di Google cercando "Google Drive per desktop") e acceda con l'<b>account Google della parrocchia</b>.</li>
+  <li>Apra Divisio → <b>Impostazioni</b> → riquadro <b>"Lavorare insieme"</b> → <span class="bottone">Scegli la cartella condivisa</span>.</li>
+  <li>Selezioni la cartella Divisio:
+    <ul><li><b>Mac</b>: nel Finder, nella colonna a sinistra, <i>Google Drive</i> → <i>Il mio Drive</i> → <i>Divisio</i>;</li>
+        <li><b>Windows</b>: <i>Google Drive (G:)</i> → <i>Il mio Drive</i> → <i>Divisio</i>.</li></ul></li>
+  <li>Il browser chiede il permesso di modificare i file della cartella: risponda <span class="bottone">Modifica file</span> / <span class="bottone">Consenti</span>
+    (se c'è la scelta, <i>"Consenti a ogni visita"</i>).</li>
+  <li>In alto a destra compare <b>☁ Condiviso · ora</b>. Fatto.</li>
+</ol>
+<div class="box nota">Quando si riapre Divisio, il browser a volte chiede di nuovo il permesso: in alto compare <b>☁ Riattiva la condivisione</b>. Basta cliccarlo e confermare.</div>
+<div class="box attenzione">Se due persone correggono <b>lo stesso</b> movimento quasi nello stesso momento, resta l'ultima correzione. Registrare movimenti <b>diversi</b> insieme non crea problemi.</div>
+
+<h2 id="collaboratori">6. Collaboratori <span class="chi">collaboratori</span></h2>
+<p>Riassunto per chi aiuta in segreteria, di solito su un computer Windows:</p>
+<ol>
+  <li>Installare <b>Google Drive per desktop</b> e accedere con l'account della parrocchia (chiedere la password al parroco).</li>
+  <li>Aprire <b>pkap62.github.io/divisio</b> con Chrome o Edge e installarlo (capitolo 3).</li>
+  <li>Scrivere il proprio nome nel riquadro "Benvenuto".</li>
+  <li>Impostazioni → "Lavorare insieme" → scegliere la cartella <b>G:\Il mio Drive\Divisio</b> (capitolo 5).</li>
+  <li>Aspettare qualche secondo: compaiono i movimenti già registrati dagli altri. Da qui in poi si usa come descritto al capitolo 9.</li>
+</ol>
+<div class="box nota">I collaboratori non devono inserire saldi di apertura né cambiare il piano dei conti: lo fa il parroco, e arriva a tutti da solo.</div>
+
+<h2 id="prova">7. Anno di prova 2026 <span class="chi">parroco</span></h2>
+<p>Prima di partire davvero il 1° gennaio 2027, si caricano in Divisio i movimenti 2026 già registrati in UNIO e si controlla che i due Rendiconti coincidano.</p>
+<ol>
+  <li>In UNIO esporti i movimenti in partita doppia (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>, senza filtri.
+    <br><i>Se si esporta solo qualche conto, Divisio lo riconosce e avvisa.</i></li>
+  <li>In Divisio: Impostazioni → <b>"Caricare i movimenti da UNIO"</b> → scelga il file, guardi l'anteprima e prema <span class="bottone">Carica</span>.</li>
+  <li>In UNIO, pagina Rendiconto Parrocchiale: <span class="bottone">Esporta saldi Patrimoniali e di Gestione in .csv</span>.</li>
+  <li>In Divisio, pagina <b>Rendiconto</b> (anno 2026) → <span class="bottone">Carica il CSV di UNIO…</span>: accanto a ogni voce compare "= UNIO" in verde oppure la cifra di UNIO in rosso.</li>
+</ol>
+<div class="box attenzione">Per un confronto alla pari <b>non inserisca i saldi di apertura 2026 prima del confronto</b>: in UNIO non ci sono. Li potrà aggiungere dopo.
+Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</span> riporta tutto com'era.</div>
+
+<h2 id="altre">8. Altre parrocchie (confratelli) <span class="chi">altre parrocchie</span></h2>
+<p>Divisio è pensato per tutte le parrocchie della Diocesi di Firenze: il piano dei conti e il Rendiconto sono già quelli diocesani.</p>
+<ol>
+  <li>Si usa lo <b>stesso indirizzo</b>: <b>pkap62.github.io/divisio</b>. Non c'è nulla da scaricare né da pagare, e non serve registrarsi.</li>
+  <li>Ogni parrocchia segue i capitoli 3 e 4 sui propri computer. I dati di una parrocchia non sono mai visibili alle altre.</li>
+  <li>Per lavorare insieme, ogni parrocchia usa una cartella <b>Divisio nel proprio Google Drive</b> (capitolo 5).
+    <b>Mai</b> collegare la stessa cartella a due parrocchie diverse: i conti si mescolerebbero.</li>
+  <li>Il passaggio dei dati a UNIO (capitolo 10) è previsto dall'anno indicato in fondo alla pagina "Per UNIO" (di solito il primo anno intero in cui si usa Divisio).</li>
+</ol>
+<div class="box attenzione"><b>Un sacerdote con due parrocchie sullo stesso computer</b> deve usare <b>due profili diversi di Chrome</b>
+(menu del profilo, in alto a destra → <i>Aggiungi</i>), uno per parrocchia: ogni profilo ha i suoi dati.</div>
+
+<h2 id="giorno">9. Uso di ogni giorno <span class="chi">tutti</span></h2>
+<table>
+  <tr><th>Per…</th><th>Si fa così</th></tr>
+  <tr><td>un'<b>entrata</b> (offerte, collette, sacramenti…)</td><td>Inizio → <span class="bottone">+ Entrata</span>: data, importo, che cos'è (con parole proprie), la voce, dove sono entrati i soldi (cassa, banca…). <span class="bottone">Registra</span>.</td></tr>
+  <tr><td>un'<b>uscita</b> (bollette, acquisti, rimborsi…)</td><td><span class="bottone">− Uscita</span>, come sopra.</td></tr>
+  <tr><td>contanti versati in banca</td><td><span class="bottone">⇄ Sposta soldi</span>: da dove escono e dove arrivano.</td></tr>
+  <tr><td>trovare la voce giusta</td><td>Nel campo "Cerca la voce" scriva una parola (es. "funer", "luce") e scelga dall'elenco.</td></tr>
+  <tr><td><b>collette imperate</b> (Giornata missionaria, Quaresima di carità…)</td><td>La raccolta è un'<b>entrata</b> sulla voce della colletta; il versamento alla Diocesi è un'<b>uscita</b> sulla stessa voce.
+    Divisio la tiene da parte: non la conta tra le entrate della parrocchia e in Inizio ricorda quanto resta da versare.</td></tr>
+  <tr><td>i dati del <b>teatro</b> dalla commercialista</td><td>Registra → <span class="bottone">Sono pratico: usa la partita doppia</span>, usando il sottoconto "Gestione teatro".</td></tr>
+  <tr><td><b>correggere</b> o <b>eliminare</b></td><td>Movimenti → apra "Dettagli" sul movimento → <span class="bottone">Modifica</span> o <span class="bottone">Elimina</span> (chiede sempre conferma).</td></tr>
+  <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo; <span class="bottone">Scarica in CSV (Excel)</span>.</td></tr>
+</table>
+<div class="box ok">Divisio non lascia salvare un movimento sbagliato: ogni registrazione è in partita doppia con Dare = Avere, e la pagina Inizio controlla sempre che i conti tornino.</div>
+
+<h2 id="trimestre">10. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
+<p>Il Rendiconto si invia sempre da UNIO, quindi UNIO deve avere i movimenti. Divisio li riassume in poche righe, una per voce (l'Economato diocesano ha approvato questo modo).</p>
+<ol>
+  <li>Divisio → <b>Per UNIO</b>: scelga la cassa o banca e il trimestre.</li>
+  <li><span class="bottone">Scarica il file per UNIO</span> (va nella cartella Download).</li>
+  <li>In UNIO: <b>Partita Doppia</b> → quadratino giallo <b>Importazione Prima Nota</b> → descrizione (es. "2° trimestre 2027") → conto di riferimento = la stessa cassa o banca → carichi il file.</li>
+  <li>Per ogni riga, in UNIO scelga Gruppo, Conto e Sottoconto scritti tra parentesi quadre all'inizio della descrizione
+    (es. <b>[U08-01-04]</b> = U08 – 01 – 04). Aiuta stampare il <span class="bottone">foglio guida</span> e spuntare le righe.</li>
+  <li>Torni in Divisio e prema <span class="bottone">Ho importato in UNIO</span>.</li>
+  <li>Ripeta per ogni cassa e banca. In Inizio, Divisio ricorda i trimestri ancora da portare in UNIO.</li>
+</ol>
+<div class="box nota">Se dopo l'importazione si corregge o si aggiunge un movimento di quel trimestre, la volta successiva Divisio prepara <b>solo le differenze</b>:
+niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in un solo file; i rari movimenti senza cassa né banca vanno inseriti a mano in UNIO (Divisio li elenca).</div>
+
+<h2 id="anno">11. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
+<ol>
+  <li>Divisio → <b>Rendiconto</b>: tutte le sezioni di UNIO (gestione, situazione patrimoniale, collette, contributo diocesano 3% e 10%, bilancio di previsione, bilancio analitico).</li>
+  <li>Verifichi che UNIO abbia tutto: in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio → tutte le voci devono risultare "= UNIO".</li>
+  <li>Per il Consiglio per gli Affari Economici: <span class="bottone">Stampa / PDF</span>.</li>
+  <li>L'invio in Curia, la scheda anagrafica, le "Altre informazioni" e gli allegati si fanno in UNIO, come sempre.</li>
+  <li>Anno nuovo: in alto scelga il nuovo anno e in Impostazioni inserisca i <b>saldi di apertura</b> (cassa, banche, collette da versare, crediti e debiti al 31 dicembre),
+    che trova nel Rendiconto dell'anno appena chiuso, alla Situazione patrimoniale. <i>Per ora si fa a mano.</i></li>
+</ol>
+
+<h2 id="copie">12. Copie di sicurezza <span class="chi">parroco</span></h2>
+<ul>
+  <li>Impostazioni → <span class="bottone">Salva una copia su file</span>: scarica un file <i>Divisio-copia-data.json</i> con tutti i dati. Lo conservi su una chiavetta o in Google Drive.</li>
+  <li>Divisio ricorda in Inizio se l'ultima copia è più vecchia di una settimana.</li>
+  <li>Per tornare indietro: <span class="bottone">Ripristina da file…</span>. Prima di sostituire i dati, Divisio scarica una copia di quelli attuali.</li>
+  <li>Con il lavoro insieme attivo, ogni file della cartella Divisio di Google Drive è anche una copia completa.</li>
+</ul>
+
+<h2 id="problemi">13. Se qualcosa non va</h2>
+<table>
+  <tr><th>Problema</th><th>Cosa fare</th></tr>
+  <tr><td>In alto c'è <b>☁ Riattiva la condivisione</b></td><td>Lo clicchi e confermi il permesso.</td></tr>
+  <tr><td><b>☁ Condivisione: problema</b> / "La cartella non risponde"</td><td>Controlli che Google Drive per desktop sia acceso e collegato all'account della parrocchia; poi Impostazioni → <span class="bottone">Aggiorna adesso</span>.</td></tr>
+  <tr><td>Non vedo i movimenti dei collaboratori</td><td>Tutti devono aver scelto la <b>stessa</b> cartella Divisio. Attenda qualche secondo o prema <span class="bottone">Aggiorna adesso</span>.</td></tr>
+  <tr><td>I dati sono spariti da un computer</td><td>Se il lavoro insieme era attivo: ricolleghi la cartella e torna tutto. Altrimenti: Ripristina dall'ultima copia di sicurezza.</td></tr>
+  <tr><td>Il riquadro "Lavorare insieme" dice di usare Chrome o Edge</td><td>Sta usando Safari o Firefox: apra Divisio con Chrome o Edge.</td></tr>
+  <tr><td>"Divisio non riesce a salvare i dati"</td><td>Probabilmente è una finestra "in incognito": usi una finestra normale.</td></tr>
+  <tr><td>Il Rendiconto non coincide con UNIO</td><td>La tabella delle differenze indica le voci. Cause tipiche: saldi di apertura (assenti in UNIO), movimenti non ancora portati in UNIO, movimenti su un'altra voce.</td></tr>
+  <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
+</table>
+
+<footer>Divisio · guida aggiornata al 15 novembre 2026 (versione 0.5) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
+</div>
+</body>
+</html>

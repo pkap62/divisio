@@ -105,6 +105,7 @@ export function vista(ctx) {
   </div>
 
   <div class="card"><h3>Informazioni</h3>
+    <p><a href="guida.html" target="_blank" rel="noopener">Apri la guida di Divisio</a> (si può stampare o salvare in PDF).</p>
     <p class="hint" id="info-memoria">Controllo della memoria…</p>
     <p class="hint">I dati sono salvati in questo browser, su questo computer, e, se attivata, nella cartella condivisa del Google Drive della parrocchia. Nessun altro invio su internet.</p>
   </div>`;

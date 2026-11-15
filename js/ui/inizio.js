@@ -26,7 +26,8 @@ export function vista({ arch, anno }) {
 
   return `
   ${!locale.leggi("autore", "") ? `<div class="card evidenza"><h3>Benvenuto in Divisio</h3>
-    <p>Per cominciare, scriva il suo nome: servirà a sapere chi ha inserito ogni movimento.</p>
+    <p>Per cominciare, scriva il suo nome: servirà a sapere chi ha inserito ogni movimento.
+      Tutte le istruzioni sono nella <a href="guida.html" target="_blank" rel="noopener">Guida</a> (anche da stampare).</p>
     <div class="riga"><input type="text" id="nome-autore" placeholder="es. don Mario" style="max-width:320px">
     <button class="btn" data-azione="salvaNome">Salva</button></div></div>` : ""}
   <h2>Anno ${anno}</h2>
