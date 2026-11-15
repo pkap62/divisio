@@ -1,0 +1,10 @@
+# Mai dati reali nel repository
+*.csv
+Divisio-copia-*.json
+*.p7m
+*.pdf
+*.xml
+dati-reali/
+
+# Sistema
+.DS_Store

@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divisio – prototipo</title>
+<style>
+:root{
+  --bg:#f5f3ee; --card:#fff; --ink:#1f2933; --muted:#5f6b76; --line:#e2ddd2;
+  --accent:#1f4e79; --accent-soft:#e7eef6; --gold:#a8761f;
+  --in:#2e7d4f; --in-soft:#e6f4ec; --out:#b3261e; --out-soft:#fdecea;
+  --warn:#8a5300; --warn-soft:#fff3dc; --move:#1f4e79;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.banner{background:var(--warn-soft);color:var(--warn);text-align:center;font-size:15px;padding:6px 16px;border-bottom:1px solid #f0dfb8}
+header{background:var(--accent);color:#fff;padding:14px 16px}
+header .wrap{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+header h1{margin:0;font-size:26px;letter-spacing:.5px}
+header .sub{opacity:.85;font-size:16px}
+nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;padding:0 8px}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 12px;font:inherit;font-size:16px;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.wrap{max-width:1040px;margin:0 auto}
+main{padding:20px 16px 80px}
+h2{font-size:24px;margin:4px 0 4px}
+h3{font-size:19px;margin:0 0 10px}
+.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.saldo .lab{color:var(--muted);font-size:15px}
+.saldo .val{font-size:26px;font-weight:650}
+.big-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.big{border:0;border-radius:12px;padding:18px 14px;font:inherit;font-size:19px;font-weight:600;cursor:pointer;text-align:left;color:#fff}
+.big small{display:block;font-weight:400;font-size:14px;opacity:.9}
+.b-in{background:var(--in)} .b-out{background:var(--out)} .b-move{background:var(--move)} .b-doc{background:var(--gold)}
+.btn{display:inline-block;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:9px;padding:10px 16px;font:inherit;font-size:17px;cursor:pointer}
+.btn.sec{background:#fff;color:var(--accent)}
+.btn.small{font-size:15px;padding:6px 10px}
+.btn.danger{background:#fff;color:var(--out);border-color:var(--out)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label.f{display:block;font-weight:600;margin:14px 0 6px}
+input[type=text],input[type=date],input[type=number],select{font:inherit;font-size:18px;padding:10px 12px;border:1px solid #c9c2b3;border-radius:9px;background:#fff;width:100%}
+input.amount{font-size:24px;font-weight:600;max-width:240px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font:inherit;font-size:18px;cursor:pointer}
+.seg button.on.in{border-color:var(--in);background:var(--in-soft);color:var(--in);font-weight:650}
+.seg button.on.out{border-color:var(--out);background:var(--out-soft);color:var(--out);font-weight:650}
+.seg button.on.move{border-color:var(--move);background:var(--accent-soft);color:var(--move);font-weight:650}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:7px 14px;font:inherit;font-size:16px;cursor:pointer;text-align:left}
+.chip.sel{background:var(--accent);color:#fff}
+.chip small{display:block;font-size:13px;opacity:.85}
+.hint{color:var(--muted);font-size:15px}
+.note{background:var(--accent-soft);border-radius:10px;padding:10px 14px;font-size:16px;margin-top:10px}
+.warnbox{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:16px;margin-top:10px}
+.okbox{background:var(--in-soft);color:var(--in);border-radius:10px;padding:10px 14px;font-size:16px;margin-top:10px}
+.badbox{background:var(--out-soft);color:var(--out);border-radius:10px;padding:10px 14px;font-size:16px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.3px}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:700;background:#faf8f3}
+tr.grp td{font-weight:650;color:var(--accent);background:var(--accent-soft)}
+tr.big td{font-weight:750;font-size:17px;background:#f1ede4}
+.zero{color:#a7a196}
+.pos{color:var(--in)} .neg{color:var(--out)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--accent);font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f2933;color:#fff;padding:12px 20px;border-radius:10px;font-size:17px;box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:20}
+.steps{margin:0;padding-left:22px} .steps li{margin:4px 0}
+.sp{flex:1}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600}
+.pill.in{background:var(--in-soft);color:var(--in)} .pill.out{background:var(--out-soft);color:var(--out)} .pill.move{background:var(--accent-soft);color:var(--move)}
+@media print{.banner,header,nav,.noprint{display:none!important} body{background:#fff;font-size:12pt} .card{border:0;padding:0} main{padding:0}}
+@media (max-width:600px){body{font-size:17px} .saldo .val{font-size:22px} th,td{padding:6px 4px}}
+</style>
+</head>
+<body>
+<div class="banner">PROTOTIPO di prova · tutti i dati sono <b>inventati</b> · niente viene salvato né inviato: ricaricando la pagina si riparte da capo</div>
+<header><div class="wrap"><h1>Divisio</h1><span class="sub" id="hdr-sub"></span></div></header>
+<nav><div class="wrap" id="nav"></div></nav>
+<main><div class="wrap" id="main"></div></main>
+<div id="toast-slot"></div>
+
+<script>
+"use strict";
+/* =====================  PIANO DEI CONTI (esempio anonimizzato)  ===================== */
+const PIANO_TXT = `
+#A|A01|Immobilizzazioni
+01|Terreni e fabbricati|01 Fabbricati ad uso pastorale;02 Altri fabbricati;03 Terreni
+02|Impianti e strumentazioni|01 Attrezzature;02 Impianti
+03|Automezzi|01 Automezzi
+04|Immobilizzazioni immateriali|01 Immobilizzazioni immateriali
+#A|A02|Attività correnti
+01|Cassa e conti correnti|01 Cassa;02 Banca;03 PayPal
+02|Titoli e investimenti|01 Titoli e investimenti 1;02 Titoli e investimenti 2
+#A|A03|Crediti diversi
+01|Crediti verso enti diocesani|01 Crediti verso la Diocesi
+02|Crediti verso altri enti|01 Crediti verso altri enti
+03|Crediti verso privati|01 Crediti verso affittuari;02 Crediti verso privati
+#PAT|PAT|Patrimonio
+01|Patrimonio netto anni precedenti|01 Patrimonio netto anni precedenti
+#P|P01|Mutui e finanziamenti
+01|Mutui e finanziamenti|01 Mutui;02 Finanziamenti
+#P|P02|Debiti diversi
+01|Debiti v/ fornitori|01 Fornitore 1;02 Fornitore 2;03 Fornitore 3
+02|Debiti per prestiti ricevuti|01 Prestito dalla Diocesi;02 Prestiti da privati;03 Prestiti diversi
+03|Debiti con erario e previdenza|01 Erario;10 Previdenza
+04|Debiti per tassa diocesana|01 Tassa sul bilancio;02 Tassa su eredità, lasciti, alienazioni
+05|Debiti diversi|01 Cauzioni affittuari;02 Debiti per lavori in corso;03 Debiti diversi;04 Gestione teatro
+#P|P03|Fondi ammortamento e accantonamento
+01|Fondi ammortamento|01 Fondi ammortamento
+02|Fondi accantonamento|01 Fondo TFR;02 Fondo per lavori;03 Altri accantonamenti
+#PG|PG1|Debiti per partite di giro (collette)
+01|Collette ordinarie|01 Seminario diocesano;02 Carità del Papa;03 Quaresima di carità;04 Terra Santa;05 Migranti;06 Università Cattolica;07 Avvento di fraternità;08 Giornata missionaria;09 Infanzia missionaria;10 Lebbrosi
+02|Collette straordinarie|01 Colletta straordinaria
+#E|E01|Entrate ordinarie
+01|Offerte S. Messe|01 Legati;02 Intenzioni Messe
+02|Collette|01 Collette domenicali;02 Collette feriali
+03|Offerte per sacramenti|01 Battesimi;02 Prime Comunioni;03 Cresime;04 Matrimoni;05 Funerali
+04|Offerte diverse|01 Benedizioni famiglie;02 Offerte per lumi votivi;03 Offerte per la Caritas parrocchiale;04 Offerte per uso locali;05 Offerte parrocchiani;10 Offerte diverse
+05|Contributi ordinari|01 Contributi ordinari di altra natura
+#E|E02|Entrate straordinarie
+01|Raccolte per iniziative straordinarie|01 Offerte per lavori autorizzati dalla Diocesi;02 Offerte per progetti
+02|Contributi straordinari|01 Contributi dalla Diocesi;02 Contributi da enti pubblici;03 Altri contributi straordinari
+03|Eredità e alienazioni|01 Eredità;02 Proventi da alienazioni
+#E|E03|Proventi da patrimonio immobiliare
+01|Proventi ordinari|01 Locazioni immobili
+02|Proventi straordinari|01 Plusvalenze su vendita immobili
+#E|E04|Proventi finanziari
+01|Proventi finanziari ordinari|01 Interessi attivi
+02|Proventi finanziari straordinari da titoli|01 Plusvalenze su titoli
+03|Proventi finanziari straordinari|01 Rimborsi assicurativi per sinistri;02 Abbuoni e sopravvenienze attive
+#U|U01|Spese per il culto e l'esercizio pastorale
+01|Spese per attività pastorali|01 Catechesi adulti e ragazzi;02 Formazione;03 Oratorio e campi scuola;04 Pellegrinaggi;05 Feste parrocchiali;06 Iniziative pastorali diverse
+02|Spese per il culto|01 Vino, ostie, libri liturgici;02 Fiori;03 Cera votiva;04 Lavanderia paramenti sacri;05 Spese varie per il culto
+03|Spese per attività caritative|01 Caritas parrocchiale;02 Erogazioni caritative in denaro;03 Erogazioni caritative in natura;04 Uscite per progetti;05 Integrazione versamento giornate
+#U|U02|Stipendi, remunerazioni, rimborsi
+01|Stipendi|01 Stipendi;02 Contributi previdenziali dipendenti;03 Assicurazioni dipendenti;04 Quota annuale TFR
+02|Remunerazioni|01 Remunerazione parroco;02 Remunerazione vicari parrocchiali
+03|Rimborsi|01 Rimborso vitto sacerdoti;02 Rimborso viaggi;03 Rimborsi spese diverse;04 Rimborsi a sacerdoti occasionali;05 Rimborso COLF;06 Rimborso sacerdote collaboratore
+#U|U03|Onorari e compensi professionali
+01|Onorari e compensi prof.li|01 Onorari e compensi;02 Ritenute d'acconto
+#U|U04|Mobili e attrezzature
+01|Acquisto mobili e strumentazioni|01 Mobili e attrezzature – acquisti
+#U|U05|Manutenzioni
+01|Manutenzioni immobili|01 Manutenzioni immobili
+02|Manutenzioni mobili, strumentazioni, automezzi|01 Manutenzione mobili, strumentazioni, automezzi
+03|Manutenzione impianti|01 Manutenzione impianti
+#U|U06|Assicurazioni
+01|Assicurazioni|01 Assicurazioni fabbricati;02 Assicurazioni automezzi;03 Assicurazioni diverse
+#U|U07|Locazioni passive
+01|Locazioni passive|01 Locazioni passive
+#U|U08|Spese diverse
+01|Utenze|01 Energia elettrica;02 Gas e combustibili;03 Acqua;04 Telefono e internet
+02|Spese diverse|01 Cancelleria;02 Materiale per pulizie;03 Fotocopie e stampati;04 Spese postali;05 Vuotatura fosse biologiche;06 Servizio vigilanza;07 Spese bancarie;08 Noleggi e licenze;09 Spese diverse;10 Software
+#U|U09|Oneri e imposte
+01|Imposte e tasse|01 IMU;02 IRES;03 IRAP;04 TARI;05 COSAP;06 Bolli;07 Imposta di registro;08 Imposte diverse
+02|Oneri finanziari|01 Interessi passivi su scoperto c/c;02 Interessi passivi su mutui;03 Interessi passivi su prestiti ricevuti
+03|Altri oneri ordinari|01 Tassa diocesana sul bilancio;02 Tassa diocesana su eredità e alienazioni;03 Oneri diversi
+04|Altri oneri straordinari|01 Minusvalenze su titoli e immobili;02 Abbuoni e sopravvenienze passive
+#U|U10|Ammortamenti / accantonamenti
+01|Ammortamenti|01 Ammortamenti
+02|Accantonamenti|01 Quota annuale fondo TFR;02 Accantonamenti per lavori;03 Accantonamenti diversi
+`;
+const GRUPPI = [], VOCI = [], CONTI = {};
+(function parsePiano(){
+  let cur = null;
+  PIANO_TXT.trim().split("\n").forEach(l => {
+    if (l.startsWith("#")) { const [t,g,n] = l.slice(1).split("|"); cur = {t,g,n,conti:[]}; GRUPPI.push(cur); return; }
+    const [c,n,subs] = l.split("|");
+    const voce = {code:cur.g+"-"+c, g:cur.g, n, t:cur.t, subs:[]};
+    cur.conti.push(voce); VOCI.push(voce);
+    subs.split(";").forEach(s => { const code = voce.code+"-"+s.slice(0,2); CONTI[code] = {code, n:s.slice(3), voce, t:cur.t}; voce.subs.push(code); });
+  });
+})();
+const CASSA="A02-01-01", BANCA="A02-01-02", PAYPAL="A02-01-03";
+const FIN=[CASSA,BANCA,PAYPAL];
+const isFin = c => FIN.includes(c);
+
+/* =====================  UTILITÀ  ===================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const EUR = new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"});
+const eur = c => EUR.format(c/100);
+const eurCell = c => `<td class="n ${c===0?"zero":""}">${eur(c)}</td>`;
+const dIt = d => d ? d.split("-").reverse().join("/") : "";
+function parseEuro(s){
+  s = String(s||"").replace(/[\s€]/g,"");
+  if (!s) return 0;
+  if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  const x = parseFloat(s); return isFinite(x) ? Math.round(x*100) : NaN;
+}
+const csvNum = c => { let s=(c/100).toFixed(2).replace(/0+$/,"").replace(/\.$/,""); return s.replace(".",","); };
+const csv2 = c => (c/100).toFixed(2).replace(".",",");
+const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const tokens = s => norm(s).split(/[^a-z0-9]+/).filter(t => t.length>=3 && !STOP.has(t));
+const STOP = new Set("per del della dei delle con una uno gli the and nel nella alla alle dal dalla fattura offerta offerte pagamento euro anno mese srl spa snc sas nr".split(" "));
+const OGGI = "2026-11-15";
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; $("#toast-slot").appendChild(t); setTimeout(()=>t.remove(),2600); }
+function download(name, text, type){ const b=new Blob([text],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }
+function nomeConto(c){ return CONTI[c] ? CONTI[c].n : c; }
+
+/* =====================  DATI INVENTATI  ===================== */
+let nextId = 1;
+function mk(data, descr, tipo, a, b, euro){
+  const c = Math.round(euro*100); let righe;
+  if (tipo==="entrata") righe=[{c:a,d:c,a:0},{c:b,d:0,a:c}];          // a = cassa/banca, b = voce
+  else if (tipo==="uscita") righe=[{c:b,d:c,a:0},{c:a,d:0,a:c}];      // a = cassa/banca, b = voce
+  else righe=[{c:b,d:c,a:0},{c:a,d:0,a:c}];                            // spostamento: da a → verso b
+  return {id:nextId++, data, descr, tipo, righe};
+}
+function apertura(cassa, banca, paypal, colletteDaVersare){
+  const righe=[{c:CASSA,d:cassa,a:0},{c:BANCA,d:banca,a:0},{c:PAYPAL,d:paypal,a:0}];
+  if (colletteDaVersare) righe.push({c:"PG1-01-08",d:0,a:colletteDaVersare});
+  const pat = cassa+banca+paypal-colletteDaVersare;
+  righe.push(pat>=0 ? {c:"PAT-01-01",d:0,a:pat} : {c:"PAT-01-01",d:-pat,a:0});
+  return {id:nextId++, data:"2026-01-01", descr:"Saldi di apertura al 1° gennaio 2026", tipo:"apertura", righe:righe.filter(r=>r.d||r.a)};
+}
+function datiEsempio(){
+  nextId = 1;
+  const E="entrata", U="uscita", S="spostamento";
+  return {
+    parrocchia:{nome:"Parrocchia di San Esempio", icsc:"0000000", comune:"Esempiopoli", parroco:"don Mario Esempio"},
+    anno:2026, learn:{}, previsione:{}, ultimoBackup:null,
+    mov:[
+      apertura(85000, 1240000, 12000, 30000),
+      mk("2026-01-11","Colletta domenicale",E,CASSA,"E01-02-01",410),
+      mk("2026-01-18","Offerta funerale",E,CASSA,"E01-03-05",150),
+      mk("2026-01-20","Bolletta luce gennaio",U,BANCA,"U08-01-01",186.40),
+      mk("2026-01-25","Intenzioni Messe",E,CASSA,"E01-01-02",90),
+      mk("2026-02-01","Colletta domenicale",E,CASSA,"E01-02-01",385),
+      mk("2026-02-05","Versamento contanti in banca",S,CASSA,BANCA,700),
+      mk("2026-02-10","Fiori per l'altare",U,CASSA,"U01-02-02",45),
+      mk("2026-02-15","TIM telefono e fibra",U,BANCA,"U08-01-04",57.10),
+      mk("2026-02-22","Benedizione delle famiglie",E,CASSA,"E01-04-01",620),
+      mk("2026-03-08","Assicurazione fabbricati",U,BANCA,"U06-01-01",650),
+      mk("2026-03-15","Offerta battesimo",E,CASSA,"E01-03-01",100),
+      mk("2026-03-22","Raccolta Quaresima di carità",E,CASSA,"PG1-01-03",480),
+      mk("2026-03-29","Vino e ostie",U,CASSA,"U01-02-01",78.50),
+      mk("2026-04-05","Colletta domenicale di Pasqua",E,CASSA,"E01-02-01",1250),
+      mk("2026-04-12","Versamento Quaresima di carità alla Diocesi",U,BANCA,"PG1-01-03",480),
+      mk("2026-04-20","Gas riscaldamento",U,BANCA,"U08-01-02",412.30),
+      mk("2026-05-03","Offerte Prime Comunioni",E,CASSA,"E01-03-02",540),
+      mk("2026-05-10","Versamento contanti in banca",S,CASSA,BANCA,1500),
+      mk("2026-05-14","TIM telefono e fibra",U,BANCA,"U08-01-04",57.10),
+      mk("2026-05-24","Offerte Cresime",E,CASSA,"E01-03-03",380),
+      mk("2026-06-07","Offerta matrimonio",E,BANCA,"E01-03-04",300),
+      mk("2026-06-15","Riparazione caldaia",U,BANCA,"U05-03-01",1220),
+      mk("2026-06-20","Donazioni online parrocchiani",E,PAYPAL,"E01-04-05",150),
+      mk("2026-07-05","Campo scuola ragazzi",U,BANCA,"U01-01-03",900),
+      mk("2026-07-12","Colletta domenicale",E,CASSA,"E01-02-01",290),
+      mk("2026-08-10","Spese bancarie trimestre",U,BANCA,"U08-02-07",24),
+      mk("2026-09-13","Offerte lumi votivi",E,CASSA,"E01-04-02",210),
+      mk("2026-09-20","Rimborso viaggio sacerdote",U,CASSA,"U02-03-02",60),
+      mk("2026-10-18","Raccolta Giornata missionaria",E,CASSA,"PG1-01-08",560),
+      mk("2026-10-25","Cancelleria per la segreteria",U,CASSA,"U08-02-01",38.90),
+      mk("2026-11-08","Versamento Giornata missionaria alla Diocesi",U,BANCA,"PG1-01-08",860),
+      mk("2026-11-10","Offerta funerale",E,CASSA,"E01-03-05",200)
+    ]
+  };
+}
+let S = datiEsempio();
+
+/* =====================  CALCOLI CONTABILI  ===================== */
+function totals(filter){
+  const t={};
+  S.mov.forEach(m => { if (filter && !filter(m)) return; m.righe.forEach(r => { const x=(t[r.c] ||= {d:0,a:0}); x.d+=r.d; x.a+=r.a; }); });
+  return t;
+}
+function nat(code, t){ const x=t[code]; if(!x) return 0; const k=CONTI[code].t; return (k==="A"||k==="U") ? x.d-x.a : x.a-x.d; }
+const anno = m => m.data.slice(0,4)===String(S.anno);
+function saldoFin(code){ return nat(code, totals(anno)); }
+function quadraTutti(){ return S.mov.every(m => m.righe.reduce((s,r)=>s+r.d,0) === m.righe.reduce((s,r)=>s+r.a,0)); }
+
+function calcRendiconto(){
+  const t = totals(anno);
+  const v = {}; VOCI.forEach(x => v[x.code] = x.subs.reduce((s,c)=>s+nat(c,t),0));
+  const sumG = g => GRUPPI.find(x=>x.g===g).conti.reduce((s,x)=>s+v[x.code],0);
+  const sumT = types => GRUPPI.filter(x=>types.includes(x.t)).reduce((s,x)=>s+sumG(x.g),0);
+  const T01=sumT(["E"]), T02=sumT(["U"]), F=T01-T02;
+  const att=sumT(["A"]), pas=sumT(["P","PG"]), pat=sumT(["PAT"]);
+  const ap = totals(m => m.tipo==="apertura" && anno(m)), yr = totals(m => m.tipo!=="apertura" && anno(m));
+  const collette = VOCI.filter(x=>x.g==="PG1").flatMap(x=>x.subs).map(c => {
+    const C3=nat(c,ap), C1=yr[c]?.a||0, C2=yr[c]?.d||0; return {c, C1, C2, C3, resto:C3+C1-C2};
+  });
+  const base3 = sumG("E01")+v["E03-01"]+v["E04-01"]+v["E04-02"], base10 = v["E02-03"]+v["E03-02"];
+  const c3 = Math.round(base3*0.03), c10 = Math.round(base10*0.10);
+  return {t, v, sumG, T01, T02, F, att, pas, pat, collette, base3, base10, c3, c10, quadra: att===pas+pat+F};
+}
+
+/* =====================  SUGGERIMENTO DELLA VOCE  ===================== */
+// [parole (inizio parola), sottoconto, direzione E=entrata U=uscita *=entrambe, peso]
+const REGOLE = [
+  ["funeral esequie defunt","E01-03-05","E",3],["battes","E01-03-01","E",3],["comunion","E01-03-02","E",3],["cresim","E01-03-03","E",3],
+  ["matrimon nozze sposi","E01-03-04","E",3],["intenzion messa messe suffragi","E01-01-02","E",2],["legat","E01-01-01","E",3],
+  ["collett questua","E01-02-01","E",2],["domenical","E01-02-01","E",2],["feriale","E01-02-02","E",3],["benedizion","E01-04-01","E",3],
+  ["lumi votiv","E01-04-02","E",3],["locali sala","E01-04-04","E",2],["donazion parrocchian online","E01-04-05","E",2],
+  ["caritas","E01-04-03","E",2],["caritas povert bisognos","U01-03-02","U",2],
+  ["contribut","E02-02-01","E",1],["eredit lascit testament","E02-03-01","E",3],["ristruttur restaur","E02-01-01","E",2],
+  ["affitto locazion canone","E03-01-01","E",2],["affitto locazion","U07-01-01","U",2],["interess","E04-01-01","E",2],["interess","U09-02-01","U",2],
+  ["sinistro","E04-03-01","E",3],
+  ["luce enel elettric energia","U08-01-01","U",3],["gas metano combustib gasolio","U08-01-02","U",3],["riscaldament","U08-01-02","U",1],["acqua","U08-01-03","U",3],
+  ["tim telefon internet fibra vodafone fastweb","U08-01-04","U",3],["fiori fiorist floreal","U01-02-02","U",3],
+  ["vino ostie particol liturg messal","U01-02-01","U",3],["cera ceri candel","U01-02-03","U",3],["lavanderia paramenti","U01-02-04","U",3],
+  ["catechesi catechism","U01-01-01","U",3],["formazion","U01-01-02","U",2],["campo oratorio","U01-01-03","U",3],["pellegrinagg gita","U01-01-04","U",3],
+  ["festa","U01-01-05","U",2],["stipend","U02-01-01","U",3],["remunerazion","U02-02-01","U",3],["rimbors","U02-03-03","U",1],
+  ["viagg benzina carburant treno autostrad","U02-03-02","U",2],["vitto","U02-03-01","U",3],["colf","U02-03-05","U",3],
+  ["commercialist consulen avvocat notai geometr ingegner architett","U03-01-01","U",3],["mobili computer stampante arred attrezzatur","U04-01-01","U",3],
+  ["manutenz riparaz idraulic muratore imbianc","U05-01-01","U",3],["caldaia impiant elettricist","U05-03-01","U",3],
+  ["assicuraz polizza","U06-01-01","U",3],["cancelleria penne","U08-02-01","U",3],["pulizi detersiv","U08-02-02","U",3],
+  ["fotocopi stampat tipografi","U08-02-03","U",3],["postal francobol raccomandat","U08-02-04","U",3],["vigilanza allarme","U08-02-06","U",3],
+  ["bancari commission","U08-02-07","U",3],["noleggi licenz","U08-02-08","U",3],["software","U08-02-10","U",3],["amazon","U08-02-09","U",1],
+  ["imu","U09-01-01","U",3],["ires","U09-01-02","U",3],["irap","U09-01-03","U",3],["tari rifiuti","U09-01-04","U",3],["bollo bolli","U09-01-06","U",2],
+  ["tassa diocesana","U09-03-01","U",2],
+  ["seminario","PG1-01-01","*",3],["papa obolo","PG1-01-02","*",3],["quaresima","PG1-01-03","*",3],["terra santa","PG1-01-04","*",2],
+  ["migrant","PG1-01-05","*",3],["cattolica","PG1-01-06","*",3],["avvento","PG1-01-07","*",3],["missionari","PG1-01-08","*",3],
+  ["infanzia","PG1-01-09","*",2],["lebbros","PG1-01-10","*",3]
+].map(([p,c,d,w]) => ({parole:p.split(" "), c, d, w}));
+function compatibile(code, tipo){ const k=CONTI[code].t; if (tipo==="entrata") return k!=="U"; if (tipo==="uscita") return k!=="E"; return true; }
+function suggerisci(testo, tipo){
+  const toks = tokens(testo), score = {}, perche = {};
+  const add = (c,w,why) => { if(!compatibile(c,tipo)) return; score[c]=(score[c]||0)+w; if(!perche[c]) perche[c]=why; };
+  REGOLE.forEach(r => {
+    if (r.d!=="*" && r.d!==(tipo==="entrata"?"E":"U")) return;
+    toks.forEach(tk => r.parole.forEach(p => { if (tk.startsWith(p)) add(r.c, r.w, `contiene «${tk}»`); }));
+  });
+  toks.forEach(tk => { const l=S.learn[tk]; if(!l) return; Object.entries(l).forEach(([c,n]) => add(c, 2*n, `l'ha già scelta per «${tk}»`)); });
+  return Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c]) => ({c, why:perche[c]}));
+}
+function impara(testo, code, correzione){
+  tokens(testo).forEach(tk => { const l=(S.learn[tk] ||= {}); l[code]=(l[code]||0)+(correzione?2:1); });
+}
+
+/* =====================  NAVIGAZIONE  ===================== */
+const PAGINE = [
+  ["home","Inizio"],["nuovo","Registra"],["movimenti","Movimenti"],["fatture","Fatture"],
+  ["rendiconto","Rendiconto"],["unio","Per UNIO"],["impostazioni","Impostazioni"]
+];
+let pagina = "home";
+function vai(p){ pagina=p; render(); window.scrollTo(0,0); }
+function render(){
+  $("#hdr-sub").textContent = `${S.parrocchia.nome} · Anno ${S.anno}`;
+  $("#nav").innerHTML = PAGINE.map(([k,n]) => `<button class="${k===pagina?"on":""}" onclick="vai('${k}')">${n}</button>`).join("");
+  $("#main").innerHTML = VISTE[pagina]();
+  if (DOPO[pagina]) DOPO[pagina]();
+}
+const VISTE = {}, DOPO = {};
+
+/* ----- INIZIO ----- */
+VISTE.home = () => {
+  const r = calcRendiconto();
+  const daVersare = r.collette.reduce((s,x)=>s+x.resto,0);
+  const ultimi = [...S.mov].filter(m=>m.tipo!=="apertura").sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id).slice(0,5);
+  return `
+  <h2>Buongiorno</h2><p class="lead">Ecco come stanno i conti della parrocchia oggi, ${dIt(OGGI)}.</p>
+  <div class="grid g4" style="margin-bottom:16px">
+    ${FIN.map(c=>`<div class="card saldo"><div class="lab">${nomeConto(c)}</div><div class="val">${eur(saldoFin(c))}</div></div>`).join("")}
+    <div class="card saldo" style="background:var(--accent-soft)"><div class="lab">Totale disponibile</div><div class="val">${eur(FIN.reduce((s,c)=>s+saldoFin(c),0))}</div></div>
+  </div>
+  <div class="big-actions">
+    <button class="big b-in" onclick="nuovo('entrata')">+ Entrata<small>offerte, collette, contributi…</small></button>
+    <button class="big b-out" onclick="nuovo('uscita')">− Uscita<small>bollette, acquisti, rimborsi…</small></button>
+    <button class="big b-move" onclick="nuovo('spostamento')">⇄ Sposta soldi<small>es. contanti versati in banca</small></button>
+    <button class="big b-doc" onclick="vai('fatture')">📄 Fatture<small>carica gli XML di Aruba</small></button>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>L'anno ${S.anno} finora</h3>
+      <table><tr><td>Entrate</td><td class="n pos">${eur(r.T01)}</td></tr>
+      <tr><td>Uscite</td><td class="n neg">${eur(r.T02)}</td></tr>
+      <tr class="tot"><td>${r.F>=0?"Avanzo":"Disavanzo"}</td><td class="n">${eur(r.F)}</td></tr></table>
+      ${daVersare>0?`<div class="warnbox">Collette ancora da versare alla Diocesi: <b>${eur(daVersare)}</b></div>`:""}
+    </div>
+    <div class="card"><h3>Controlli</h3>
+      ${quadraTutti()?`<div class="okbox">✓ Tutti i movimenti sono in quadratura (Dare = Avere)</div>`:`<div class="badbox">✗ C'è un movimento non in quadratura</div>`}
+      ${r.quadra?`<div class="okbox">✓ Il Rendiconto torna: Attività = Passività + Patrimonio + Avanzo</div>`:`<div class="badbox">✗ Il Rendiconto non torna</div>`}
+      ${S.ultimoBackup?`<div class="okbox">✓ Ultima copia di sicurezza: ${esc(S.ultimoBackup)}</div>`:`<div class="warnbox">Non hai ancora fatto una copia di sicurezza. <a href="#" onclick="vai('impostazioni');return false">Falla ora</a></div>`}
+    </div>
+  </div>
+  <div class="card"><h3>Ultimi movimenti</h3>${tabellaMovimenti(ultimi,false)}
+    <p style="margin:10px 0 0"><a href="#" onclick="vai('movimenti');return false">Vedi tutti i movimenti →</a></p></div>`;
+};
+
+/* ----- REGISTRA ----- */
+let F;
+function resetForm(tipo){ F = {modo:"semplice", tipo:tipo||"entrata", data:OGGI, importo:"", descr:"", code:"", fin:CASSA, da:CASSA, a:BANCA, proposte:[],
+  pd:[{c:"",d:"",a:""},{c:"",d:"",a:""}], pdDescr:"", pdData:OGGI}; }
+resetForm();
+function nuovo(tipo){ resetForm(tipo); vai("nuovo"); }
+function opzioniVoci(tipo, sel){
+  const ordine = tipo==="entrata" ? ["E","PG","A","P"] : tipo==="uscita" ? ["U","PG","A","P"] : ["A","P","PAT","PG","E","U"];
+  return `<option value="">— scegli la voce —</option>` + ordine.flatMap(t => GRUPPI.filter(g=>g.t===t)).flatMap(g => g.conti).map(v => {
+    const subs = v.subs.filter(c => tipo==="pd" || !isFin(c));
+    if (!subs.length) return "";
+    return `<optgroup label="${esc(v.code+" · "+v.n)}">${subs.map(c=>`<option value="${c}" ${c===sel?"selected":""}>${esc(CONTI[c].n)} (${c})</option>`).join("")}</optgroup>`;
+  }).join("");
+}
+const finRadio = (name, val, onch) => `<div class="seg">${FIN.map(c=>`<button type="button" class="${c===val?"on move":""}" onclick="${onch}('${c}')">${nomeConto(c)}</button>`).join("")}</div>`;
+VISTE.nuovo = () => F.modo==="pd" ? vistaPD() : `
+  <div class="row"><h2 class="sp">Registra un movimento</h2><button class="btn sec small" onclick="F.modo='pd';render()">Sono pratico: usa la partita doppia</button></div>
+  <p class="lead">Compila i campi: Divisio scriverà da solo la registrazione in partita doppia.</p>
+  <div class="card">
+    <div class="seg">
+      <button class="${F.tipo==="entrata"?"on in":""}" onclick="setTipo('entrata')">+ Entrata</button>
+      <button class="${F.tipo==="uscita"?"on out":""}" onclick="setTipo('uscita')">− Uscita</button>
+      <button class="${F.tipo==="spostamento"?"on move":""}" onclick="setTipo('spostamento')">⇄ Sposta soldi</button>
+    </div>
+    <div class="grid g2">
+      <div><label class="f">Data</label><input type="date" value="${F.data}" oninput="F.data=this.value;aggiorna()"></div>
+      <div><label class="f">Importo (€)</label><input type="text" class="amount" inputmode="decimal" placeholder="0,00" value="${esc(F.importo)}" oninput="F.importo=this.value;aggiorna()"></div>
+    </div>
+    <label class="f">${F.tipo==="spostamento"?"Descrizione":"Che cos'è? Lo scriva con parole sue"}</label>
+    <input type="text" id="descr" placeholder="${F.tipo==="entrata"?"es. offerta funerale":F.tipo==="uscita"?"es. bolletta luce":"es. versamento contanti in banca"}" value="${esc(F.descr)}" oninput="F.descr=this.value;aggiornaProposte();aggiorna()">
+    ${F.tipo==="spostamento" ? `
+      <label class="f">Da dove escono i soldi</label>${finRadio("da",F.da,"setDa")}
+      <label class="f">Dove arrivano</label>${finRadio("a",F.a,"setA")}` : `
+      <div id="proposte"></div>
+      <label class="f">Voce</label><select id="voce" onchange="F.code=this.value;aggiornaProposte();aggiorna()">${opzioniVoci(F.tipo,F.code)}</select>
+      <label class="f">${F.tipo==="entrata"?"Dove sono entrati i soldi":"Da dove sono usciti i soldi"}</label>${finRadio("fin",F.fin,"setFin")}`}
+    <div id="anteprima"></div>
+    <div class="row" style="margin-top:18px"><button class="btn" id="salva" onclick="salvaSemplice()">Registra</button>
+      <button class="btn sec" onclick="resetForm(F.tipo);render()">Svuota</button></div>
+  </div>`;
+DOPO.nuovo = () => { if (F.modo==="semplice") { aggiornaProposte(); aggiorna(); } else aggiornaPD(); };
+function setTipo(t){ const d=F.descr, i=F.importo, dt=F.data; resetForm(t); F.descr=d; F.importo=i; F.data=dt; render(); }
+function setFin(c){ F.fin=c; render(); }
+function setDa(c){ F.da=c; if(F.a===c) F.a=FIN.find(x=>x!==c); render(); }
+function setA(c){ F.a=c; if(F.da===c) F.da=FIN.find(x=>x!==c); render(); }
+function aggiornaProposte(){
+  const box = $("#proposte"); if (!box) return;
+  F.proposte = F.descr.trim() ? suggerisci(F.descr, F.tipo) : [];
+  box.innerHTML = F.proposte.length ? `<div class="hint" style="margin-top:10px">Proposte di Divisio (scelga lei):</div><div class="chips">${F.proposte.map(p =>
+    `<button class="chip ${p.c===F.code?"sel":""}" onclick="scegli('${p.c}')">${esc(CONTI[p.c].n)}<small>${p.c} · ${esc(p.why)}</small></button>`).join("")}</div>`
+    : (F.descr.trim() ? `<div class="hint" style="margin-top:10px">Nessuna proposta: scelga la voce dall'elenco. Divisio lo ricorderà la prossima volta.</div>` : "");
+}
+function scegli(c){ F.code=c; $("#voce").value=c; aggiornaProposte(); aggiorna(); }
+function righeSemplici(){
+  const c = parseEuro(F.importo);
+  if (!(c>0)) return null;
+  if (F.tipo==="spostamento") return F.da===F.a ? null : [{c:F.a,d:c,a:0},{c:F.da,d:0,a:c}];
+  if (!F.code) return null;
+  return F.tipo==="entrata" ? [{c:F.fin,d:c,a:0},{c:F.code,d:0,a:c}] : [{c:F.code,d:c,a:0},{c:F.fin,d:0,a:c}];
+}
+function aggiorna(){
+  const box = $("#anteprima"); if (!box) return;
+  const righe = righeSemplici(); const msgs = [];
+  if (F.data && F.data.slice(0,4)!==String(S.anno)) msgs.push(`<div class="warnbox">La data è fuori dall'anno ${S.anno}.</div>`);
+  if (F.importo && isNaN(parseEuro(F.importo))) msgs.push(`<div class="badbox">Importo non valido: scriva per esempio 50 oppure 1.250,50</div>`);
+  if (F.code && CONTI[F.code].t==="PG") msgs.push(`<div class="note">${F.tipo==="entrata"
+    ? "Questa è una <b>colletta da versare alla Diocesi</b>: Divisio la tiene da parte e non la conta tra le entrate della parrocchia."
+    : "Questo è il <b>versamento alla Diocesi</b> di una colletta raccolta."}</div>`);
+  if (F.code==="P02-05-04") msgs.push(`<div class="note">Dati del teatro forniti dalla commercialista.</div>`);
+  box.innerHTML = msgs.join("") + (righe ? `<details><summary>Mostra la registrazione in partita doppia</summary>${tabellaRighe(righe)}</details>` : "");
+  $("#salva").disabled = !righe || !F.descr.trim() || F.data.slice(0,4)!==String(S.anno);
+}
+function tabellaRighe(righe){
+  const td = righe.reduce((s,r)=>s+r.d,0), ta = righe.reduce((s,r)=>s+r.a,0);
+  return `<table><tr><th>Conto</th><th class="n">Dare</th><th class="n">Avere</th></tr>${righe.map(r=>`<tr><td>${esc(nomeConto(r.c))} <span class="code">${r.c}</span></td><td class="n">${r.d?eur(r.d):""}</td><td class="n">${r.a?eur(r.a):""}</td></tr>`).join("")}
+  <tr class="tot"><td>Totale ${td===ta?"✓":"✗"}</td><td class="n">${eur(td)}</td><td class="n">${eur(ta)}</td></tr></table>`;
+}
+function salvaSemplice(){
+  const righe = righeSemplici(); if (!righe) return;
+  if (F.tipo!=="spostamento") impara(F.descr, F.code, F.proposte.length && F.proposte[0].c!==F.code);
+  S.mov.push({id:nextId++, data:F.data, descr:F.descr.trim(), tipo:F.tipo, righe});
+  toast("Registrato ✓"); resetForm(F.tipo); render();
+}
+/* partita doppia */
+function vistaPD(){
+  return `
+  <div class="row"><h2 class="sp">Registra in partita doppia</h2><button class="btn sec small" onclick="F.modo='semplice';render()">Torna alla modalità semplice</button></div>
+  <p class="lead">Per chi conosce la partita doppia: il movimento si salva solo se Dare = Avere.</p>
+  <div class="card">
+    <div class="grid g2"><div><label class="f">Data</label><input type="date" value="${F.pdData}" oninput="F.pdData=this.value;aggiornaPD()"></div>
+    <div><label class="f">Descrizione</label><input type="text" value="${esc(F.pdDescr)}" oninput="F.pdDescr=this.value;aggiornaPD()" placeholder="es. dati teatro 3° trimestre dalla commercialista"></div></div>
+    <div class="tablewrap"><table style="margin-top:14px"><tr><th>Conto</th><th class="n">Dare</th><th class="n">Avere</th><th></th></tr>
+    ${F.pd.map((r,i)=>`<tr><td style="min-width:260px"><select onchange="F.pd[${i}].c=this.value;aggiornaPD()">${opzioniVoci("pd",r.c)}</select></td>
+      <td><input type="text" inputmode="decimal" value="${esc(r.d)}" oninput="F.pd[${i}].d=this.value;aggiornaPD()" style="text-align:right;min-width:110px"></td>
+      <td><input type="text" inputmode="decimal" value="${esc(r.a)}" oninput="F.pd[${i}].a=this.value;aggiornaPD()" style="text-align:right;min-width:110px"></td>
+      <td>${F.pd.length>2?`<button class="btn danger small" onclick="F.pd.splice(${i},1);render()">✕</button>`:""}</td></tr>`).join("")}
+    <tr class="tot"><td>Totale</td><td class="n" id="pd-d"></td><td class="n" id="pd-a"></td><td></td></tr></table></div>
+    <button class="btn sec small" style="margin-top:10px" onclick="F.pd.push({c:'',d:'',a:''});render()">+ Aggiungi riga</button>
+    <div id="pd-msg"></div>
+    <div class="row" style="margin-top:18px"><button class="btn" id="pd-salva" onclick="salvaPD()">Registra</button></div>
+  </div>`;
+}
+function righePD(){ return F.pd.map(r=>({c:r.c, d:parseEuro(r.d)||0, a:parseEuro(r.a)||0})).filter(r=>r.c && (r.d||r.a)); }
+function aggiornaPD(){
+  const righe = righePD(); const td=righe.reduce((s,r)=>s+r.d,0), ta=righe.reduce((s,r)=>s+r.a,0);
+  $("#pd-d").textContent=eur(td); $("#pd-a").textContent=eur(ta);
+  let msg="", ok=false;
+  if (td!==ta) msg=`<div class="badbox">Non in quadratura: mancano <b>${eur(Math.abs(td-ta))}</b> in ${td>ta?"Avere":"Dare"}.</div>`;
+  else if (righe.length<2 || td===0) msg=`<div class="hint" style="margin-top:10px">Inserisca almeno due righe.</div>`;
+  else if (!F.pdDescr.trim()) msg=`<div class="hint" style="margin-top:10px">Manca la descrizione.</div>`;
+  else { msg=`<div class="okbox">✓ Dare = Avere: si può registrare.</div>`; ok=true; }
+  if (F.pdData.slice(0,4)!==String(S.anno)) { msg+=`<div class="warnbox">La data è fuori dall'anno ${S.anno}.</div>`; ok=false; }
+  $("#pd-msg").innerHTML=msg; $("#pd-salva").disabled=!ok;
+}
+function salvaPD(){ const righe=righePD(); S.mov.push({id:nextId++, data:F.pdData, descr:F.pdDescr.trim(), tipo:"pd", righe}); toast("Registrato ✓"); resetForm(); F.modo="pd"; render(); }
+
+/* ----- MOVIMENTI ----- */
+let filtro = {q:"", conto:"", periodo:""};
+const PERIODI = {T1:["01-01","03-31","1° trim."],T2:["04-01","06-30","2° trim."],T3:["07-01","09-30","3° trim."],T4:["10-01","12-31","4° trim."],A:["01-01","12-31","anno"]};
+function descriviMov(m){
+  const fins = m.righe.filter(r=>isFin(r.c)), altri = m.righe.filter(r=>!isFin(r.c));
+  if (m.tipo==="apertura") return {voce:"Saldi di apertura", conto:"", imp:m.righe.reduce((s,r)=>s+r.d,0), cls:""};
+  if (fins.length===2 && altri.length===0) { const a=fins.find(r=>r.d), da=fins.find(r=>r.a); return {voce:"Spostamento", conto:`${nomeConto(da.c)} → ${nomeConto(a.c)}`, imp:a.d, cls:"move"}; }
+  const net = fins.reduce((s,r)=>s+r.d-r.a,0);
+  return {voce: altri.length===1 ? `${CONTI[altri[0].c].n} <span class="code">${altri[0].c}</span>` : "Più voci",
+    conto: fins.map(r=>nomeConto(r.c)).join(", ") || "—", imp: fins.length? net : altri.reduce((s,r)=>s+r.d,0), cls: !fins.length?"":net>=0?"in":"out"};
+}
+function tabellaMovimenti(lista, azioni){
+  if (!lista.length) return `<p class="hint">Nessun movimento.</p>`;
+  return `<div class="tablewrap"><table><tr><th>Data</th><th>Descrizione</th><th>Voce</th><th>Cassa / banca</th><th class="n">Importo</th>${azioni?"<th></th>":""}</tr>
+  ${lista.map(m => { const d=descriviMov(m); return `<tr><td>${dIt(m.data)}</td><td>${esc(m.descr)}</td><td>${d.voce}</td><td>${esc(d.conto)}</td>
+    <td class="n ${d.cls==="in"?"pos":d.cls==="out"?"neg":""}">${d.cls==="in"?"+":""}${eur(d.imp)}</td>
+    ${azioni?`<td><details><summary>Dettagli</summary>${tabellaRighe(m.righe)}${m.tipo!=="apertura"?`<button class="btn danger small" style="margin-top:6px" onclick="elimina(${m.id})">Elimina</button>`:""}</details></td>`:""}</tr>`; }).join("")}
+  </table></div>`;
+}
+VISTE.movimenti = () => {
+  const lista = S.mov.filter(m => {
+    if (filtro.q && !norm(m.descr).includes(norm(filtro.q))) return false;
+    if (filtro.conto && !m.righe.some(r=>r.c===filtro.conto)) return false;
+    if (filtro.periodo) { const [a,b]=PERIODI[filtro.periodo]; const md=m.data.slice(5); if (md<a||md>b) return false; }
+    return true;
+  }).sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
+  return `<h2>Movimenti</h2><p class="lead">Tutto quello che è stato registrato nel ${S.anno}. Apra "Dettagli" per vedere la partita doppia.</p>
+  <div class="card"><div class="grid g4">
+    <div><label class="f">Cerca</label><input type="text" value="${esc(filtro.q)}" placeholder="es. funerale" oninput="filtro.q=this.value;rinfrescaMov()"></div>
+    <div><label class="f">Cassa / banca</label><select onchange="filtro.conto=this.value;rinfrescaMov()"><option value="">Tutte</option>${FIN.map(c=>`<option value="${c}" ${filtro.conto===c?"selected":""}>${nomeConto(c)}</option>`).join("")}</select></div>
+    <div><label class="f">Periodo</label><select onchange="filtro.periodo=this.value;rinfrescaMov()"><option value="">Tutto l'anno</option>${["T1","T2","T3","T4"].map(p=>`<option value="${p}" ${filtro.periodo===p?"selected":""}>${PERIODI[p][2]}</option>`).join("")}</select></div>
+  </div></div>
+  <div class="card" id="lista-mov">${tabellaMovimenti(lista,true)}<p class="hint">${lista.length} movimenti</p></div>
+  <div class="noprint"><button class="btn sec" onclick="esportaMovCSV()">Scarica tutti i movimenti in CSV</button></div>`;
+};
+let _t; function rinfrescaMov(){ clearTimeout(_t); _t=setTimeout(()=>{ const f=document.activeElement; const sel=f&&f.selectionStart; render(); const inp=$("#main input[type=text]"); if(f&&f.tagName==="INPUT"&&inp){inp.focus(); inp.setSelectionRange(sel,sel);} },250); }
+function elimina(id){ const m=S.mov.find(x=>x.id===id); if(!confirm(`Eliminare il movimento «${m.descr}» del ${dIt(m.data)}?`)) return; S.mov=S.mov.filter(x=>x.id!==id); toast("Movimento eliminato"); render(); }
+function esportaMovCSV(){
+  const rows=[["Data","Descrizione","Tipo","Conto","Nome conto","Dare","Avere"]];
+  [...S.mov].sort((a,b)=>a.data.localeCompare(b.data)).forEach(m=>m.righe.forEach(r=>rows.push([dIt(m.data),m.descr,m.tipo,r.c,nomeConto(r.c),csv2(r.d),csv2(r.a)])));
+  download(`divisio_movimenti_${S.anno}.csv`, rows.map(r=>r.map(x=>/[;"\n]/.test(x)?`"${String(x).replace(/"/g,'""')}"`:x).join(";")).join("\r\n"), "text/csv;charset=utf-8");
+}
+
+/* ----- FATTURE ----- */
+let fatture = [];   // in attesa di conferma
+const ESEMPIO_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<p:FatturaElettronica versione="FPR12" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2">
+ <FatturaElettronicaHeader><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>00000000000</IdCodice></IdFiscaleIVA>
+ <Anagrafica><Denominazione>Fioreria Esempio s.n.c.</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore></FatturaElettronicaHeader>
+ <FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>2026-11-03</Data><Numero>2026/118</Numero>
+ <ImportoTotaleDocumento>198.00</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali>
+ <DatiBeniServizi><DettaglioLinee><NumeroLinea>1</NumeroLinea><Descrizione>Composizioni floreali per l'altare - Solennità di Tutti i Santi</Descrizione><PrezzoTotale>180.00</PrezzoTotale><AliquotaIVA>10.00</AliquotaIVA></DettaglioLinee>
+ <DatiRiepilogo><AliquotaIVA>10.00</AliquotaIVA><ImponibileImporto>180.00</ImponibileImporto><Imposta>18.00</Imposta></DatiRiepilogo></DatiBeniServizi>
+ <DatiPagamento><DettaglioPagamento><DataScadenzaPagamento>2026-12-03</DataScadenzaPagamento><ImportoPagamento>198.00</ImportoPagamento></DettaglioPagamento></DatiPagamento>
+ </FatturaElettronicaBody></p:FatturaElettronica>`;
+function leggiFatturaXML(txt, nomeFile){
+  const doc = new DOMParser().parseFromString(txt, "application/xml");
+  if (doc.getElementsByTagName("parsererror").length) throw new Error("non è un file XML leggibile (se finisce in .p7m arriverà nella versione completa)");
+  const trova = (root, nome) => { if(!root) return null; for (const e of root.getElementsByTagName("*")) if (e.localName===nome) return e; return null; };
+  const testo = (root, ...path) => { let el=root; for (const p of path) el=trova(el,p); return el ? el.textContent.trim() : ""; };
+  const tutti = nome => [...doc.getElementsByTagName("*")].filter(e=>e.localName===nome);
+  const ced = trova(doc,"CedentePrestatore");
+  if (!ced) throw new Error("non sembra una FatturaPA");
+  const forn = testo(ced,"Denominazione") || `${testo(ced,"Nome")} ${testo(ced,"Cognome")}`.trim();
+  const dg = trova(doc,"DatiGeneraliDocumento");
+  const imp = tutti("ImponibileImporto").reduce((s,e)=>s+Math.round(parseFloat(e.textContent)*100),0);
+  const iva = tutti("Imposta").reduce((s,e)=>s+Math.round(parseFloat(e.textContent)*100),0);
+  const tot = testo(dg,"ImportoTotaleDocumento") ? Math.round(parseFloat(testo(dg,"ImportoTotaleDocumento"))*100) : imp+iva;
+  const righe = tutti("DettaglioLinee").map(l=>testo(l,"Descrizione")).filter(Boolean);
+  const f = {file:nomeFile, forn, piva:testo(ced,"IdFiscaleIVA","IdCodice"), numero:testo(dg,"Numero"), data:testo(dg,"Data"),
+    descr:righe.join(" · "), imp, iva, tot, scad:testo(doc,"DataScadenzaPagamento"), pagata:OGGI, fin:BANCA, code:"", stato:"da confermare"};
+  f.proposte = suggerisci(f.forn+" "+f.descr, "uscita");
+  f.doppia = S.mov.some(m => m.fattura && m.fattura.piva===f.piva && m.fattura.numero===f.numero);
+  return f;
+}
+VISTE.fatture = () => `
+  <h2>Fatture</h2><p class="lead">Carichi le fatture XML scaricate da Aruba, anche tante insieme. Divisio legge i dati e glieli mostra: <b>niente viene registrato senza la sua conferma</b>.</p>
+  <div class="card noprint">
+    <div class="row"><label class="btn">Scegli fatture XML…<input type="file" accept=".xml,.p7m" multiple style="display:none" onchange="caricaFatture(this.files)"></label>
+    <button class="btn sec" onclick="caricaEsempio()">Prova con una fattura di esempio</button></div>
+    <p class="hint" style="margin-bottom:0">I file vengono letti solo su questo computer, non sono inviati da nessuna parte. Le fatture in PDF (rare) si registrano a mano da "Registra".</p>
+  </div>
+  ${fatture.map((f,i)=>schedaFattura(f,i)).join("")}`;
+function caricaEsempio(){ fatture.push(leggiFatturaXML(ESEMPIO_XML,"esempio.xml")); render(); }
+async function caricaFatture(files){
+  for (const file of files) { try { fatture.push(leggiFatturaXML(await file.text(), file.name)); } catch(e) { toast(`${file.name}: ${e.message}`); } }
+  render();
+}
+function schedaFattura(f,i){
+  if (f.stato==="registrata") return `<div class="card"><div class="okbox">✓ Registrata: ${esc(f.forn)} n. ${esc(f.numero)} – ${eur(f.tot)}</div></div>`;
+  if (f.stato==="scartata") return "";
+  return `<div class="card"><div class="row"><h3 class="sp">Controlli i dati letti dalla fattura</h3><span class="hint">${esc(f.file)}</span></div>
+  ${f.doppia?`<div class="warnbox">Attenzione: una fattura con lo stesso fornitore e numero è già registrata.</div>`:""}
+  <table>
+    <tr><td>Fornitore</td><td><b>${esc(f.forn)}</b> <span class="code">P.IVA ${esc(f.piva)}</span></td></tr>
+    <tr><td>Numero e data</td><td>n. ${esc(f.numero)} del ${dIt(f.data)}</td></tr>
+    <tr><td>Descrizione</td><td>${esc(f.descr)}</td></tr>
+    <tr><td>Imponibile + IVA</td><td>${eur(f.imp)} + ${eur(f.iva)}</td></tr>
+    <tr class="tot"><td>Totale da pagare</td><td>${eur(f.tot)}</td></tr>
+    <tr><td>Scadenza</td><td>${dIt(f.scad)||"—"}</td></tr>
+  </table>
+  <p class="hint">La parrocchia non recupera l'IVA: la spesa registrata è il totale.</p>
+  <div class="grid g2"><div><label class="f">Pagata il</label><input type="date" value="${f.pagata}" oninput="fatture[${i}].pagata=this.value"></div>
+  <div><label class="f">Pagata da</label><div class="seg">${FIN.map(c=>`<button type="button" class="${c===f.fin?"on move":""}" onclick="fatture[${i}].fin='${c}';render()">${nomeConto(c)}</button>`).join("")}</div></div></div>
+  ${f.proposte.length?`<div class="hint" style="margin-top:12px">Proposte di Divisio (scelga lei):</div><div class="chips">${f.proposte.map(p=>`<button class="chip ${p.c===f.code?"sel":""}" onclick="fatture[${i}].code='${p.c}';render()">${esc(CONTI[p.c].n)}<small>${p.c} · ${esc(p.why)}</small></button>`).join("")}</div>`:""}
+  <label class="f">Voce</label><select onchange="fatture[${i}].code=this.value;render()">${opzioniVoci("uscita",f.code)}</select>
+  <div class="row" style="margin-top:16px"><button class="btn" ${f.code?"":"disabled"} onclick="confermaFattura(${i})">Conferma e registra</button>
+  <button class="btn sec" onclick="fatture[${i}].stato='scartata';render()">Non registrare</button></div></div>`;
+}
+function confermaFattura(i){
+  const f=fatture[i];
+  impara(f.forn+" "+f.descr, f.code, f.proposte.length && f.proposte[0].c!==f.code);
+  S.mov.push({id:nextId++, data:f.pagata, descr:`Fattura ${f.forn} n. ${f.numero} del ${dIt(f.data)}`, tipo:"uscita",
+    righe:[{c:f.code,d:f.tot,a:0},{c:f.fin,d:0,a:f.tot}], fattura:{piva:f.piva, numero:f.numero}});
+  f.stato="registrata"; toast("Fattura registrata ✓"); render();
+}
+
+/* ----- RENDICONTO ----- */
+let confronto = null;
+VISTE.rendiconto = () => {
+  const r = calcRendiconto();
+  const sezione = (tipi) => GRUPPI.filter(g=>tipi.includes(g.t)).map(g => `
+    <tr class="grp"><td colspan="2">${g.g} ${esc(g.n)}</td></tr>
+    ${g.conti.map(v=>`<tr><td><span class="code">${v.code.slice(-2)}</span> ${esc(v.n)}${diff(v.code,r.v[v.code])}</td>${eurCell(r.v[v.code])}</tr>`).join("")}
+    <tr class="tot"><td>Totale ${esc(g.n.toLowerCase())}</td>${eurCell(r.sumG(g.g))}</tr>`).join("");
+  return `
+  <div class="row"><h2 class="sp">Rendiconto Parrocchiale ${S.anno}</h2>
+    <div class="row noprint"><button class="btn sec small" onclick="window.print()">Stampa / PDF</button><button class="btn sec small" onclick="esportaSaldiCSV()">CSV come UNIO</button></div></div>
+  <p class="lead">Calcolato da solo dai movimenti, con le stesse voci di UNIO (Diocesi di Firenze).</p>
+  ${r.quadra?`<div class="okbox">✓ Quadratura: Attività ${eur(r.att)} = Passività ${eur(r.pas)} + Patrimonio ${eur(r.pat)} + Avanzo ${eur(r.F)}</div>`:`<div class="badbox">✗ Il Rendiconto non è in quadratura</div>`}
+  <div class="card noprint" style="margin-top:16px"><h3>Confronta con UNIO</h3>
+    <p class="hint" style="margin-top:0">In UNIO, pagina Rendiconto, prema "Esporta saldi Patrimoniali e di Gestione in .csv" e carichi qui il file: Divisio controlla voce per voce. Il file resta su questo computer.</p>
+    <label class="btn sec small">Carica il CSV di UNIO…<input type="file" accept=".csv" style="display:none" onchange="caricaConfronto(this.files[0])"></label>
+    ${confronto?riepilogoConfronto(r):""}</div>
+  <div class="card"><h3>Rendiconto di gestione</h3><table>
+    <tr><th>Voce</th><th class="n">Anno ${S.anno}</th></tr>
+    ${sezione(["E"])}<tr class="big"><td>T01 Totale entrate</td>${eurCell(r.T01)}</tr>
+    ${sezione(["U"])}<tr class="big"><td>T02 Totale uscite</td>${eurCell(r.T02)}</tr>
+    <tr class="big"><td>F ${r.F>=0?"Avanzo":"Disavanzo"} di gestione (T01 − T02)</td>${eurCell(r.F)}</tr></table></div>
+  <div class="card"><h3>Situazione patrimoniale</h3><table>
+    <tr><th>Voce</th><th class="n">Anno ${S.anno}</th></tr>
+    ${sezione(["A"])}<tr class="big"><td>Totale attività</td>${eurCell(r.att)}</tr>
+    ${sezione(["PAT"])}${sezione(["P","PG"])}<tr class="big"><td>Totale passività</td>${eurCell(r.pas)}</tr>
+    <tr class="big"><td>Avanzo/Disavanzo di gestione</td>${eurCell(r.F)}</tr></table></div>
+  <div class="card"><h3>Collette</h3><div class="tablewrap"><table>
+    <tr><th>Colletta</th><th class="n">C1 Raccolte</th><th class="n">C2 Versate</th><th class="n">C3 Anno prima</th><th class="n">Da versare</th></tr>
+    ${r.collette.map(x=>`<tr><td>${esc(CONTI[x.c].n)}</td>${eurCell(x.C1)}${eurCell(x.C2)}${eurCell(x.C3)}${eurCell(x.resto)}</tr>`).join("")}
+    <tr class="tot"><td>Totale</td>${["C1","C2","C3","resto"].map(k=>eurCell(r.collette.reduce((s,x)=>s+x[k],0))).join("")}</tr></table></div></div>
+  <div class="card"><h3>Contributo diocesano</h3><table>
+    <tr><td>Base 3% (entrate ordinarie, proventi ordinari e finanziari)</td>${eurCell(r.base3)}</tr><tr><td>Contributo 3%</td>${eurCell(r.c3)}</tr>
+    <tr><td>Base 10% (eredità, alienazioni, proventi straordinari)</td>${eurCell(r.base10)}</tr><tr><td>Contributo 10%</td>${eurCell(r.c10)}</tr>
+    <tr class="big"><td>Totale contributo diocesano</td>${eurCell(r.c3+r.c10)}</tr></table></div>
+  <div class="card"><h3>Bilancio di previsione ${S.anno+1}</h3><p class="hint" style="margin-top:0">Scriva una cifra per ogni gruppo.</p><table>
+    ${GRUPPI.filter(g=>g.t==="E"||g.t==="U").map(g=>`<tr><td>${g.g} ${esc(g.n)}</td><td class="n"><input type="text" inputmode="decimal" style="max-width:150px;text-align:right" value="${S.previsione[g.g]!=null?csv2(S.previsione[g.g]):""}" onchange="S.previsione['${g.g}']=parseEuro(this.value)||0;render()"></td></tr>`).join("")}
+    ${(()=>{const e=GRUPPI.filter(g=>g.t==="E").reduce((s,g)=>s+(S.previsione[g.g]||0),0),u=GRUPPI.filter(g=>g.t==="U").reduce((s,g)=>s+(S.previsione[g.g]||0),0);
+      return `<tr class="tot"><td>Totale entrate previste</td>${eurCell(e)}</tr><tr class="tot"><td>Totale uscite previste</td>${eurCell(u)}</tr><tr class="big"><td>Avanzo/Disavanzo previsto</td>${eurCell(e-u)}</tr>`;})()}
+  </table></div>
+  <div class="card"><details><summary>Bilancio analitico (dettaglio per sottoconto)</summary><table style="margin-top:10px">
+    ${VOCI.filter(v=>v.g!=="PAT").map(v=>v.subs.filter(c=>nat(c,r.t)!==0).map(c=>`<tr><td><span class="code">${c}</span> ${esc(CONTI[c].n)}</td>${eurCell(nat(c,r.t))}</tr>`).join("")).join("")}
+  </table></details></div>`;
+};
+function diff(code, val){
+  if (!confronto || !(code in confronto.v)) return "";
+  return confronto.v[code]===val ? ` <span class="pill in">= UNIO</span>` : ` <span class="pill out">UNIO: ${eur(confronto.v[code])}</span>`;
+}
+function riepilogoConfronto(r){
+  const diverse = Object.keys(confronto.v).filter(k => r.v[k]!==undefined && r.v[k]!==confronto.v[k]);
+  return diverse.length===0 ? `<div class="okbox">✓ Tutte le ${Object.keys(confronto.v).length} voci coincidono con UNIO (file ${esc(confronto.nome)}).</div>`
+    : `<div class="warnbox">${diverse.length} voci su ${Object.keys(confronto.v).length} sono diverse da UNIO (file ${esc(confronto.nome)}). Sono segnate in rosso qui sotto.</div>`;
+}
+async function caricaConfronto(file){
+  if (!file) return;
+  const righe = (await file.text()).split(/\r?\n/).slice(1).filter(l=>l.trim());
+  const v = {};
+  righe.forEach(l => { const f=l.split(";"); if (f.length>=8) v[`${f[4]}-${f[5]}`] = parseEuro(f[7]); });
+  if (!Object.keys(v).length) { toast("Il file non sembra il CSV dei saldi di UNIO"); return; }
+  confronto = {nome:file.name, v}; render();
+}
+function esportaSaldiCSV(){
+  const r = calcRendiconto();
+  const rows = [`Icsc;Azienda;Esercizio;Sezione;Gruppo;Conto;Descrizione;Anno corrente ${S.anno};Anno precedente ${S.anno-1}`];
+  GRUPPI.filter(g=>["A","PAT","P","PG","E","U"].includes(g.t)).forEach(g => g.conti.forEach(v => {
+    const sez = (g.t==="E"||g.t==="U") ? "RENDICONTO DI GESTIONE" : "SITUAZIONE PATRIMONIALE";
+    rows.push(`${S.parrocchia.icsc};A1;${S.anno};${sez};${g.g};${v.code.slice(-2)};${v.n};${csvNum(r.v[v.code])};;`);
+  }));
+  download(`${S.anno}_${S.parrocchia.icsc}_rendiconto_divisio.csv`, rows.join("\r\n"), "text/csv;charset=utf-8");
+}
+
+/* ----- PER UNIO ----- */
+let unioSel = {fin:BANCA, periodo:"T4", fatti:{}};
+function righeUNIO(fin, periodo){
+  const [a,b,lab] = PERIODI[periodo]; const da=`${S.anno}-${a}`, al=`${S.anno}-${b}`;
+  const gruppi = {}, altrove = [];
+  S.mov.filter(m => m.tipo!=="apertura" && m.data>=da && m.data<=al).forEach(m => {
+    const mie = m.righe.filter(r=>r.c===fin); if (!mie.length) return;
+    const altri = m.righe.filter(r=>r.c!==fin);
+    const altreFin = altri.filter(r=>isFin(r.c));
+    if (altreFin.length) {
+      const ricevo = mie.reduce((s,r)=>s+r.d-r.a,0) > 0;
+      if (!ricevo) { altrove.push(m); return; }   // lo spostamento si importa nel file del conto che riceve
+    }
+    altri.forEach(r => {
+      const dir = r.a>0 ? "E" : "U", imp = r.a>0 ? r.a : r.d;
+      const k = r.c+"|"+dir; const g = (gruppi[k] ||= {code:r.c, dir, imp:0, n:0, data:""});
+      g.imp += imp; g.n++; if (m.data>g.data) g.data=m.data;
+    });
+  });
+  const lista = Object.values(gruppi).sort((x,y)=>x.code.localeCompare(y.code)||x.dir.localeCompare(y.dir))
+    .map(g => ({...g, descr:`[${g.code}] ${CONTI[g.code].n} – ${lab} ${S.anno} (${g.n} mov.)`}));
+  const senzaCassa = S.mov.filter(m => m.tipo!=="apertura" && m.data>=da && m.data<=al && !m.righe.some(r=>isFin(r.c)));
+  return {lista, altrove, senzaCassa, lab};
+}
+VISTE.unio = () => {
+  const {lista, altrove, senzaCassa, lab} = righeUNIO(unioSel.fin, unioSel.periodo);
+  const te = lista.filter(x=>x.dir==="E").reduce((s,x)=>s+x.imp,0), tu = lista.filter(x=>x.dir==="U").reduce((s,x)=>s+x.imp,0);
+  return `<h2>Prepara i dati per UNIO</h2>
+  <p class="lead">Divisio riassume i movimenti in poche righe, una per voce. In UNIO basterà caricare il file e scegliere il codice indicato all'inizio di ogni riga.</p>
+  <div class="card noprint"><div class="grid g2">
+    <div><label class="f">Cassa o banca</label><div class="seg">${FIN.map(c=>`<button type="button" class="${c===unioSel.fin?"on move":""}" onclick="unioSel.fin='${c}';render()">${nomeConto(c)}</button>`).join("")}</div></div>
+    <div><label class="f">Periodo</label><select onchange="unioSel.periodo=this.value;render()">${Object.entries(PERIODI).map(([k,p])=>`<option value="${k}" ${k===unioSel.periodo?"selected":""}>${k==="A"?"Anno intero":p[2]+" "+S.anno}</option>`).join("")}</select></div>
+  </div>
+  <h3 style="margin-top:18px">Come si fa</h3><ol class="steps">
+    <li>Prema <b>Scarica il file per UNIO</b>.</li>
+    <li>In UNIO: Partita Doppia → quadratino giallo (Importazione Prima Nota) → Conto di riferimento: <b>${nomeConto(unioSel.fin)}</b> <span class="code">${unioSel.fin}</span> → carichi il file.</li>
+    <li>Per ogni riga scelga in UNIO il codice tra parentesi quadre e spunti la casella qui sotto.</li>
+    <li>Alla fine, nella pagina <a href="#" onclick="vai('rendiconto');return false">Rendiconto</a>, carichi il CSV dei saldi di UNIO per controllare che tutto torni.</li></ol>
+  <div class="row" style="margin-top:12px"><button class="btn" ${lista.length?"":"disabled"} onclick="scaricaUNIO()">Scarica il file per UNIO</button><button class="btn sec" onclick="window.print()">Stampa il foglio guida</button></div></div>
+  <div class="card"><h3>Foglio guida · ${nomeConto(unioSel.fin)} · ${lab} ${S.anno}</h3>
+  ${lista.length?`<div class="tablewrap"><table><tr><th>Data</th><th>Descrizione</th><th class="n">Uscite</th><th class="n">Entrate</th><th>Codice da scegliere in UNIO</th><th>Fatto</th></tr>
+    ${lista.map(x=>{const k=unioSel.fin+unioSel.periodo+x.code+x.dir; return `<tr><td>${dIt(x.data)}</td><td>${esc(x.descr)}</td><td class="n">${x.dir==="U"?eur(x.imp):""}</td><td class="n">${x.dir==="E"?eur(x.imp):""}</td>
+      <td><b>${x.code.split("-").join(" – ")}</b><br><span class="hint">${esc(CONTI[x.code].n)}</span></td><td><input type="checkbox" style="width:22px;height:22px" ${unioSel.fatti[k]?"checked":""} onchange="unioSel.fatti['${k}']=this.checked"></td></tr>`;}).join("")}
+    <tr class="tot"><td colspan="2">Totale (${lista.length} righe)</td><td class="n">${eur(tu)}</td><td class="n">${eur(te)}</td><td colspan="2"></td></tr></table></div>`
+    : `<p class="hint">Nessun movimento di ${nomeConto(unioSel.fin)} in questo periodo.</p>`}
+  ${altrove.length?`<div class="note">${altrove.length} spostamento/i verso altre casse non compaiono qui: si importano nel file del conto che riceve i soldi, così non vengono contati due volte.</div>`:""}
+  ${senzaCassa.length?`<div class="warnbox">${senzaCassa.length} movimento/i senza cassa né banca (es. dati del teatro) vanno inseriti a mano in UNIO: ${senzaCassa.map(m=>esc(m.descr)).join("; ")}.</div>`:""}
+  </div>`;
+};
+function scaricaUNIO(){
+  const {lista, lab} = righeUNIO(unioSel.fin, unioSel.periodo);
+  const testo = lista.map(x => [dIt(x.data), x.descr.replace(/;/g,","), x.dir==="U"?csv2(x.imp):"0,00", x.dir==="E"?csv2(x.imp):"0,00"].join(";")).join("\r\n");
+  download(`UNIO_${nomeConto(unioSel.fin)}_${lab.replace(/[°. ]/g,"")}_${S.anno}.csv`, testo, "text/csv;charset=utf-8");
+}
+
+/* ----- IMPOSTAZIONI ----- */
+VISTE.impostazioni = () => {
+  const ap = S.mov.find(m=>m.tipo==="apertura");
+  const val = c => { const r=ap&&ap.righe.find(x=>x.c===c); return r? csv2(r.d||r.a) : ""; };
+  const parole = Object.entries(S.learn).flatMap(([tk,m]) => Object.entries(m).map(([c,n])=>({tk,c,n}))).sort((a,b)=>b.n-a.n);
+  return `<h2>Impostazioni</h2><p class="lead">Dati della parrocchia, saldi iniziali e copie di sicurezza.</p>
+  <div class="card"><h3>Copia di sicurezza</h3>
+    <p style="margin-top:0">Salvi spesso una copia su file (per esempio su una chiavetta o in una cartella sincronizzata). Se il computer si rompe, con quel file si riparte.</p>
+    <div class="row"><button class="btn" onclick="salvaBackup()">Salva una copia su file</button>
+    <label class="btn sec">Ripristina da file…<input type="file" accept=".json" style="display:none" onchange="ripristina(this.files[0])"></label>
+    <button class="btn danger" onclick="if(confirm('Tornare ai dati di esempio iniziali?')){S=datiEsempio();fatture=[];confronto=null;render();}">Ricomincia con i dati di esempio</button></div></div>
+  <div class="card"><h3>Saldi di apertura al 1° gennaio ${S.anno}</h3>
+    <p class="hint" style="margin-top:0">Quanto c'era davvero in cassa e in banca all'inizio dell'anno. Si possono inserire anche più tardi: il Rendiconto si aggiorna da solo.</p>
+    <div class="grid g4">
+      ${FIN.map(c=>`<div><label class="f">${nomeConto(c)}</label><input type="text" inputmode="decimal" id="ap-${c}" value="${val(c)}"></div>`).join("")}
+      <div><label class="f">Collette non ancora versate</label><input type="text" inputmode="decimal" id="ap-PG" value="${val("PG1-01-08")}"></div>
+    </div>
+    <p class="hint">Divisio calcola da solo il Patrimonio netto (la differenza).</p>
+    <button class="btn" onclick="salvaApertura()">Salva i saldi di apertura</button></div>
+  <div class="card"><h3>Parrocchia</h3><div class="grid g2">
+    ${[["nome","Nome"],["icsc","Codice ICSC"],["comune","Comune"],["parroco","Parroco"]].map(([k,n])=>`<div><label class="f">${n}</label><input type="text" value="${esc(S.parrocchia[k])}" onchange="S.parrocchia['${k}']=this.value;render()"></div>`).join("")}
+  </div></div>
+  <div class="card"><h3>Parole imparate</h3>
+    ${parole.length?`<p class="hint" style="margin-top:0">Divisio ricorda le sue scelte per proporre la voce giusta la prossima volta.</p><table><tr><th>Parola</th><th>Voce scelta</th><th class="n">Volte</th><th></th></tr>
+      ${parole.map(p=>`<tr><td>${esc(p.tk)}</td><td>${esc(CONTI[p.c].n)} <span class="code">${p.c}</span></td><td class="n">${p.n}</td><td><button class="btn danger small" onclick="delete S.learn['${p.tk}']['${p.c}'];render()">Dimentica</button></td></tr>`).join("")}</table>`
+      : `<p class="hint" style="margin:0">Ancora nessuna. Registri qualche movimento scegliendo la voce: Divisio imparerà.</p>`}</div>
+  <div class="card"><details><summary>Piano dei conti (${Object.keys(CONTI).length} sottoconti)</summary>
+    ${GRUPPI.map(g=>`<p style="margin:12px 0 4px"><b>${g.g} ${esc(g.n)}</b></p><ul style="margin:0">${g.conti.map(v=>`<li>${v.code.slice(-2)} ${esc(v.n)}: <span class="hint">${v.subs.map(c=>esc(CONTI[c].n)).join(" · ")}</span></li>`).join("")}</ul>`).join("")}
+  </details></div>`;
+};
+function salvaApertura(){
+  const v = id => { const x=parseEuro($("#"+id).value); return isNaN(x)?0:x; };
+  const nuovo = apertura(v("ap-"+CASSA), v("ap-"+BANCA), v("ap-"+PAYPAL), v("ap-PG"));
+  S.mov = S.mov.filter(m=>m.tipo!=="apertura"); S.mov.unshift(nuovo); toast("Saldi di apertura salvati ✓"); render();
+}
+function salvaBackup(){
+  S.ultimoBackup = new Date().toLocaleString("it-IT");
+  download(`divisio-copia-${OGGI}.json`, JSON.stringify({app:"Divisio", formato:1, salvatoIl:new Date().toISOString(), dati:S}, null, 1), "application/json");
+  toast("Copia salvata ✓"); render();
+}
+async function ripristina(file){
+  if (!file) return;
+  try {
+    const j = JSON.parse(await file.text());
+    if (j.app!=="Divisio" || !j.dati || !Array.isArray(j.dati.mov)) throw new Error();
+    if (!confirm(`Sostituire i dati attuali con la copia del ${new Date(j.salvatoIl).toLocaleString("it-IT")}?`)) return;
+    S = j.dati; nextId = Math.max(0,...S.mov.map(m=>m.id))+1; toast("Copia ripristinata ✓"); render();
+  } catch { toast("Questo file non è una copia di Divisio"); }
+}
+
+render();
+</script>
+</body>
+</html>

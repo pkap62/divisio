@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Divisio – test</title>
+<style>body{font:16px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:20px;background:#fff;color:#1f2933} .ok{color:#2b7448} .ko{color:#b3261e;font-weight:700}</style></head>
+<body>
+<h1>Test di Divisio</h1>
+<pre id="esito">In esecuzione…</pre>
+<script type="module">
+  import { esegui } from "./tutti.js";
+  const out = document.getElementById("esito");
+  out.textContent = "";
+  esegui((t) => { const s = document.createElement("span"); s.className = t.startsWith("✗") ? "ko" : t.startsWith("✓") ? "ok" : ""; s.textContent = t + "\n"; out.appendChild(s); });
+</script>
+</body>
+</html>
