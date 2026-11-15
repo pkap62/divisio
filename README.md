@@ -9,6 +9,16 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 - Fase 3 – ponte verso UNIO: per ogni cassa/banca e trimestre un file riepilogativo (una riga per sottoconto, codice all'inizio della descrizione) nel formato dell'"Importazione Prima Nota" di UNIO, foglio guida stampabile, registro delle importazioni e, dopo, solo le differenze; promemoria in Inizio.
 - Condivisione – più persone (Mac e Windows) lavorano insieme tramite una cartella "Divisio" nel Google Drive della parrocchia (Google Drive per desktop): ogni computer scrive il proprio file `divisio-<computer>.json` e legge quelli degli altri; per ogni record vince la modifica più recente. Richiede Chrome o Edge.
 
+## Usarlo
+Aprire **<https://pkap62.github.io/divisio/>** con Google Chrome o Microsoft Edge (Mac o Windows) e,
+dal menu del browser, scegliere **"Installa Divisio"**: comparirà come un'app sul computer e funzionerà anche senza internet.
+Il sito contiene solo il programma: i dati della parrocchia restano sul computer (e, se attivata, nella cartella condivisa di Google Drive).
+
+## Pubblicare una nuova versione
+1. Cambiare `VERSIONE` in `js/app.js` e in `sw.js` (e aggiungere a `sw.js` eventuali nuovi file).
+2. Far girare i test (`./tests/esegui.sh`).
+3. `git push`: GitHub Pages pubblica in automatico in circa un minuto; i computer ricevono l'aggiornamento alla riapertura.
+
 ## Principi
 - I dati della parrocchia restano **sul computer** (nel browser) e, se attivata la condivisione, nella cartella del Google Drive della parrocchia. Nessun server, nessun altro invio su internet.
 - Ogni movimento è salvato in **partita doppia**: Dare = Avere sempre.
@@ -39,5 +49,3 @@ Dal Terminale del Mac (usa il motore JavaScript già presente, nessuna installaz
 ```
 oppure, con il server acceso, aprire <http://localhost:8765/tests/>.
 
-## Nuova versione
-Cambiare `VERSIONE` in `js/app.js` e in `sw.js`, e aggiungere a `sw.js` eventuali nuovi file.
