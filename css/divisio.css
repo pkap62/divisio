@@ -23,6 +23,7 @@ a { color: var(--blu); }
   font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: -.5px; }
 .marchio-o { height: .8em; width: auto; margin-left: .03em; margin-bottom: .01em; overflow: visible; }
 .testata .sotto { opacity: .9; font-size: 16px; }
+.testata .versione-app { opacity: .75; font-size: 13px; margin-left: -6px; align-self: flex-end; padding-bottom: 4px; }
 .nuvola { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 14px; cursor: pointer; }
 .nuvola.avviso-nuvola { background: #fff3dc; color: #7d4b00; border-color: #fff3dc; font-weight: 600; }
 ol.passi li { margin: 6px 0; }

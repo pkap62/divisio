@@ -49,6 +49,7 @@ function anniDisponibili() {
 function disegnaIntestazione() {
   const nome = ctx.arch.impostazione("parrocchia", {}).nome || "La mia parrocchia";
   $("#nome-parrocchia").textContent = nome;
+  $("#versione-app").textContent = `versione ${VERSIONE}`;
   $("#anno").innerHTML = anniDisponibili().map((a) => `<option value="${a}" ${a === ctx.anno ? "selected" : ""}>Anno ${a}</option>`).join("");
   $("#menu").innerHTML = Object.entries(PAGINE).map(([k, p]) =>
     `<button data-pagina="${k}" ${k === ctx.pagina ? 'class="on" aria-current="page"' : ""}>${p.nome}</button>`).join("");

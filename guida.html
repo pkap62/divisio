@@ -16,6 +16,7 @@
   .marchio svg { height: .8em; width: auto; margin-left: .03em; }
   header p { margin: 6px 0 0; color: var(--tenue); }
   header p.autore { margin-top: 2px; font-size: 14px; font-style: italic; }
+  header p.versione { margin-top: 2px; font-size: 14px; font-weight: 600; }
   h1 { font-size: 30px; margin: 18px 0 4px; }
   h2 { font-size: 23px; color: var(--blu); margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid var(--linea); }
   h3 { font-size: 19px; margin: 22px 0 6px; }
@@ -47,6 +48,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
+  <p class="versione">Versione <span id="versione">0.6.3</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -79,7 +81,7 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
   <tr><th>Serve</th><th>Note</th></tr>
   <tr><td>Un computer <b>Mac o Windows</b></td><td>Non è adatto a telefono o tablet.</td></tr>
   <tr><td><b>Google Chrome</b> oppure <b>Microsoft Edge</b></td><td>Con Safari o Firefox Divisio si apre, ma non può lavorare insieme agli altri computer.</td></tr>
-  <tr><td><b>Google Drive per desktop</b> con l'account Google della parrocchia</td><td>Solo se più persone devono registrare (capitolo 5).</td></tr>
+  <tr><td><b>Google Drive per desktop</b>: il parroco con l'account Google della parrocchia, i collaboratori con il proprio</td><td>Solo se più persone devono registrare (capitolo 5).</td></tr>
   <tr><td>Internet</td><td>Solo la prima volta e per lavorare insieme; per il resto Divisio funziona anche senza.</td></tr>
 </table>
 
@@ -137,9 +139,20 @@ e legge quelli degli altri, ogni 30 secondi e dopo ogni registrazione. Nessuno s
 <ol>
   <li>Nel <b>Google Drive della parrocchia</b> (drive.google.com, con l'account della parrocchia) crei, dentro "Il mio Drive", una cartella chiamata <b>Divisio</b>.</li>
 </ol>
+<h3>Per ogni collaboratore (fa il parroco)</h3>
+<p>Ai collaboratori <b>non serve la password della parrocchia</b>: basta condividere con loro solo la cartella Divisio.
+Ogni collaboratore usa il <b>proprio account Google</b> (per esempio il suo indirizzo Gmail).</p>
+<ol>
+  <li>In drive.google.com, con l'account della parrocchia, clic destro sulla cartella <b>Divisio</b> → <span class="bottone">Condividi</span>.</li>
+  <li>Scriva l'indirizzo Google del collaboratore, scelga <b>Editor</b> e confermi con <span class="bottone">Invia</span>.</li>
+</ol>
+<p>Il collaboratore vede solo quella cartella: non la posta né gli altri file della parrocchia.
+Quando smette di collaborare, nella stessa finestra <span class="bottone">Condividi</span> il parroco gli toglie l'accesso. Non serve cambiare password.</p>
 <h3>Su ogni computer</h3>
 <ol>
-  <li>Installi <b>Google Drive per desktop</b> (si scarica dal sito di Google cercando "Google Drive per desktop") e acceda con l'<b>account Google della parrocchia</b>.</li>
+  <li>Installi <b>Google Drive per desktop</b> (si scarica dal sito di Google cercando "Google Drive per desktop") e acceda:
+    il parroco con l'<b>account Google della parrocchia</b>, un collaboratore con il <b>proprio account</b>
+    (prima faccia il passaggio del capitolo 6 per avere la cartella Divisio nel suo Drive).</li>
   <li>Apra Divisio → <b>Impostazioni</b> → riquadro <b>"Lavorare insieme"</b> → <span class="bottone">Scegli la cartella condivisa</span>.</li>
   <li>Selezioni la cartella Divisio:
     <ul><li><b>Mac</b>: nel Finder, nella colonna a sinistra, <i>Google Drive</i> → <i>Il mio Drive</i> → <i>Divisio</i>;</li>
@@ -152,15 +165,22 @@ e legge quelli degli altri, ogni 30 secondi e dopo ogni registrazione. Nessuno s
 <div class="box attenzione">Se due persone correggono <b>lo stesso</b> movimento quasi nello stesso momento, resta l'ultima correzione. Registrare movimenti <b>diversi</b> insieme non crea problemi.</div>
 
 <h2 id="collaboratori">6. Collaboratori <span class="chi">collaboratori</span></h2>
-<p>Riassunto per chi aiuta in segreteria, di solito su un computer Windows:</p>
+<p>Riassunto per chi aiuta in segreteria, di solito su un computer Windows. Serve un <b>account Google personale</b> (per esempio Gmail):
+non bisogna chiedere la password della parrocchia.</p>
 <ol>
-  <li>Installare <b>Google Drive per desktop</b> e accedere con l'account della parrocchia (chiedere la password al parroco).</li>
+  <li>Comunicare al parroco il proprio indirizzo Google: lui condivide con questo indirizzo la cartella Divisio (capitolo 5).</li>
+  <li>Aprire drive.google.com con il <b>proprio account</b>. La cartella <b>Divisio</b> si trova in <i>Condivisi con me</i>:
+    clic destro → <span class="bottone">Organizza</span> → <span class="bottone">Aggiungi scorciatoia</span> → <i>Il mio Drive</i>.
+    Questo passaggio serve perché sul computer Google Drive per desktop mostra solo quello che sta in "Il mio Drive".</li>
+  <li>Installare <b>Google Drive per desktop</b> e accedere con il <b>proprio account</b>.</li>
   <li>Aprire <b>pkap62.github.io/divisio</b> con Chrome o Edge e installarlo (capitolo 3).</li>
   <li>Scrivere il proprio nome nel riquadro "Benvenuto".</li>
   <li>Impostazioni → "Lavorare insieme" → scegliere la cartella <b>G:\Il mio Drive\Divisio</b> (capitolo 5).</li>
   <li>Aspettare qualche secondo: compaiono i movimenti già registrati dagli altri. Da qui in poi si usa come descritto al capitolo 9.</li>
 </ol>
 <div class="box nota">I collaboratori non devono inserire saldi di apertura né cambiare il piano dei conti: lo fa il parroco, e arriva a tutti da solo.</div>
+<div class="box attenzione">Se in Divisio la cartella Divisio non si riesce a scegliere, controllare di aver aggiunto la scorciatoia in "Il mio Drive" (punto 2).
+Se ancora non va, avvisare il parroco: per quel computer si può accedere a Google Drive per desktop con l'account della parrocchia, come per il parroco.</div>
 
 <h2 id="prova">7. Anno di prova 2026 <span class="chi">parroco</span></h2>
 <p>Prima di partire davvero il 1° gennaio 2027, si caricano in Divisio i movimenti 2026 già registrati in UNIO e si controlla che i due Rendiconti coincidano.</p>
@@ -286,7 +306,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
 <table>
   <tr><th>Problema</th><th>Cosa fare</th></tr>
   <tr><td>In alto c'è <b>☁ Riattiva la condivisione</b></td><td>Lo clicchi e confermi il permesso.</td></tr>
-  <tr><td><b>☁ Condivisione: problema</b> / "La cartella non risponde"</td><td>Controlli che Google Drive per desktop sia acceso e collegato all'account della parrocchia; poi Impostazioni → <span class="bottone">Aggiorna adesso</span>.</td></tr>
+  <tr><td><b>☁ Condivisione: problema</b> / "La cartella non risponde"</td><td>Controlli che Google Drive per desktop sia acceso e collegato all'account giusto (della parrocchia, o quello personale del collaboratore) e che la cartella Divisio sia ancora condivisa; poi Impostazioni → <span class="bottone">Aggiorna adesso</span>.</td></tr>
   <tr><td>Non vedo i movimenti dei collaboratori</td><td>Tutti devono aver scelto la <b>stessa</b> cartella Divisio. Attenda qualche secondo o prema <span class="bottone">Aggiorna adesso</span>.</td></tr>
   <tr><td>I dati sono spariti da un computer</td><td>Se il lavoro insieme era attivo: ricolleghi la cartella e torna tutto. Altrimenti: Ripristina dall'ultima copia di sicurezza.</td></tr>
   <tr><td>Il riquadro "Lavorare insieme" dice di usare Chrome o Edge</td><td>Sta usando Safari o Firefox: apra Divisio con Chrome o Edge.</td></tr>
@@ -300,5 +320,10 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
 <footer>Divisio · guida aggiornata al 16 novembre 2026 (versione 0.6) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
+<script type="module">
+  // Il numero di versione si prende da js/versione.js, così resta sempre quello di Divisio.
+  import { VERSIONE } from "./js/versione.js";
+  document.getElementById("versione").textContent = VERSIONE;
+</script>
 </body>
 </html>
