@@ -76,6 +76,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 /* moduli */
 label.campo { display: block; font-weight: 600; margin: 14px 0 6px; }
 input[type=text], input[type=date], input[type=search], select { font: inherit; font-size: 18px; padding: 10px 12px; border: 1px solid #bdb5a4; border-radius: 9px; background: #fff; width: 100%; color: var(--testo); }
+/* menù a tendina: colori netti. Chrome/Edge recenti disegnano anche l'elenco aperto con questi stili;
+   gli altri browser usano il loro elenco, con almeno i colori di testo e sfondo. */
+select optgroup { color: var(--blu); background: var(--blu-chiaro); font-weight: 700; font-style: normal; }
+select option { color: var(--testo); background: #fff; font-weight: 400; }
+@supports (appearance: base-select) {
+  select, ::picker(select) { appearance: base-select; }
+  select { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  select::picker-icon { color: var(--blu); margin-left: auto; }
+  ::picker(select) { border: 1px solid #bdb5a4; border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+                     max-height: min(60vh, 480px); overflow-y: auto; padding: 4px 0; }
+  select optgroup { padding: 0; margin: 0; }
+  select optgroup legend { display: block; padding: 8px 14px 6px; font-size: 15px; color: var(--blu); background: var(--blu-chiaro);
+                           border-top: 1px solid var(--linea); position: sticky; top: -4px; }
+  select option { padding: 8px 14px 8px 22px; font-size: 17px; line-height: 1.35; gap: 8px; }
+  select option:hover, select option:focus-visible { background: var(--blu); color: #fff; outline: none; }
+  select option:checked { font-weight: 650; }
+  select option::checkmark { color: inherit; }
+  select.scegli-anno { gap: 4px; padding: 6px 8px 6px 10px; }
+  select.scegli-anno::picker-icon { font-size: 12px; }
+}
 input.importo { font-size: 24px; font-weight: 600; max-width: 240px; }
 input.n { text-align: right; min-width: 110px; }
 .scelta { display: flex; gap: 8px; flex-wrap: wrap; }

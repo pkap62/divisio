@@ -2,7 +2,7 @@
 // Contiene SOLO i file del programma, mai i dati della parrocchia.
 // A ogni nuova versione cambiare VERSIONE (così i computer scaricano i file aggiornati).
 
-const VERSIONE = "divisio-0.5.2";
+const VERSIONE = "divisio-0.5.3";
 const FILE = [
   "./", "index.html", "guida.html", "manifest.webmanifest", "css/divisio.css",
   "icone/icona.svg", "icone/icona-192.png", "icone/icona-512.png",

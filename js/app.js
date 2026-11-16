@@ -10,7 +10,7 @@ import * as unio from "./ui/unio.js";
 import * as impostazioni from "./ui/impostazioni.js";
 import * as condivisione from "./ui/condivisione.js";
 
-export const VERSIONE = "0.5.2";
+export const VERSIONE = "0.5.3";
 
 const PAGINE = {
   inizio: { modulo: inizio, nome: "Inizio" },
