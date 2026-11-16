@@ -4,7 +4,8 @@ import { riepilogoAnno } from "../js/dominio/saldi.js";
 import { sottocontiIniziali, isCassaBanca, tipoDi } from "../js/dominio/piano.js";
 
 const CASSA = "A02-01-01", BANCA = "A02-01-02";
-const conti = new Map(sottocontiIniziali().map((c) => [c.codice, c]));
+// Di partenza c'è solo la cassa: per le prove si aggiunge una banca, come farebbe la parrocchia.
+const conti = new Map([...sottocontiIniziali(), { codice: "A02-01-02", nome: "Banca di prova", attivo: true }].map((c) => [c.codice, c]));
 const mov = (tipo, righe, extra = {}) => ({ data: "2026-03-01", descr: "prova", tipo, righe, ...extra });
 
 test("entrata: Dare cassa / Avere voce", () => {
@@ -129,4 +130,36 @@ test("cassa e banche nell'ordine in cui sono state aggiunte, PayPal non più al 
   conti[0] = { ...conti[0], ordine: prossimoOrdineCassa(conti) };
   uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "BancoPosta", "PayPal"]);
   vero(!casseInOrdine([{ codice: "E01-02-01", nome: "x" }]).length, "solo casse e banche");
+});
+
+test("di partenza solo la cassa; le banche prendono i numeri man mano (02, 03…)", async () => {
+  const { nuovoCodiceSottoconto } = await import("../js/dominio/piano.js");
+  uguale(sottocontiIniziali().filter((c) => isCassaBanca(c.codice)).map((c) => c.nome), ["Cassa"]);
+  const codici = sottocontiIniziali().map((c) => c.codice);
+  uguale(nuovoCodiceSottoconto("A02-01", codici), "A02-01-02");
+  uguale(nuovoCodiceSottoconto("A02-01", [...codici, "A02-01-02"]), "A02-01-03");
+});
+
+test("vecchi 'Banca' e 'PayPal' predefiniti: tolti solo se mai toccati né usati", async () => {
+  const { cassePredefiniteDaTogliere, contiVisibili } = await import("../js/dominio/piano.js");
+  const O = "2000-01-01T00:00:00.000Z";
+  const conti = new Map([
+    ["A02-01-01", { codice: "A02-01-01", nome: "Cassa", modificatoIl: O }],
+    ["A02-01-02", { codice: "A02-01-02", nome: "Banca", modificatoIl: O }],
+    ["A02-01-03", { codice: "A02-01-03", nome: "PayPal", attivo: false, modificatoIl: O }],
+  ]);
+  const codici = (l) => l.map((c) => c.codice);
+  uguale(codici(cassePredefiniteDaTogliere(conti, [], O)), ["A02-01-02", "A02-01-03"]);
+  // Usata in un movimento (anche nei saldi di apertura): resta.
+  const usa = [{ righe: [{ conto: "A02-01-02" }, { conto: "E01-02-01" }] }];
+  uguale(codici(cassePredefiniteDaTogliere(conti, usa, O)), ["A02-01-03"]);
+  // Movimento eliminato: non conta.
+  uguale(codici(cassePredefiniteDaTogliere(conti, [{ ...usa[0], eliminato: true }], O)), ["A02-01-02", "A02-01-03"]);
+  // Rinominata dalla parrocchia: resta.
+  conti.set("A02-01-02", { ...conti.get("A02-01-02"), nome: "Intesa", modificatoIl: "2026-05-01T10:00:00.000Z" });
+  uguale(codici(cassePredefiniteDaTogliere(conti, [], O)), ["A02-01-03"]);
+  // I tolti non si vedono, a meno che un movimento (es. da un altro computer) li usi.
+  conti.set("A02-01-03", { ...conti.get("A02-01-03"), eliminato: true });
+  uguale([...contiVisibili(conti, []).keys()], ["A02-01-01", "A02-01-02"]);
+  uguale([...contiVisibili(conti, [{ righe: [{ conto: "A02-01-03" }] }]).keys()], ["A02-01-01", "A02-01-02", "A02-01-03"]);
 });

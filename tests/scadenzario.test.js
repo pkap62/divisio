@@ -9,7 +9,7 @@ import { unisciDati } from "../js/dominio/unione.js";
 import { riepilogoAnno } from "../js/dominio/saldi.js";
 import { FIORI, LUCE_RATE, NOTA_CREDITO } from "./esempi/esempi.js";
 
-const conti = new Map(sottocontiIniziali().map((c) => [c.codice, c]));
+const conti = new Map([...sottocontiIniziali(), { codice: "A02-01-02", nome: "Banca di prova", attivo: true }].map((c) => [c.codice, c]));   // cassa + una banca aggiunta
 const fattura = (xml, id) => ({ ...nuovaFattura(leggiFatturaPA(xml).fatture[0], { origine: "xml" }), id });
 const BANCA = "A02-01-02", CASSA = "A02-01-01";
 

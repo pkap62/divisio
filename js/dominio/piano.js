@@ -21,7 +21,7 @@ const PIANO = `
 03|Automezzi|01 Automezzi
 04|Immobilizzazioni immateriali|01 Immobilizzazioni immateriali
 #A|A02|Attività correnti
-01|Cassa e Conti Correnti|01 Cassa;02 Banca;03 PayPal
+01|Cassa e Conti Correnti|01 Cassa
 02|Titoli e investimenti|01 Titoli e investimenti 1;02 Titoli e investimenti 2
 #A|A03|Crediti diversi
 01|Crediti verso enti diocesani|01 Crediti verso la Diocesi
@@ -139,11 +139,13 @@ export function tipoDi(codice) {
 /** Casse, banche e conti di pagamento: sottoconti di "A02-01 Cassa e conti correnti". */
 export const isCassaBanca = (codice) => codice.startsWith("A02-01-");
 
-// Ordine di cassa e banche negli elenchi: la cassa sempre per prima, poi nell'ordine in cui sono state
-// aggiunte (o rimesse in uso), indicato dal campo "ordine". Per i conti salvati prima che esistesse,
-// vale il numero del codice; PayPal (sottoconto già previsto, scelto più tardi) va dopo le banche.
-const CASSA_PRINCIPALE = "A02-01-01", PAYPAL = "A02-01-03";
-const chiaveCassa = (c) => (c.codice === CASSA_PRINCIPALE ? -1 : c.ordine ?? (c.codice === PAYPAL ? 100 : Number(c.codice.slice(7))));
+// Di partenza c'è solo la cassa (A02-01-01): ogni banca aggiunta prende il primo numero libero (02, 03…).
+// Ordine negli elenchi: la cassa sempre per prima, poi nell'ordine in cui sono state aggiunte
+// (o rimesse in uso), indicato dal campo "ordine". Per i conti salvati prima che esistesse vale il numero
+// del codice; il vecchio PayPal già previsto (A02-01-03, scelto più tardi) va dopo le banche.
+const CASSA_PRINCIPALE = "A02-01-01";
+const vecchioPayPal = (c) => c.codice === "A02-01-03" && /paypal/i.test(c.nome ?? "");
+const chiaveCassa = (c) => (c.codice === CASSA_PRINCIPALE ? -1 : c.ordine ?? (vecchioPayPal(c) ? 100 : Number(c.codice.slice(7))));
 export const confrontaCasse = (a, b) => chiaveCassa(a) - chiaveCassa(b) || a.codice.localeCompare(b.codice);
 
 /** Casse e banche fra i conti dati, nell'ordine in cui la parrocchia le ha aggiunte. */
@@ -164,3 +166,34 @@ export function nuovoCodiceSottoconto(codiceVoce, codiciEsistenti) {
 
 /** Il codice è un sottoconto valido di una voce esistente? */
 export const codiceValido = (codice) => /^[A-Z0-9]{3}-\d{2}-\d{2}$/.test(codice) && VOCE_PER_CODICE.has(voceDi(codice));
+
+/** Sottoconti di cassa e banca che le versioni fino alla 0.6.1 creavano già: "Banca" e "PayPal". */
+const CASSE_PREDEFINITE_VECCHIE = ["A02-01-02", "A02-01-03"];
+
+/**
+ * Quali di quei vecchi sottoconti togliere: solo se nessuno li ha mai toccati (data "antica" `origine`)
+ * e nessun movimento li usa. Se la parrocchia li ha rinominati, messi in uso o usati, restano.
+ */
+export function cassePredefiniteDaTogliere(conti, movimenti, origine) {
+  const usati = contiUsati(movimenti);
+  return CASSE_PREDEFINITE_VECCHIE.map((k) => conti.get(k))
+    .filter((c) => c && !c.eliminato && c.modificatoIl === origine && !usati.has(c.codice));
+}
+
+/** Codici dei sottoconti usati da almeno un movimento (esclusi i movimenti eliminati). */
+export function contiUsati(movimenti) {
+  const usati = new Set();
+  for (const m of movimenti) if (!m.eliminato) for (const r of m.righe ?? []) usati.add(r.conto);
+  return usati;
+}
+
+/**
+ * Sottoconti da mostrare: tutti tranne quelli tolti (segnaposto "eliminato", che restano solo per
+ * avvisare gli altri computer). Un sottoconto tolto ma usato da un movimento si mostra comunque.
+ */
+export function contiVisibili(conti, movimenti) {
+  const tolti = [...conti.values()].filter((c) => c.eliminato);
+  if (!tolti.length) return conti;
+  const usati = contiUsati(movimenti);
+  return new Map([...conti].filter(([k, c]) => !c.eliminato || usati.has(k)));
+}

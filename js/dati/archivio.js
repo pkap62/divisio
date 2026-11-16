@@ -3,7 +3,7 @@
 // computer si potranno unire (vedi dominio/unione.js).
 
 import * as db from "./db.js";
-import { sottocontiIniziali } from "../dominio/piano.js";
+import { sottocontiIniziali, cassePredefiniteDaTogliere, contiVisibili } from "../dominio/piano.js";
 import { nuovoId, nuovoIstante, piuRecente, CHIAVI } from "../dominio/unione.js";
 
 // I sottoconti di partenza hanno una data "antica": qualunque modifica dell'utente vince.
@@ -21,16 +21,28 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
     stato.movimenti = new Map(movimenti.map((m) => [m.id, m]));
     stato.impostazioni = new Map(impostazioni.map((i) => [i.chiave, i]));
     stato.fatture = new Map(fatture.map((f) => [f.id, f]));
+    visibili = null;
   }
-  const avvisa = () => ascoltatori.forEach((f) => f());
+  // Sottoconti da mostrare (senza quelli tolti): ricalcolati solo quando cambia qualcosa.
+  let visibili = null;
+  const conti = () => (visibili ??= contiVisibili(stato.conti, stato.movimenti.values()));
+  const avvisa = () => { visibili = null; ascoltatori.forEach((f) => f()); };
 
   await ricarica();
   if (stato.conti.size === 0) {
     // Sottoconti che ogni parrocchia sceglie se usare: all'inizio non sono in uso.
-    // PayPal (Impostazioni → Cassa e banche) e Gestione teatro (Piano dei conti → "in uso").
-    const DA_SCEGLIERE = ["A02-01-03", "P02-05-04"];
+    // Gestione teatro (Piano dei conti → "in uso"). Le banche (anche PayPal) si aggiungono da Impostazioni → Cassa e banche.
+    const DA_SCEGLIERE = ["P02-05-04"];
     const iniziali = sottocontiIniziali().map((c) => ({ ...c, ...(DA_SCEGLIERE.includes(c.codice) ? { attivo: false } : {}), modificatoIl: ORIGINE, autore: "Divisio" }));
     await db.scriviMolti(conn, "conti", iniziali);
+    await ricarica();
+  }
+  // Fino alla 0.6.1 c'erano già "Banca" (A02-01-02) e "PayPal" (A02-01-03): se nessuno li ha mai toccati
+  // né usati, si tolgono, così resta solo la cassa e le banche prendono i numeri man mano che si aggiungono.
+  // Restano come segnaposto "eliminato", perché anche gli altri computer della parrocchia li tolgano.
+  const daTogliere = cassePredefiniteDaTogliere(stato.conti, stato.movimenti.values(), ORIGINE);
+  if (daTogliere.length) {
+    await db.scriviMolti(conn, "conti", daTogliere.map((c) => ({ ...c, eliminato: true, attivo: false, modificatoIl: nuovoIstante(c.modificatoIl), autore: "Divisio" })));
     await ricarica();
   }
 
@@ -41,9 +53,9 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
     get autore() { return chi; },
     ascolta(f) { ascoltatori.add(f); return () => ascoltatori.delete(f); },
 
-    /** Map codice → sottoconto (anche quelli non più in uso). */
-    get conti() { return stato.conti; },
-    contiAttivi() { return [...stato.conti.values()].filter((c) => c.attivo !== false); },
+    /** Map codice → sottoconto (anche quelli non più in uso; non quelli tolti). */
+    get conti() { return conti(); },
+    contiAttivi() { return [...conti().values()].filter((c) => c.attivo !== false); },
     nomeConto(codice) { return stato.conti.get(codice)?.nome ?? codice; },
 
     /** Movimenti validi (esclusi quelli eliminati). */
@@ -79,6 +91,7 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
 
     async salvaConto(c) {
       const record = { ...stato.conti.get(c.codice), ...c, ...marca(stato.conti.get(c.codice)) };
+      delete record.eliminato;   // un numero tolto può tornare a servire per una banca nuova
       await db.scrivi(conn, "conti", record);
       stato.conti.set(record.codice, record);
       avvisa();

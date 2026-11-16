@@ -7,6 +7,8 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.6.2** – Nel piano dei conti di partenza c'è solo la **Cassa** (A02-01-01): non ci sono più «Banca» e «PayPal» già pronti. Ogni banca aggiunta in Impostazioni → Cassa e banche prende il primo numero libero (A02-01-02, poi 03…). Nei dati già esistenti «Banca» e «PayPal» si tolgono da soli se non sono mai stati rinominati, messi in uso o usati in un movimento.
+
 **0.6.1** – Cassa e banche compaiono nell'ordine in cui sono state aggiunte (la cassa sempre per prima): PayPal non si mette più al secondo posto.
 
 **0.6 – Fatture e scadenze**

@@ -5,7 +5,7 @@ import { sottocontiIniziali } from "../js/dominio/piano.js";
 import { scritturaSemplice } from "../js/dominio/scritture.js";
 
 const dati = () => ({
-  conti: sottocontiIniziali(),
+  conti: [...sottocontiIniziali(), { codice: "A02-01-02", nome: "Banca di prova", attivo: true }],
   impostazioni: [{ chiave: "parrocchia", valore: { nome: "Parrocchia di San Esempio" } }],
   movimenti: [
     { id: "m1", data: "2026-03-01", descr: "Offerta funerale", tipo: "entrata", righe: scritturaSemplice({ tipo: "entrata", importo: 5000, voce: "E01-03-05", cassa: "A02-01-01" }) },
