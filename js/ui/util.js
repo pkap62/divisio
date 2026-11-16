@@ -1,7 +1,7 @@
 // Piccoli aiuti per l'interfaccia.
 
 import { formatEuro } from "../dominio/importi.js";
-import { VOCI, voceDi } from "../dominio/piano.js";
+import { VOCI, voceDi, confrontaCasse } from "../dominio/piano.js";
 
 export const $ = (s, radice = document) => radice.querySelector(s);
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -64,7 +64,7 @@ export function opzioniConti(conti, { tipi, escludi = () => false, cerca = "", s
     for (const v of VOCI.filter((x) => x.tipo === t)) {
       const elenco = perVoce.get(v.codice);
       if (!elenco) continue;
-      html += `<optgroup label="${esc(v.codice + " · " + v.nome)}">${elenco.sort((a, b) => a.codice.localeCompare(b.codice))
+      html += `<optgroup label="${esc(v.codice + " · " + v.nome)}">${elenco.sort(v.codice === "A02-01" ? confrontaCasse : (a, b) => a.codice.localeCompare(b.codice))
         .map((c) => `<option value="${c.codice}" ${c.codice === selezionato ? "selected" : ""}>${esc(c.nome)} (${c.codice})</option>`).join("")}</optgroup>`;
     }
   }

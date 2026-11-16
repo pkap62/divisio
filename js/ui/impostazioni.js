@@ -3,7 +3,7 @@
 import { creaBackup, leggiBackup } from "../dominio/backup.js";
 import { scritturaApertura, CONTO_PATRIMONIO } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { GRUPPI, isCassaBanca, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
+import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
 import { vistaCard as cardImporta, azioni as azioniImporta, cambia as cambiaImporta } from "./importa.js";
@@ -12,6 +12,7 @@ import { VERSIONE } from "../versione.js";
 
 /* ---------- cassa e banche ---------- */
 // La cassa è sempre presente; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
+// Negli elenchi compaiono nell'ordine in cui sono state aggiunte (vedi casseInOrdine).
 const CASSA = "A02-01-01";
 const VOCE_CASSE = "A02-01";
 const BANCHE_PROPOSTE = [
@@ -22,8 +23,7 @@ const BANCHE_PROPOSTE = [
 const stessoNome = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 function cardBanche(arch) {
-  const tutti = [...arch.conti.values()].filter((c) => isCassaBanca(c.codice) && c.codice !== CASSA)
-    .sort((a, b) => a.codice.localeCompare(b.codice));
+  const tutti = casseInOrdine(arch.conti.values()).filter((c) => c.codice !== CASSA);
   const inUso = tutti.filter((c) => c.attivo !== false);
   const tolti = tutti.filter((c) => c.attivo === false);
   const proposte = BANCHE_PROPOSTE.filter((n) => !inUso.some((c) => stessoNome(c.nome, n)));
@@ -105,7 +105,7 @@ export function vista(ctx) {
   const { arch, anno } = ctx;
   if (!AP || AP.anno !== anno) preparaApertura(ctx);
   const par = arch.impostazione("parrocchia", {});
-  const casse = arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+  const casse = casseInOrdine(arch.contiAttivi());
   const ultimaCopia = locale.leggi("ultimaCopia", null);
   const altriConti = arch.contiAttivi();
 
@@ -223,7 +223,8 @@ export const cambia = {
     toast("Nome cambiato ✓");
   },
   async attivo(el, ev, ctx) {
-    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: el.checked });
+    const ordine = el.checked && isCassaBanca(el.dataset.codice) ? { ordine: prossimoOrdineCassa(ctx.arch.conti.values()) } : {};
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: el.checked, ...ordine });
     el.closest(".sottoconto").classList.toggle("spento", !el.checked);
   },
   async ripristina(el, ev, ctx) {
@@ -277,11 +278,11 @@ export const azioni = {
     const esistente = [...ctx.arch.conti.values()].find((c) => isCassaBanca(c.codice) && stessoNome(c.nome, nome));
     if (esistente && esistente.attivo !== false) { toast(`"${esistente.nome}" c'è già`); return; }
     if (esistente) {
-      await ctx.arch.salvaConto({ codice: esistente.codice, attivo: true });
+      await ctx.arch.salvaConto({ codice: esistente.codice, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
     } else {
       const codice = nuovoCodiceSottoconto(VOCE_CASSE, ctx.arch.conti.keys());
       if (!codice) { toast("Non si possono aggiungere altre banche"); return; }
-      await ctx.arch.salvaConto({ codice, nome, attivo: true });
+      await ctx.arch.salvaConto({ codice, nome, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
     }
     toast(`${nome} aggiunta ✓`);
     ctx.aggiorna();
@@ -294,7 +295,7 @@ export const azioni = {
     ctx.aggiorna();
   },
   async bancaRimetti(el, ev, ctx) {
-    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true });
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
     toast(`${ctx.arch.nomeConto(el.dataset.codice)} di nuovo in uso ✓`);
     ctx.aggiorna();
   },
@@ -303,7 +304,8 @@ export const azioni = {
     if (!codice) { toast("Questa voce ha già 99 sottoconti"); return; }
     const nome = prompt(`Nome del nuovo sottoconto (${codice}):`);
     if (!nome?.trim()) return;
-    await ctx.arch.salvaConto({ codice, nome: nome.trim(), attivo: true });
+    const ordine = isCassaBanca(codice) ? { ordine: prossimoOrdineCassa(ctx.arch.conti.values()) } : {};
+    await ctx.arch.salvaConto({ codice, nome: nome.trim(), attivo: true, ...ordine });
     toast("Sottoconto aggiunto ✓");
     ctx.aggiorna();
   },

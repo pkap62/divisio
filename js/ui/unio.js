@@ -1,7 +1,7 @@
 // Pagina "Per UNIO": file riepilogativo da importare in UNIO, foglio guida e registro degli invii.
 
 import { TRIMESTRI, periodo, preparaInvio, senzaCassa, descrizioneRiga, csvImportazione, inviiDi } from "../dominio/ponte.js";
-import { isCassaBanca } from "../dominio/piano.js";
+import { casseInOrdine } from "../dominio/piano.js";
 import { totaliRighe } from "../dominio/scritture.js";
 import { esc, eur, dataIt, scarica, toast, locale } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
@@ -9,7 +9,7 @@ import { tabellaRighe } from "./elenco.js";
 const sel = { cassa: null, trimestre: null };
 const fatti = new Set();   // caselle "fatto" del foglio guida (solo su questo schermo)
 
-const casse = (arch) => arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const invii = (arch) => arch.impostazione("unio-invii", []);
 export const primoAnnoUNIO = (arch) => arch.impostazione("unio-dal", 2027);
 const trimestreCorrente = () => `T${Math.floor(new Date().getMonth() / 3) + 1}`;

@@ -139,6 +139,19 @@ export function tipoDi(codice) {
 /** Casse, banche e conti di pagamento: sottoconti di "A02-01 Cassa e conti correnti". */
 export const isCassaBanca = (codice) => codice.startsWith("A02-01-");
 
+// Ordine di cassa e banche negli elenchi: la cassa sempre per prima, poi nell'ordine in cui sono state
+// aggiunte (o rimesse in uso), indicato dal campo "ordine". Per i conti salvati prima che esistesse,
+// vale il numero del codice; PayPal (sottoconto già previsto, scelto più tardi) va dopo le banche.
+const CASSA_PRINCIPALE = "A02-01-01", PAYPAL = "A02-01-03";
+const chiaveCassa = (c) => (c.codice === CASSA_PRINCIPALE ? -1 : c.ordine ?? (c.codice === PAYPAL ? 100 : Number(c.codice.slice(7))));
+export const confrontaCasse = (a, b) => chiaveCassa(a) - chiaveCassa(b) || a.codice.localeCompare(b.codice);
+
+/** Casse e banche fra i conti dati, nell'ordine in cui la parrocchia le ha aggiunte. */
+export const casseInOrdine = (conti) => [...conti].filter((c) => isCassaBanca(c.codice)).sort(confrontaCasse);
+
+/** Valore di "ordine" per una banca aggiunta o rimessa in uso adesso: dopo tutte le altre. */
+export const prossimoOrdineCassa = (conti) => Math.max(0, ...casseInOrdine(conti).map(chiaveCassa)) + 1;
+
 /** Attività e Uscite crescono in Dare; tutti gli altri in Avere. */
 export const crescInDare = (codice) => ["A", "U"].includes(tipoDi(codice));
 

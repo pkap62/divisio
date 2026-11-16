@@ -7,6 +7,8 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.6.1** – Cassa e banche compaiono nell'ordine in cui sono state aggiunte (la cassa sempre per prima): PayPal non si mette più al secondo posto.
+
 **0.6 – Fatture e scadenze**
 - Nuova pagina **Fatture**: si caricano le fatture ricevute, anche molte insieme (trascinandole o scegliendole): XML FatturaPA, anche firmati `.p7m`, e PDF.
 - Dagli XML si leggono fornitore, partita IVA, numero, data, imponibile, IVA, totale, rate con scadenza e modalità di pagamento. Dai PDF con testo gli stessi dati,

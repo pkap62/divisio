@@ -2,7 +2,7 @@
 
 import { movimentiAnno } from "../dominio/saldi.js";
 import { movimentiCSV, perData } from "../dominio/csv.js";
-import { isCassaBanca } from "../dominio/piano.js";
+import { casseInOrdine } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
 import { esc, eur, dataIt, norm, scarica, toast, $ } from "./util.js";
 import { tabellaMovimenti } from "./elenco.js";
@@ -30,7 +30,7 @@ function elenco(ctx) {
 }
 
 export function vista(ctx) {
-  const casse = ctx.arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+  const casse = casseInOrdine(ctx.arch.contiAttivi());
   const opz = (valori, scelto) => valori.map(([v, n]) => `<option value="${v}" ${v === scelto ? "selected" : ""}>${esc(n)}</option>`).join("");
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>

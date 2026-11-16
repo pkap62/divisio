@@ -114,3 +114,19 @@ test("quadratura su 2000 movimenti casuali: Dare = Avere e stato patrimoniale in
   const r = riepilogoAnno(ms, 2026);
   vero(r.quadra, `Attività ${r.attivita} ≠ Passività ${r.passivita} + Patrimonio ${r.patrimonio} + Avanzo ${r.avanzo}`);
 });
+
+test("cassa e banche nell'ordine in cui sono state aggiunte, PayPal non più al secondo posto", async () => {
+  const { casseInOrdine, prossimoOrdineCassa } = await import("../js/dominio/piano.js");
+  const nomi = (cs) => casseInOrdine(cs).map((c) => c.nome);
+  const conti = [{ codice: "A02-01-03", nome: "PayPal" }, { codice: "A02-01-02", nome: "Banca" }, { codice: "A02-01-01", nome: "Cassa" }];
+  // Dati di prima: PayPal già in uso, senza "ordine" → dopo le banche.
+  conti.push({ codice: "A02-01-04", nome: "Intesa" });
+  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "PayPal"]);
+  // Una banca aggiunta dopo PayPal va in fondo.
+  conti.push({ codice: "A02-01-05", nome: "BancoPosta", ordine: prossimoOrdineCassa(conti) });
+  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "PayPal", "BancoPosta"]);
+  // PayPal rimesso in uso adesso: ultimo. La cassa resta sempre prima.
+  conti[0] = { ...conti[0], ordine: prossimoOrdineCassa(conti) };
+  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "BancoPosta", "PayPal"]);
+  vero(!casseInOrdine([{ codice: "E01-02-01", nome: "x" }]).length, "solo casse e banche");
+});

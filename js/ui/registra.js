@@ -2,13 +2,13 @@
 
 import { scritturaSemplice, verificaMovimento, analizza } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale, formatEuro } from "../dominio/importi.js";
-import { isCassaBanca, tipoDi } from "../dominio/piano.js";
+import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
 import { esc, eur, dataPerAnno, opzioniConti, toast, $ } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
 
 let F = null;   // stato del modulo in compilazione
 
-const casse = (arch) => arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const rigaVuota = () => ({ conto: "", dare: "", avere: "" });
 
 function nuovo(ctx, tipo = "entrata", tieni = {}) {

@@ -7,7 +7,7 @@ import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { isCassaBanca, tipoDi } from "../dominio/piano.js";
+import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
 import { esc, eur, dataIt, oggiISO, opzioniConti, toast, locale, $ } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
 
@@ -17,7 +17,7 @@ let filtro = locale.leggi("fatture-filtro", "dapagare");
 
 /* ---------- impostazioni che servono qui ---------- */
 export const teatro = (arch) => ({ attivo: false, conto: CONTO_TEATRO, parole: [], ...arch.impostazione("teatro", {}) });
-const casse = (arch) => arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const ricordo = (arch, f) => arch.impostazione(chiaveFornitore(f));
 const parrocchia = (arch) => arch.impostazione("parrocchia", {});
 

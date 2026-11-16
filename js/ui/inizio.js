@@ -1,7 +1,7 @@
 // Pagina "Inizio": saldi, pulsanti principali, controlli, ultimi movimenti.
 
 import { riepilogoAnno, movimentiAnno, totaliPerConto, saldo } from "../dominio/saldi.js";
-import { isCassaBanca } from "../dominio/piano.js";
+import { casseInOrdine } from "../dominio/piano.js";
 import { quadra } from "../dominio/scritture.js";
 import { perData } from "../dominio/csv.js";
 import { esc, eur, locale } from "./util.js";
@@ -17,7 +17,7 @@ export function vista({ arch, anno }) {
   const dellAnno = movimentiAnno(tutti, anno);
   const r = riepilogoAnno(tutti, anno);
   const tot = totaliPerConto(dellAnno);
-  const casse = arch.contiAttivi().filter((c) => isCassaBanca(c.codice));
+  const casse = casseInOrdine(arch.contiAttivi());
   const ultimi = dellAnno.filter((m) => m.tipo !== "apertura").sort(perData).reverse().slice(0, 6);
   const apertura = arch.movimento(`apertura-${anno}`);
   const ultimaCopia = locale.leggi("ultimaCopia", null);
