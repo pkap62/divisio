@@ -8,6 +8,42 @@ import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./ut
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
 import { vistaCard as cardImporta, azioni as azioniImporta, cambia as cambiaImporta } from "./importa.js";
 
+/* ---------- cassa e banche ---------- */
+// La cassa è sempre presente; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
+const CASSA = "A02-01-01";
+const VOCE_CASSE = "A02-01";
+const BANCHE_PROPOSTE = [
+  "Intesa Sanpaolo", "UniCredit", "BNL BNP Paribas", "Banco BPM", "Monte dei Paschi di Siena", "BPER Banca",
+  "Crédit Agricole Italia", "Banca Popolare di Sondrio", "Banca Etica", "ChiantiBanca", "Banca di Cambiano",
+  "Banco Fiorentino", "Banca Alta Toscana", "BancoPosta (Poste Italiane)", "PayPal",
+];
+const stessoNome = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+function cardBanche(arch) {
+  const tutti = [...arch.conti.values()].filter((c) => isCassaBanca(c.codice) && c.codice !== CASSA)
+    .sort((a, b) => a.codice.localeCompare(b.codice));
+  const inUso = tutti.filter((c) => c.attivo !== false);
+  const tolti = tutti.filter((c) => c.attivo === false);
+  const proposte = BANCHE_PROPOSTE.filter((n) => !inUso.some((c) => stessoNome(c.nome, n)));
+  return `
+  <div class="card"><h3>Cassa e banche</h3>
+    <p class="hint">Dove stanno i soldi della parrocchia. La <b>cassa</b> c'è sempre; poi aggiunga una riga per ogni banca o conto di appoggio
+      (anche <b>PayPal</b>, se lo usa). Compariranno nelle registrazioni, nei saldi di apertura e nella pagina Per UNIO.</p>
+    <div class="sottoconto"><span class="codice">${CASSA}</span><b class="spazio">${esc(arch.nomeConto(CASSA))}</b><span class="hint">sempre presente</span></div>
+    ${inUso.map((c) => `<div class="sottoconto"><span class="codice">${c.codice}</span>
+      <input type="text" value="${esc(c.nome)}" data-cambia="rinomina" data-codice="${c.codice}" aria-label="Nome della banca ${c.codice}">
+      <button class="btn sec piccolo" data-azione="bancaTogli" data-codice="${c.codice}">Togli</button></div>`).join("")}
+    ${inUso.length ? "" : `<p class="hint">Nessuna banca: per ora si usa solo la cassa.</p>`}
+    <div class="riga" style="margin-top:12px">
+      <input type="text" id="banca-nuova" list="banche-proposte" placeholder="Scelga dall'elenco o scriva il nome della banca" style="max-width:360px" aria-label="Nuova banca">
+      <datalist id="banche-proposte">${proposte.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
+      <button class="btn sec" data-azione="bancaAggiungi">+ Aggiungi</button>
+    </div>
+    ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
+      `${esc(c.nome)} <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
+  </div>`;
+}
+
 const CAMPI_PARROCCHIA = [
   ["nome", "Nome della parrocchia"], ["icsc", "Codice ICSC"], ["indirizzo", "Indirizzo"], ["comune", "Comune"],
   ["provincia", "Provincia"], ["codiceFiscale", "Codice fiscale"], ["telefono", "Telefono"], ["email", "E-mail"],
@@ -64,6 +100,8 @@ export function vista(ctx) {
 
   ${cardCondivisione()}
 
+  ${cardBanche(arch)}
+
   <div class="card"><h3>Saldi di apertura al 1° gennaio ${anno}</h3>
     <p class="hint">Quanto c'era davvero in cassa e in banca all'inizio dell'anno, ed eventuali collette, crediti o debiti rimasti dall'anno prima.
       Si possono inserire o correggere anche più avanti: i conti si aggiornano da soli. Per una banca "in rosso" scriva il segno meno.</p>
@@ -92,7 +130,7 @@ export function vista(ctx) {
   </div>
 
   <div class="card"><h3>Piano dei conti</h3>
-    <p class="hint">Gruppi e voci sono quelli della Diocesi e non si cambiano. I sottoconti si possono rinominare (es. "Banca" → il nome della sua banca),
+    <p class="hint">Gruppi e voci sono quelli della Diocesi e non si cambiano. I sottoconti si possono rinominare (es. "Offerte diverse" → "Offerte per il presepe"),
       aggiungere o mettere "fuori uso" (non compaiono più negli elenchi, ma i movimenti già registrati restano).</p>
     ${GRUPPI.map((g) => `<details data-chiave="gruppo-${g.codice}"><summary>${g.codice} · ${esc(g.nome)}</summary>
       ${g.voci.map((v) => `<div class="voce-piano"><div class="riga"><b class="spazio">${v.codice} ${esc(v.nome)}</b>
@@ -100,7 +138,7 @@ export function vista(ctx) {
         ${[...arch.conti.values()].filter((c) => c.codice.startsWith(v.codice + "-")).sort((a, b) => a.codice.localeCompare(b.codice)).map((c) => `
           <div class="sottoconto ${c.attivo === false ? "spento" : ""}"><span class="codice">${c.codice}</span>
             <input type="text" value="${esc(c.nome)}" data-cambia="rinomina" data-codice="${c.codice}" aria-label="Nome del sottoconto ${c.codice}">
-            <label class="spunta"><input type="checkbox" ${c.attivo === false ? "" : "checked"} data-cambia="attivo" data-codice="${c.codice}"> in uso</label></div>`).join("")}
+            <label class="spunta"><input type="checkbox" ${c.attivo === false ? "" : "checked"} ${c.codice === CASSA ? "disabled" : ""} data-cambia="attivo" data-codice="${c.codice}"> in uso</label></div>`).join("")}
       </div>`).join("")}</details>`).join("")}
   </div>
 
@@ -187,6 +225,34 @@ export const azioni = {
       toast("Saldi di apertura salvati ✓");
     }
     preparaApertura(ctx);
+    ctx.aggiorna();
+  },
+  async bancaAggiungi(el, ev, ctx) {
+    const campo = $("#banca-nuova");
+    const nome = campo.value.trim();
+    if (!nome) { toast("Scelga o scriva il nome della banca"); campo.focus(); return; }
+    const esistente = [...ctx.arch.conti.values()].find((c) => isCassaBanca(c.codice) && stessoNome(c.nome, nome));
+    if (esistente && esistente.attivo !== false) { toast(`"${esistente.nome}" c'è già`); return; }
+    if (esistente) {
+      await ctx.arch.salvaConto({ codice: esistente.codice, attivo: true });
+    } else {
+      const codice = nuovoCodiceSottoconto(VOCE_CASSE, ctx.arch.conti.keys());
+      if (!codice) { toast("Non si possono aggiungere altre banche"); return; }
+      await ctx.arch.salvaConto({ codice, nome, attivo: true });
+    }
+    toast(`${nome} aggiunta ✓`);
+    ctx.aggiorna();
+  },
+  async bancaTogli(el, ev, ctx) {
+    const nome = ctx.arch.nomeConto(el.dataset.codice);
+    if (!confirm(`Togliere "${nome}" dall'elenco?\n\nNon comparirà più tra le scelte, ma i movimenti già registrati restano. Si può rimettere in uso quando si vuole.`)) return;
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: false });
+    toast(`${nome} tolta dall'elenco`);
+    ctx.aggiorna();
+  },
+  async bancaRimetti(el, ev, ctx) {
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true });
+    toast(`${ctx.arch.nomeConto(el.dataset.codice)} di nuovo in uso ✓`);
     ctx.aggiorna();
   },
   async aggiungiSottoconto(el, ev, ctx) {

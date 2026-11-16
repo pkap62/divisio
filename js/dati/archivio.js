@@ -25,7 +25,10 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
 
   await ricarica();
   if (stato.conti.size === 0) {
-    const iniziali = sottocontiIniziali().map((c) => ({ ...c, modificatoIl: ORIGINE, autore: "Divisio" }));
+    // Sottoconti che ogni parrocchia sceglie se usare: all'inizio non sono in uso.
+    // PayPal (Impostazioni → Cassa e banche) e Gestione teatro (Piano dei conti → "in uso").
+    const DA_SCEGLIERE = ["A02-01-03", "P02-05-04"];
+    const iniziali = sottocontiIniziali().map((c) => ({ ...c, ...(DA_SCEGLIERE.includes(c.codice) ? { attivo: false } : {}), modificatoIl: ORIGINE, autore: "Divisio" }));
     await db.scriviMolti(conn, "conti", iniziali);
     await ricarica();
   }

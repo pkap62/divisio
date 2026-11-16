@@ -108,7 +108,7 @@ function vistaPD(ctx) {
   <div class="card">
     <div class="griglia g2">
       <div><label class="campo" for="p-data">Data</label><input id="p-data" type="date" value="${F.data}" data-input="data"></div>
-      <div><label class="campo" for="p-descr">Descrizione</label><input id="p-descr" type="text" value="${esc(F.descr)}" data-input="descr" placeholder="es. dati del teatro, 3° trimestre"></div>
+      <div><label class="campo" for="p-descr">Descrizione</label><input id="p-descr" type="text" value="${esc(F.descr)}" data-input="descr" placeholder="es. giroconto di fine anno"></div>
     </div>
     <div class="scorri"><table class="pd"><tr><th>Conto</th><th class="n">Dare</th><th class="n">Avere</th><th></th></tr>
       ${F.righe.map((r, i) => `<tr>
