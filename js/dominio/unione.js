@@ -5,7 +5,7 @@
 // Regola: per ogni record vince la modifica più recente. L'unione dà lo stesso risultato
 // in qualunque ordine si leggano i file e anche se si legge due volte lo stesso file.
 
-export const CHIAVI = { conti: "codice", movimenti: "id", impostazioni: "chiave" };
+export const CHIAVI = { conti: "codice", movimenti: "id", impostazioni: "chiave", fatture: "id" };
 
 export function piuRecente(a, b) {
   if (!a) return b;
@@ -22,7 +22,7 @@ export function unisciElenco(chiave, ...elenchi) {
   return [...m.values()];
 }
 
-/** Unisce più insiemi di dati {conti, movimenti, impostazioni}. */
+/** Unisce più insiemi di dati {conti, movimenti, impostazioni, fatture}. */
 export function unisciDati(...insiemi) {
   const out = {};
   for (const [tab, chiave] of Object.entries(CHIAVI)) out[tab] = unisciElenco(chiave, ...insiemi.map((d) => d?.[tab]));

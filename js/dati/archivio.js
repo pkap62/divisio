@@ -11,15 +11,16 @@ const ORIGINE = "2000-01-01T00:00:00.000Z";
 
 export async function apriArchivio({ autore, nomeDb } = {}) {
   const conn = await db.apri(nomeDb);
-  const stato = { conti: new Map(), movimenti: new Map(), impostazioni: new Map() };
+  const stato = { conti: new Map(), movimenti: new Map(), impostazioni: new Map(), fatture: new Map() };
   const ascoltatori = new Set();
   let chi = autore || "Utente";
 
   async function ricarica() {
-    const [conti, movimenti, impostazioni] = await Promise.all(db.TABELLE.map((t) => db.leggiTutto(conn, t)));
+    const [conti, movimenti, impostazioni, fatture] = await Promise.all(db.TABELLE.map((t) => db.leggiTutto(conn, t)));
     stato.conti = new Map(conti.map((c) => [c.codice, c]));
     stato.movimenti = new Map(movimenti.map((m) => [m.id, m]));
     stato.impostazioni = new Map(impostazioni.map((i) => [i.chiave, i]));
+    stato.fatture = new Map(fatture.map((f) => [f.id, f]));
   }
   const avvisa = () => ascoltatori.forEach((f) => f());
 
@@ -48,6 +49,12 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
     /** Movimenti validi (esclusi quelli eliminati). */
     movimenti() { return [...stato.movimenti.values()].filter((m) => !m.eliminato); },
     movimento(id) { const m = stato.movimenti.get(id); return m && !m.eliminato ? m : undefined; },
+
+    /** Fatture dello scadenzario (escluse quelle tolte). */
+    fatture() { return [...stato.fatture.values()].filter((f) => !f.eliminato); },
+    fattura(id) { const f = stato.fatture.get(id); return f && !f.eliminato ? f : undefined; },
+    /** Impostazioni la cui chiave inizia con un prefisso (es. "fornitore:"). */
+    impostazioniCon(prefisso) { return [...stato.impostazioni.values()].filter((i) => i.chiave.startsWith(prefisso) && i.valore != null); },
 
     impostazione(chiave, predefinito) { return stato.impostazioni.get(chiave)?.valore ?? predefinito; },
 
@@ -84,9 +91,44 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
       avvisa();
     },
 
+    /**
+     * Salva insieme, in un'unica operazione, fatture, movimenti e impostazioni (es. "fattura pagata" + la sua uscita):
+     * o si salva tutto o niente, così fattura e contabilità non restano mai a metà.
+     * { fatture:[…], movimenti:[…], movimentiDaEliminare:[id], impostazioni:[{chiave, valore}] }
+     */
+    async salvaInsieme({ fatture = [], movimenti = [], movimentiDaEliminare = [], impostazioni = [] }) {
+      let t = null;
+      const marcaInOrdine = (prec) => {
+        t = nuovoIstante([t, prec?.modificatoIl].filter(Boolean).sort().at(-1));
+        return { modificatoIl: t, autore: chi };
+      };
+      const scr = { fatture: [], movimenti: [], impostazioni: [] };
+      for (const m of movimenti) {
+        const prec = m.id ? stato.movimenti.get(m.id) : undefined;
+        const r = { ...m, id: m.id || nuovoId(), creatoIl: prec?.creatoIl ?? new Date().toISOString(), ...marcaInOrdine(prec) };
+        delete r.eliminato;
+        scr.movimenti.push(r);
+      }
+      for (const id of movimentiDaEliminare) {
+        const prec = stato.movimenti.get(id);
+        if (prec && !prec.eliminato) scr.movimenti.push({ ...prec, eliminato: true, ...marcaInOrdine(prec) });
+      }
+      for (const f of fatture) {
+        const prec = f.id ? stato.fatture.get(f.id) : undefined;
+        scr.fatture.push({ ...f, id: f.id || nuovoId(), creatoIl: prec?.creatoIl ?? f.creatoIl ?? new Date().toISOString(), ...marcaInOrdine(prec) });
+      }
+      for (const { chiave, valore } of impostazioni) scr.impostazioni.push({ chiave, valore, ...marcaInOrdine(stato.impostazioni.get(chiave)) });
+      await db.scriviInsieme(conn, scr);
+      for (const r of scr.movimenti) stato.movimenti.set(r.id, r);
+      for (const r of scr.fatture) stato.fatture.set(r.id, r);
+      for (const r of scr.impostazioni) stato.impostazioni.set(r.chiave, r);
+      avvisa();
+      return scr;
+    },
+
     /** Tutti i dati, compresi i segnaposto dei movimenti eliminati (servono per unire i computer). */
     esporta() {
-      return { conti: [...stato.conti.values()], movimenti: [...stato.movimenti.values()], impostazioni: [...stato.impostazioni.values()] };
+      return { conti: [...stato.conti.values()], movimenti: [...stato.movimenti.values()], impostazioni: [...stato.impostazioni.values()], fatture: [...stato.fatture.values()] };
     },
 
     /** Sostituisce tutto (ripristino da copia di sicurezza). */

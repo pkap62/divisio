@@ -62,6 +62,7 @@ e come usarlo durante l'anno. Non servono conoscenze tecniche.</p>
   <li><a href="#prova">Anno di prova 2026</a></li>
   <li><a href="#altre">Altre parrocchie</a></li>
   <li><a href="#giorno">Uso di ogni giorno</a></li>
+  <li><a href="#fatture">Fatture e scadenze</a></li>
   <li><a href="#trimestre">Ogni trimestre: i dati in UNIO</a></li>
   <li><a href="#anno">Fine anno: il Rendiconto</a></li>
   <li><a href="#copie">Copie di sicurezza</a></li>
@@ -79,6 +80,12 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
   <tr><td><b>Google Drive per desktop</b> con l'account Google della parrocchia</td><td>Solo se più persone devono registrare (capitolo 5).</td></tr>
   <tr><td>Internet</td><td>Solo la prima volta e per lavorare insieme; per il resto Divisio funziona anche senza.</td></tr>
 </table>
+
+<div class="box attenzione"><b>Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
+(per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.6:</b> la pagina <b>Fatture</b> (capitolo 10): si caricano le fatture ricevute (XML di Aruba, anche firmati .p7m, e PDF),
+lo scadenzario mostra cosa pagare e quando, e solo le fatture <b>pagate</b> entrano in contabilità, dopo la conferma della voce di spesa proposta da Divisio.</div>
 
 <h2 id="privacy">2. Dove stanno i dati</h2>
 <ul>
@@ -116,7 +123,7 @@ i dati di quel computer spariscono. Per questo servono le <a href="#copie">copie
     <i>Scorciatoia:</i> caricando i movimenti da UNIO (capitolo 7) Divisio propone da solo i nomi dei sottoconti di UNIO.</li>
   <li><b>Saldi di apertura</b>: quanto c'era davvero in cassa e in ogni banca il 1° gennaio, più eventuali collette ancora da versare, crediti o debiti.
     Divisio calcola da solo il patrimonio netto. Si possono inserire anche più tardi.</li>
-  <li><b>Copia di sicurezza</b>: ne faccia subito una (capitolo 12).</li>
+  <li><b>Copia di sicurezza</b>: ne faccia subito una (capitolo 13).</li>
   <li>Se lavorano anche i collaboratori: <b>Lavorare insieme</b> (capitolo 5).</li>
 </ol>
 
@@ -171,7 +178,7 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <li>Ogni parrocchia segue i capitoli 3 e 4 sui propri computer. I dati di una parrocchia non sono mai visibili alle altre.</li>
   <li>Per lavorare insieme, ogni parrocchia usa una cartella <b>Divisio nel proprio Google Drive</b> (capitolo 5).
     <b>Mai</b> collegare la stessa cartella a due parrocchie diverse: i conti si mescolerebbero.</li>
-  <li>Il passaggio dei dati a UNIO (capitolo 10) è previsto dall'anno indicato in fondo alla pagina "Per UNIO" (di solito il primo anno intero in cui si usa Divisio).</li>
+  <li>Il passaggio dei dati a UNIO (capitolo 11) è previsto dall'anno indicato in fondo alla pagina "Per UNIO" (di solito il primo anno intero in cui si usa Divisio).</li>
 </ol>
 <div class="box attenzione"><b>Un sacerdote con due parrocchie sullo stesso computer</b> deve usare <b>due profili diversi di Chrome</b>
 (menu del profilo, in alto a destra → <i>Aggiungi</i>), uno per parrocchia: ogni profilo ha i suoi dati.</div>
@@ -190,7 +197,57 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 </table>
 <div class="box ok">Divisio non lascia salvare un movimento sbagliato: ogni registrazione è in partita doppia con Dare = Avere, e la pagina Inizio controlla sempre che i conti tornino.</div>
 
-<h2 id="trimestre">10. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
+<h2 id="fatture">10. Fatture e scadenze <span class="chi">tutti</span></h2>
+<p>Le fatture ricevute dai fornitori si caricano in Divisio e restano nello <b>scadenzario</b> come "da pagare".
+<b>In contabilità entra solo una fattura pagata</b>, e solo dopo la sua conferma.</p>
+<h3>Caricare le fatture</h3>
+<ol>
+  <li>Divisio → <b>Fatture</b>. Trascini i file nel riquadro <b>Carica fatture</b>, oppure <span class="bottone">Scegli i file…</span>: anche molti insieme
+    (per esempio tutti gli XML del trimestre scaricati da Aruba). Vanno bene <b>.xml</b>, <b>.xml.p7m</b> (firmati) e <b>.pdf</b>.</li>
+  <li>Divisio mostra i dati letti: fornitore, partita IVA, numero, data, imponibile, IVA, totale, scadenza e modalità di pagamento.
+    I campi <b>in arancione</b> sono incerti: li controlli con l'originale e li corregga; poi spunti <i>Ho controllato</i>.</li>
+  <li><span class="bottone">Aggiungi … allo scadenzario</span>.</li>
+</ol>
+<div class="box attenzione"><b>Controlli sempre i dati letti.</b> Dagli XML Divisio legge i dati esatti scritti nella fattura elettronica.
+Dai PDF li ricava dal testo e può sbagliare: per questo li mostra accanto all'immagine del PDF. I PDF <b>scansionati</b> (fotografie) non si possono leggere:
+i campi vanno scritti a mano guardando il PDF.</div>
+<ul>
+  <li><b>Doppioni:</b> se una fattura (stesso fornitore, numero e data) è già nello scadenzario, o compare due volte tra i file scelti (es. XML e PDF della stessa fattura),
+    Divisio lo dice e non la carica di nuovo.</li>
+  <li>I file restano sul computer e Divisio non li conserva: tenga gli originali nella solita cartella.</li>
+  <li>Le fatture <b>a rate</b> hanno una riga per ogni rata, con la sua scadenza. Le <b>note di credito</b> si segnano come "rimborsate" e riducono la spesa.</li>
+  <li>Se c'è una <b>ritenuta d'acconto</b>, nello scadenzario c'è l'importo da pagare al fornitore; la ritenuta si versa con l'F24 e si registra a mano.</li>
+</ul>
+<h3>Lo scadenzario</h3>
+<p>In ordine di scadenza: in rosso le fatture <b>scadute</b>, in arancione quelle che scadono <b>entro 7 giorni</b>. In alto i totali; i pulsanti
+<span class="bottone">Da pagare</span> <span class="bottone">Pagate</span> <span class="bottone">Tutte</span> scelgono cosa vedere. Anche la pagina Inizio avvisa delle fatture scadute o in scadenza.
+In "Dettagli" si vedono tutti i dati, si corregge la scadenza o si toglie una fattura caricata per errore.</p>
+<h3>Segnare una fattura come pagata</h3>
+<ol>
+  <li><span class="bottone">Segna come pagata</span>: data del pagamento, come è stata pagata, da quale cassa o banca.</li>
+  <li><b>Voce di spesa:</b> Divisio propone una voce e spiega perché (la scelta fatta l'ultima volta per lo stesso fornitore, le sue fatture già pagate,
+    oppure parole della fattura come "luce" o "caldaia"). Se non è sicuro non propone nulla e chiede di sceglierla dall'elenco.</li>
+  <li>Sotto si vede la registrazione in partita doppia che verrà salvata. <span class="bottone">Conferma</span>: la fattura diventa pagata e l'uscita entra in contabilità.</li>
+  <li>Con "Ricorda questa scelta" (già spuntato), la volta successiva per quel fornitore la proposta è già quella giusta.
+    L'elenco dei fornitori ricordati è in fondo alla pagina (si possono "dimenticare").</li>
+</ol>
+<ul>
+  <li><b>Errore?</b> Nelle fatture pagate, "Dettagli" → <span class="bottone">Torna da pagare</span>: la fattura torna nello scadenzario e la sua uscita viene tolta dalla contabilità.
+    Se l'uscita era già stata portata in UNIO, la pagina Per UNIO preparerà la correzione.</li>
+  <li>Se si elimina da <b>Movimenti</b> un'uscita nata da una fattura, la fattura torna "da pagare".</li>
+  <li>Se scadenzario e contabilità non coincidono (per esempio per una modifica fatta da un altro computer), la pagina Fatture lo segnala in <b>Da sistemare</b> e propone come rimediare.</li>
+</ul>
+<h3>Attività commerciale (teatro) <span class="chi">facoltativo</span></h3>
+<p>Solo per le parrocchie con un teatro, un cinema o un'altra attività seguita dal commercialista. È spenta: si accende in Impostazioni → <b>Fatture del teatro</b>.
+Quando si segna pagata una fattura, Divisio chiede se è <b>della parrocchia</b>, <b>del teatro</b>, <b>metà e metà</b> o un'altra percentuale:</p>
+<ul>
+  <li>la parte della parrocchia va sulla voce di spesa; la parte del teatro va sul conto scelto nelle Impostazioni (di solito "Gestione teatro", P02-05-04) e non tra le uscite della parrocchia;</li>
+  <li>se una fattura tutta del teatro è pagata dal conto del teatro, si spunta la casella apposita e in contabilità non si registra nulla;</li>
+  <li>nelle Impostazioni si possono scrivere le parole che indicano il teatro (es. "Sala della Comunità"): Divisio propone "del teatro" e chiede conferma.
+    Per i fornitori ricordati propone la scelta dell'ultima volta (es. metà e metà); negli altri casi lo chiede.</li>
+</ul>
+
+<h2 id="trimestre">11. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
 <p>Il Rendiconto si invia sempre da UNIO, quindi UNIO deve avere i movimenti. Divisio li riassume in poche righe, una per voce (l'Economato diocesano ha approvato questo modo).</p>
 <ol>
   <li>Divisio → <b>Per UNIO</b>: scelga la cassa o banca e il trimestre.</li>
@@ -204,7 +261,7 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 <div class="box nota">Se dopo l'importazione si corregge o si aggiunge un movimento di quel trimestre, la volta successiva Divisio prepara <b>solo le differenze</b>:
 niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in un solo file; i rari movimenti senza cassa né banca vanno inseriti a mano in UNIO (Divisio li elenca).</div>
 
-<h2 id="anno">11. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
+<h2 id="anno">12. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
 <ol>
   <li>Divisio → <b>Rendiconto</b>: tutte le sezioni di UNIO (gestione, situazione patrimoniale, collette, contributo diocesano 3% e 10%, bilancio di previsione, bilancio analitico).</li>
   <li>Verifichi che UNIO abbia tutto: in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio → tutte le voci devono risultare "= UNIO".</li>
@@ -214,7 +271,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
     che trova nel Rendiconto dell'anno appena chiuso, alla Situazione patrimoniale. <i>Per ora si fa a mano.</i></li>
 </ol>
 
-<h2 id="copie">12. Copie di sicurezza <span class="chi">parroco</span></h2>
+<h2 id="copie">13. Copie di sicurezza <span class="chi">parroco</span></h2>
 <ul>
   <li>Impostazioni → <span class="bottone">Salva una copia su file</span>: scarica un file <i>Divisio-copia-data.json</i> con tutti i dati. Lo conservi su una chiavetta o in Google Drive.</li>
   <li>Divisio ricorda in Inizio se l'ultima copia è più vecchia di una settimana.</li>
@@ -222,7 +279,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
   <li>Con il lavoro insieme attivo, ogni file della cartella Divisio di Google Drive è anche una copia completa.</li>
 </ul>
 
-<h2 id="problemi">13. Se qualcosa non va</h2>
+<h2 id="problemi">14. Se qualcosa non va</h2>
 <table>
   <tr><th>Problema</th><th>Cosa fare</th></tr>
   <tr><td>In alto c'è <b>☁ Riattiva la condivisione</b></td><td>Lo clicchi e confermi il permesso.</td></tr>
@@ -232,10 +289,12 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
   <tr><td>Il riquadro "Lavorare insieme" dice di usare Chrome o Edge</td><td>Sta usando Safari o Firefox: apra Divisio con Chrome o Edge.</td></tr>
   <tr><td>"Divisio non riesce a salvare i dati"</td><td>Probabilmente è una finestra "in incognito": usi una finestra normale.</td></tr>
   <tr><td>Il Rendiconto non coincide con UNIO</td><td>La tabella delle differenze indica le voci. Cause tipiche: saldi di apertura (assenti in UNIO), movimenti non ancora portati in UNIO, movimenti su un'altra voce.</td></tr>
+  <tr><td>Un PDF non viene letto, o i dati sono sbagliati</td><td>Corregga i campi a mano guardando l'immagine del PDF (o il link "Apri il PDF intero"). Se c'è anche l'XML della stessa fattura, carichi quello: è più preciso.</td></tr>
+  <tr><td>In Fatture compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura "da pagare").</td></tr>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 16 novembre 2026 (versione 0.5) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 16 novembre 2026 (versione 0.6) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 </body>

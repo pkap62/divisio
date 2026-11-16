@@ -27,7 +27,7 @@ export function tabellaMovimenti(lista, arch, { dettagli = false } = {}) {
     ${lista.map((m) => {
       const d = descrivi(m, arch);
       const classe = d.segno > 0 ? "pos" : d.segno < 0 ? "neg" : "";
-      return `<tr><td class="nowrap">${dataIt(m.data)}</td><td>${esc(m.descr)}
+      return `<tr><td class="nowrap">${dataIt(m.data)}</td><td>${esc(m.descr)}${m.fattura ? ` <span class="pill">da fattura</span>` : ""}
         ${dettagli ? `<details><summary>Dettagli</summary>${tabellaRighe(m.righe, arch)}
           <p class="hint">Inserito da ${esc(m.autore ?? "—")} · ultima modifica ${m.modificatoIl ? new Date(m.modificatoIl).toLocaleString("it-IT") : "—"}</p>
           ${m.tipo === "apertura"

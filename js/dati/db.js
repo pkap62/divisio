@@ -1,9 +1,10 @@
 // Accesso a IndexedDB (il database interno del browser), senza librerie esterne.
 
 const NOME = "divisio";
-const VERSIONE = 2;
+// 3 (Divisio 0.6): aggiunto il cassetto "fatture". Gli altri cassetti non vengono toccati.
+const VERSIONE = 3;
 // Dati della parrocchia (finiscono nelle copie e nella condivisione).
-export const TABELLE = ["conti", "movimenti", "impostazioni"];
+export const TABELLE = ["conti", "movimenti", "impostazioni", "fatture"];
 // "locale": cose di QUESTO computer (es. la cartella condivisa scelta), mai copiate altrove.
 
 const promessa = (req) => new Promise((ok, ko) => { req.onsuccess = () => ok(req.result); req.onerror = () => ko(req.error); });
@@ -17,6 +18,7 @@ export function apri(nome = NOME) {
     if (!db.objectStoreNames.contains("movimenti")) db.createObjectStore("movimenti", { keyPath: "id" });
     if (!db.objectStoreNames.contains("impostazioni")) db.createObjectStore("impostazioni", { keyPath: "chiave" });
     if (!db.objectStoreNames.contains("locale")) db.createObjectStore("locale", { keyPath: "chiave" });
+    if (!db.objectStoreNames.contains("fatture")) db.createObjectStore("fatture", { keyPath: "id" });
   };
   return promessa(req);
 }
@@ -65,13 +67,22 @@ export function unisciRecord(db, tabella, records, vince) {
   });
 }
 
+/** Scrive record di più cassetti in un'unica operazione: o tutti o nessuno. scritture = {tabella: [record]} */
+export async function scriviInsieme(db, scritture) {
+  const tabelle = Object.keys(scritture).filter((t) => scritture[t]?.length);
+  if (!tabelle.length) return;
+  const tx = db.transaction(tabelle, "readwrite");
+  for (const t of tabelle) for (const v of scritture[t]) tx.objectStore(t).put(v);
+  await fine(tx);
+}
+
 /** Sostituisce TUTTI i dati in un'unica operazione: o riesce tutto o non cambia niente. */
 export async function sostituisciTutto(db, dati) {
   const tx = db.transaction(TABELLE, "readwrite");
   for (const t of TABELLE) {
     const s = tx.objectStore(t);
     s.clear();
-    for (const v of dati[t]) s.put(v);
+    for (const v of dati[t] ?? []) s.put(v);   // le copie fatte prima della 0.6 non hanno le fatture
   }
   await fine(tx);
 }

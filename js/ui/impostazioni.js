@@ -7,6 +7,8 @@ import { GRUPPI, isCassaBanca, crescInDare, tipoDi, nuovoCodiceSottoconto } from
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
 import { vistaCard as cardImporta, azioni as azioniImporta, cambia as cambiaImporta } from "./importa.js";
+import { teatro } from "./fatture.js";
+import { VERSIONE } from "../versione.js";
 
 /* ---------- cassa e banche ---------- */
 // La cassa è sempre presente; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
@@ -41,6 +43,26 @@ function cardBanche(arch) {
     </div>
     ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
       `${esc(c.nome)} <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
+  </div>`;
+}
+
+/* ---------- fatture del teatro (facoltativo, spento per tutti all'inizio) ---------- */
+function cardTeatro(arch) {
+  const t = teatro(arch);
+  const conti = [...arch.conti.values()].filter((c) => c.attivo !== false || c.codice === t.conto);
+  return `<div class="card"><h3>Fatture del teatro (attività commerciale)</h3>
+    <p class="hint">Solo per le parrocchie con un teatro, un cinema o un'altra attività commerciale seguita dal commercialista.
+      Se non serve, la lasci spenta: non comparirà da nessuna parte.</p>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="teatroAttivo" ${t.attivo ? "checked" : ""}>
+      Quando segno pagata una fattura, chiedimi se è della parrocchia, del teatro o di tutti e due (es. metà e metà)</label>
+    ${t.attivo ? `<label class="campo" for="t-conto">Conto per la parte del teatro</label>
+      <select id="t-conto" data-cambia="teatroConto">${opzioniConti(conti, { tipi: ["P", "A"], escludi: (c) => isCassaBanca(c), selezionato: t.conto, vuota: "— scegli il conto —" })}</select>
+      <p class="hint">Se la fattura è pagata da una cassa o banca della parrocchia, la parte del teatro va su questo conto (di solito «Gestione teatro», P02-05-04)
+        e non tra le uscite della parrocchia. Se invece è pagata dal conto del teatro, non si registra nulla.</p>
+      <label class="campo" for="t-parole">Parole che indicano il teatro</label>
+      <input id="t-parole" type="text" value="${esc(t.parole.join(", "))}" placeholder="es. Sala della Comunità, cinema, teatro" data-cambia="teatroParole">
+      <p class="hint">Separate da virgole. Se una fattura le contiene (nell'intestazione o nella descrizione), Divisio propone "del teatro" e chiede di confermare.
+        Negli altri casi lo chiede, finché non ricorda la scelta fatta per quel fornitore.</p>` : ""}
   </div>`;
 }
 
@@ -118,6 +140,8 @@ export function vista(ctx) {
 
   ${cardImporta(ctx)}
 
+  ${cardTeatro(arch)}
+
   <div class="card"><h3>Chi usa questo computer</h3>
     <p class="hint">Il nome resta su questo computer e compare accanto ai movimenti che inserisce.</p>
     <input type="text" value="${esc(locale.leggi("autore", ""))}" placeholder="es. don Mario" data-cambia="autore" style="max-width:320px" aria-label="Nome">
@@ -144,6 +168,7 @@ export function vista(ctx) {
 
   <div class="card"><h3>Informazioni</h3>
     <p><a href="guida.html" target="_blank" rel="noopener">Apri la guida di Divisio</a> (si può stampare o salvare in PDF).</p>
+    <p class="hint">Divisio versione ${VERSIONE}. Per leggere i PDF usa il lettore di Mozilla (pdf.js), che lavora su questo computer.</p>
     <p class="hint" id="info-memoria">Controllo della memoria…</p>
     <p class="hint">I dati sono salvati in questo browser, su questo computer, e, se attivata, nella cartella condivisa del Google Drive della parrocchia. Nessun altro invio su internet.</p>
   </div>`;
@@ -166,6 +191,24 @@ export const input = {
 export const cambia = {
   ...cambiaImporta,
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
+  async teatroAttivo(el, ev, ctx) {
+    const t = teatro(ctx.arch);
+    await ctx.arch.salvaImpostazione("teatro", { ...t, attivo: el.checked });
+    const conto = ctx.arch.conti.get(t.conto);
+    if (el.checked && conto && conto.attivo === false) await ctx.arch.salvaConto({ codice: t.conto, attivo: true });
+    toast(el.checked ? "Divisione parrocchia / teatro attivata ✓" : "Divisione parrocchia / teatro spenta");
+    ctx.aggiorna();
+  },
+  async teatroConto(el, ev, ctx) {
+    if (!el.value) return;
+    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), conto: el.value });
+    toast("Salvato ✓");
+  },
+  async teatroParole(el, ev, ctx) {
+    const parole = el.value.split(",").map((p) => p.trim()).filter(Boolean);
+    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), parole });
+    toast("Salvato ✓");
+  },
   autore(el, ev, ctx) { const n = el.value.trim(); locale.scrivi("autore", n); ctx.arch.impostaAutore(n); toast("Nome salvato ✓"); },
   async parrocchia(el, ev, ctx) {
     const par = { ...ctx.arch.impostazione("parrocchia", {}), [el.dataset.campo]: el.value.trim() };

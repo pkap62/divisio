@@ -10,4 +10,6 @@ import "./rendiconto.test.js";
 import "./condivisione.test.js";
 import "./ponte.test.js";
 import "./importaUNIO.test.js";
+import "./fatture.test.js";
+import "./scadenzario.test.js";
 export { esegui } from "./mini.js";

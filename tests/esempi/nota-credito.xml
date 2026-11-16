@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FatturaElettronica versione="FPR12"><FatturaElettronicaHeader>
+<CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234567890</IdCodice></IdFiscaleIVA><Anagrafica><Denominazione>Fioreria Esempio s.n.c. di Rossi &amp; C.</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore>
+<CessionarioCommittente><DatiAnagrafici><CodiceFiscale>90000000000</CodiceFiscale><Anagrafica><Denominazione>Parrocchia di San Esempio</Denominazione></Anagrafica></DatiAnagrafici></CessionarioCommittente>
+</FatturaElettronicaHeader><FatturaElettronicaBody>
+<DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD04</TipoDocumento><Divisa>EUR</Divisa><Data>2026-11-10</Data><Numero>NC 7</Numero><ImportoTotaleDocumento>24.40</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali>
+<DatiBeniServizi><DettaglioLinee><NumeroLinea>1</NumeroLinea><Descrizione>Storno parziale fattura 2026/118</Descrizione><PrezzoTotale>20.00</PrezzoTotale><AliquotaIVA>22.00</AliquotaIVA></DettaglioLinee>
+<DatiRiepilogo><AliquotaIVA>22.00</AliquotaIVA><ImponibileImporto>20.00</ImponibileImporto><Imposta>4.40</Imposta></DatiRiepilogo></DatiBeniServizi>
+</FatturaElettronicaBody></FatturaElettronica>

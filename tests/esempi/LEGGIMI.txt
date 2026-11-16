@@ -1,0 +1,7 @@
+Fatture di prova INVENTATE per i test e per provare Divisio (nessun dato reale).
+- fattura-fiori.xml: fattura normale, bonifico, una scadenza
+- fattura-luce-rate.xml: due rate, intestata alla Sala della Comunità (per la prova del teatro)
+- nota-credito.xml: nota di credito dello stesso fornitore dei fiori
+- fattura-idraulico.pdf: PDF con testo (si legge da solo)
+- fattura-scansione.pdf: PDF fatto solo di un'immagine (va compilato a mano)
+esempi.js contiene gli stessi XML come testo, per i test dal Terminale; i due PDF si ricreano con: python3 tests/esempi/crea_pdf.py tests/esempi

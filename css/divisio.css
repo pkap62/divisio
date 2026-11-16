@@ -127,11 +127,30 @@ summary { cursor: pointer; color: var(--blu); font-weight: 600; }
 table.rendiconto tr.gruppo td { font-weight: 650; color: var(--blu); background: var(--blu-chiaro); }
 table.rendiconto tr.grande-tot td { font-weight: 750; font-size: 17px; background: #f1ede4; }
 td.prec, th.prec { color: var(--tenue); }
-.pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 600; margin-left: 6px; }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 13px; font-weight: 600; margin-left: 6px; background: #f1ede4; color: var(--tenue); }
 .ok-pill { background: var(--verde-chiaro); color: var(--verde); } .ko-pill { background: var(--rosso-chiaro); color: var(--rosso); }
 input.previsione { max-width: 160px; font-size: 16px; padding: 6px 10px; }
 .riga-bottoni.stretta { margin-top: 0; }
 .solo-stampa { display: none; }
+
+.avviso.sperimentale { margin: 0 0 16px; }
+
+/* fatture e scadenze */
+.zona-file { border: 2px dashed #bdb5a4; }
+.zona-file.sopra { border-color: var(--blu); background: var(--blu-chiaro); }
+.voce-carico { border-top: 1px solid var(--linea); padding: 14px 0 6px; }
+.voce-carico:first-of-type { border-top: 0; }
+input.incerto, select.incerto { border: 2px solid #d08a1a; background: var(--arancio-chiaro); }
+.da-controllare { color: var(--arancio); font-weight: 600; font-size: 14px; }
+.presto-pill { background: var(--arancio-chiaro); color: var(--arancio); }
+.teatro-pill { background: #efe7f6; color: #5b3a7a; }
+img.pdf-vista { display: block; width: 100%; max-width: 820px; border: 1px solid var(--linea); border-radius: 9px; margin-top: 8px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.filtro-fatture { margin: 14px 0 6px; }
+.filtro-fatture button { flex: 0 1 auto; min-width: 120px; padding: 8px 14px; font-size: 16px; }
+.riepilogo-fatture .saldo { background: #faf8f3; border-radius: 10px; padding: 10px 14px; }
+table.scadenze td { vertical-align: top; }
+tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
+.riga.stretta { margin-top: 8px; } .riga.stretta .campo { margin: 0; }
 
 /* piano dei conti */
 .voce-piano { border-top: 1px solid var(--linea); padding: 10px 0; }
@@ -145,6 +164,10 @@ input.previsione { max-width: 160px; font-size: 16px; padding: 6px 10px; }
   th, td { padding: 6px 4px; }
   .griglia.voce { grid-template-columns: 1fr; }
   .sottoconto { grid-template-columns: 1fr auto; } .sottoconto .codice { grid-column: 1 / -1; }
+  table.scadenze > tbody > tr:first-child { display: none; }
+  table.scadenze > tbody > tr { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--linea); padding: 6px 0; }
+  table.scadenze > tbody > tr > td { border: 0; padding: 2px 4px; }
+  table.scadenze > tbody > tr > td:nth-child(2), table.scadenze > tbody > tr > td:nth-child(4) { grid-column: 1 / -1; }
 }
 @media print {
   .testata, .menu, .riga-bottoni, .btn, .salta, .solo-schermo, .pill, input.previsione { display: none !important; }

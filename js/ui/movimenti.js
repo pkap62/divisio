@@ -6,6 +6,7 @@ import { isCassaBanca } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
 import { esc, eur, dataIt, norm, scarica, toast, $ } from "./util.js";
 import { tabellaMovimenti } from "./elenco.js";
+import { tornaDaPagare } from "../dominio/scadenzario.js";
 
 const PERIODI = { T1: ["01-01", "03-31", "1° trimestre"], T2: ["04-01", "06-30", "2° trimestre"], T3: ["07-01", "09-30", "3° trimestre"], T4: ["10-01", "12-31", "4° trimestre"] };
 const filtro = { testo: "", cassa: "", periodo: "", tipo: "" };
@@ -57,9 +58,18 @@ export const azioni = {
   modifica: (el, ev, ctx) => ctx.vai("registra", { modifica: el.dataset.id }),
   async elimina(el, ev, ctx) {
     const m = ctx.arch.movimento(el.dataset.id);
-    if (!m || !confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?`)) return;
-    await ctx.arch.eliminaMovimento(m.id);
-    toast("Movimento eliminato");
+    if (!m) return;
+    const f = m.fattura ? ctx.arch.fattura(m.fattura.id) : undefined;
+    if (f) {
+      // movimento nato da una fattura pagata: la fattura torna "da pagare", nella stessa operazione
+      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà "da pagare" nello scadenzario.`)) return;
+      await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, m.fattura.rata).fattura], movimentiDaEliminare: [m.id] });
+      toast("Movimento eliminato; la fattura è di nuovo da pagare");
+    } else {
+      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?`)) return;
+      await ctx.arch.eliminaMovimento(m.id);
+      toast("Movimento eliminato");
+    }
     ridisegnaElenco(ctx);
   },
   csv(el, ev, ctx) {

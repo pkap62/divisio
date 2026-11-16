@@ -1,0 +1,4 @@
+Lettore PDF di Mozilla (pdf.js), versione 4.10.38, dal pacchetto ufficiale "pdfjs-dist".
+Licenza Apache 2.0 (vedi LICENSE). File copiati senza modifiche; solo l'estensione è .js invece di .mjs,
+così ogni server li riconosce come programmi JavaScript. Divisio lo usa solo per leggere il testo dei PDF, sul computer.
+La cartella standard_fonts (caratteri di base per disegnare le pagine) viene dallo stesso pacchetto, con le sue licenze.

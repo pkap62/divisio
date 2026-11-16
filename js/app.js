@@ -6,16 +6,19 @@ import * as inizio from "./ui/inizio.js";
 import * as registra from "./ui/registra.js";
 import * as movimenti from "./ui/movimenti.js";
 import * as rendiconto from "./ui/rendiconto.js";
+import * as fatture from "./ui/fatture.js";
 import * as unio from "./ui/unio.js";
 import * as impostazioni from "./ui/impostazioni.js";
 import * as condivisione from "./ui/condivisione.js";
 
-export const VERSIONE = "0.5.3";
+import { VERSIONE } from "./versione.js";
+export { VERSIONE };
 
 const PAGINE = {
   inizio: { modulo: inizio, nome: "Inizio" },
   registra: { modulo: registra, nome: "Registra" },
   movimenti: { modulo: movimenti, nome: "Movimenti" },
+  fatture: { modulo: fatture, nome: "Fatture" },
   rendiconto: { modulo: rendiconto, nome: "Rendiconto" },
   unio: { modulo: unio, nome: "Per UNIO" },
   impostazioni: { modulo: impostazioni, nome: "Impostazioni" },

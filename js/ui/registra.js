@@ -64,6 +64,9 @@ export function vista(ctx) {
   return F.modo === "pd" ? vistaPD(ctx) : vistaSemplice(ctx);
 }
 
+const notaFattura = (ctx) => (F.id && ctx.arch.movimento(F.id)?.fattura
+  ? `<div class="nota">Questo movimento viene da una fattura pagata (pagina Fatture). Si può correggere qui; per annullare il pagamento, usi "Torna da pagare" nella pagina Fatture.</div>` : "");
+
 function intestazione(titolo, testoBottone, azioneBottone) {
   return `<div class="riga"><h2 class="spazio">${titolo}</h2>
     <button class="btn sec piccolo" data-azione="${azioneBottone}">${testoBottone}</button></div>`;
@@ -74,6 +77,7 @@ function vistaSemplice(ctx) {
   return `
   ${intestazione(F.id ? "Correggi il movimento" : "Registra un movimento", "Sono pratico: usa la partita doppia", "modoPD")}
   <p class="lead">Compili i campi: Divisio scrive da solo la registrazione in partita doppia.</p>
+  ${notaFattura(ctx)}
   <div class="card">
     <div class="scelta">
       <button class="${F.tipo === "entrata" ? "on entrata" : ""}" data-azione="tipo" data-v="entrata">+ Entrata</button>
@@ -105,6 +109,7 @@ function vistaPD(ctx) {
   return `
   ${intestazione(F.id ? "Correggi il movimento" : "Registra in partita doppia", "Torna alla modalità semplice", "modoSemplice")}
   <p class="lead">Per chi conosce la partita doppia: il movimento si salva solo se Dare = Avere.</p>
+  ${notaFattura(ctx)}
   <div class="card">
     <div class="griglia g2">
       <div><label class="campo" for="p-data">Data</label><input id="p-data" type="date" value="${F.data}" data-input="data"></div>

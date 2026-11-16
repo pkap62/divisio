@@ -150,3 +150,19 @@ Calcolato da tutti i movimenti dell'anno, voce = primi due livelli del codice.
 ## 17. Domande aperte
 - Teatro: quali totali esattamente, e su quali conti, vengono riportati oggi in UNIO (uno screenshot di un movimento basterà).
 - Colonne del file movimenti esportato da UNIO, "Visualizzazioni" (per l'import dell'anno di prova).
+
+## 18. Fatture e scadenzario (fatto il 16/11/2026, versione 0.6)
+- Pagina **Fatture**: caricamento di più file insieme (trascinamento o scelta): XML FatturaPA, `.p7m` (busta ASN.1 letta senza librerie, anche con XML spezzato), PDF.
+  Lettura XML ripresa dallo "Scadenzario-fatture" (`xmlInvoiceParser.ts`), regole PDF da `pdfInstallmentDetector.ts`; nessun servizio esterno (lo Scadenzario usava Gemini: escluso).
+- PDF: testo estratto con pdf.js (Mozilla, in `js/lib/pdfjs/`), campi "sicuri" solo se c'è un'unica risposta; controllo imponibile + IVA = totale.
+  Campi incerti in arancione da confermare ("Ho controllato") accanto all'immagine del PDF. Scansioni: niente OCR, compilazione a mano.
+- Doppione = stesso fornitore (partita IVA, altrimenti nome) + numero + data; segnalato e non caricato (anche tra file scelti insieme).
+- Nuovo cassetto `fatture` (IndexedDB versione 3; gli altri cassetti non vengono toccati), incluso nella copia di sicurezza (formato 2) e nella condivisione.
+  Record: dati della fattura + `rate:[{n, scadenza, importo, modalita, stato:"da pagare"|"pagata", pagataIl, cassa, voce, quotaTeatro, fuori, movimentoId}]`.
+- **Regola**: solo una rata pagata genera un movimento, con id fisso `fattura-<id>-<rata>` e campo `fattura:{id, rata}`; fattura e movimento si salvano nella stessa operazione.
+  "Torna da pagare" elimina il movimento; eliminare il movimento da Movimenti rimette la fattura "da pagare"; `coerenza()` segnala ogni differenza (es. da un altro computer).
+- Costo registrato = importo pagato (IVA compresa); nota di credito = rimborso che riduce la spesa; ritenuta d'acconto esclusa dalla rata, con avviso (F24 a mano).
+- Proposta della voce: scelta ricordata per il fornitore (impostazione `fornitore:<partita IVA>`), poi storico delle sue fatture pagate, poi parole (regole in `suggerimenti.js`);
+  se non è chiaro nessuna proposta. Sempre conferma esplicita.
+- Teatro (impostazione `teatro`, spenta per tutti): quota in % per fattura, ricordata per fornitore; parte del teatro sul conto scelto (predefinito P02-05-04);
+  "pagata dal conto del teatro" → nessuna registrazione. Parole che indicano il teatro scritte dall'utente (nessun dato della parrocchia nel codice).

@@ -5,6 +5,9 @@ Divisio-copia-*.json
 *.pdf
 *.xml
 dati-reali/
+# eccezione: fatture di prova INVENTATE per i test
+!tests/esempi/*.xml
+!tests/esempi/*.pdf
 
 # Sistema
 .DS_Store
