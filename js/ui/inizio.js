@@ -12,6 +12,29 @@ import { oggiISO } from "./util.js";
 import { problemi as problemiFatture, elencoScadenze } from "./fatture.js";
 import { riepilogo as riepilogoFatture } from "../dominio/scadenzario.js";
 
+// Indice delle funzioni principali. solo: true = cosa che UNIO non fa.
+const FUNZIONI = [
+  { pagina: "registra", titolo: "Registrare entrate e uscite", testo: "Si scrive con parole proprie e si sceglie la voce: la partita doppia la fa Divisio. Per chi è pratico, anche la partita doppia a mano." },
+  { pagina: "movimenti", titolo: "Movimenti", testo: "Cercare, correggere ed eliminare i movimenti; scaricarli in Excel." },
+  { pagina: "fatture", titolo: "Fatture e scadenze", testo: "Legge da sola le fatture elettroniche (XML di Aruba, anche firmate) e i PDF; scadenzario con le fatture scadute o in scadenza; quando una fattura è pagata propone la voce di spesa e la ricorda per il fornitore.", solo: true },
+  { pagina: "banca", titolo: "Estratti conto della banca", testo: "Carica i movimenti scaricati dalla banca online (CSV o Excel, di ogni banca), propone come registrarli, riconosce le fatture pagate e i doppioni, e impara dalle scelte fatte.", solo: true },
+  { pagina: "rendiconto", titolo: "Rendiconto parrocchiale", testo: "Tutte le sezioni del Rendiconto della Diocesi di Firenze, da stampare; confronto voce per voce con i saldi esportati da UNIO." },
+  { pagina: "unio", titolo: "Per UNIO", testo: "Prepara il file da importare in UNIO, una riga per voce, e ricorda i trimestri ancora da portare; dopo una correzione prepara solo le differenze." },
+  { pagina: "impostazioni", titolo: "Lavorare insieme e copie", testo: "Parroco e collaboratori lavorano insieme tramite il Google Drive della parrocchia; copie di sicurezza; Divisio funziona anche senza internet." },
+];
+
+function indice() {
+  if (locale.leggi("indice-ridotto", false)) {
+    return `<p class="hint indice-ridotto"><a href="#" data-azione="indice" data-v="apri">Che cosa fa Divisio: mostra l'indice delle funzioni</a></p>`;
+  }
+  return `<div class="card indice-funzioni"><div class="riga"><h3 class="spazio">Che cosa fa Divisio</h3>
+      <button class="btn sec piccolo" data-azione="indice" data-v="riduci">Nascondi</button></div>
+    <div class="griglia g2">${FUNZIONI.map((f) => `<a href="#" class="funzione" data-azione="vai" data-pagina="${f.pagina}">
+      <b>${f.titolo}</b>${f.solo ? ` <span class="pill solo-divisio">non c'è in UNIO</span>` : ""}<span>${f.testo}</span></a>`).join("")}
+      <a href="guida.html" target="_blank" rel="noopener" class="funzione"><b>Guida</b><span>Tutte le istruzioni passo per passo, anche da stampare.</span></a></div>
+  </div>`;
+}
+
 export function vista({ arch, anno }) {
   const tutti = arch.movimenti();
   const dellAnno = movimentiAnno(tutti, anno);
@@ -28,16 +51,17 @@ export function vista({ arch, anno }) {
 
   const sf = riepilogoFatture(elencoScadenze(arch));
   const pf = problemiFatture(arch);
-  const novita = locale.leggi("novita-viste", "") !== "0.6";
+  const novita = locale.leggi("novita-viste", "") !== "0.7";
 
   return `
-  <div class="avviso sperimentale"><b>Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
+  <div class="avviso sperimentale"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
     (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
-  ${novita && locale.leggi("autore", "") ? `<div class="card evidenza"><div class="riga"><h3 class="spazio">Novità di Divisio 0.6: fatture e scadenze</h3>
+  ${indice()}
+  ${novita && locale.leggi("autore", "") ? `<div class="card evidenza"><div class="riga"><h3 class="spazio">Novità di Divisio 0.7: estratti conto della banca</h3>
     <button class="btn sec piccolo" data-azione="novitaViste">Ho capito</button></div>
-    <p>Nella nuova pagina <a href="#" data-azione="vai" data-pagina="fatture">Fatture</a> si caricano le fatture ricevute (XML di Aruba o PDF, anche molte insieme).
-      Restano nello <b>scadenzario</b> come "da pagare"; quando le segna come pagate, Divisio propone la voce di spesa e, solo dopo la sua conferma,
-      registra l'uscita. Tutto è spiegato nella <a href="guida.html#fatture" target="_blank" rel="noopener">Guida</a>.</p></div>` : ""}
+    <p>Nella nuova pagina <a href="#" data-azione="vai" data-pagina="banca">Banca</a> si carica l'elenco dei movimenti scaricato dalla banca online (CSV o Excel).
+      Divisio propone come registrare ogni movimento, riconosce le fatture pagate e i movimenti già presenti, e ricorda le sue scelte per la volta successiva.
+      In contabilità non entra nulla finché lei non conferma. Tutto è spiegato nella <a href="guida.html#banca" target="_blank" rel="noopener">Guida</a>.</p></div>` : ""}
   ${!locale.leggi("autore", "") ? `<div class="card evidenza"><h3>Benvenuto in Divisio</h3>
     <p>Per cominciare, scriva il suo nome: servirà a sapere chi ha inserito ogni movimento.
       Tutte le istruzioni sono nella <a href="guida.html" target="_blank" rel="noopener">Guida</a> (anche da stampare).</p>
@@ -85,7 +109,8 @@ export function vista({ arch, anno }) {
 export const azioni = {
   nuovo: (el, ev, ctx) => ctx.vai("registra", { tipo: el.dataset.tipo }),
   vai: (el, ev, ctx) => ctx.vai(el.dataset.pagina),
-  novitaViste(el, ev, ctx) { locale.scrivi("novita-viste", "0.6"); ctx.aggiorna(); },
+  indice(el, ev, ctx) { locale.scrivi("indice-ridotto", el.dataset.v === "riduci"); ctx.aggiorna(); },
+  novitaViste(el, ev, ctx) { locale.scrivi("novita-viste", "0.7"); ctx.aggiorna(); },
   perUNIO: (el, ev, ctx) => ctx.vai("unio", { cassa: el.dataset.cassa, trimestre: el.dataset.trimestre }),
   salvaNome(el, ev, ctx) {
     const nome = document.getElementById("nome-autore").value.trim();

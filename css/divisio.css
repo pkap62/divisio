@@ -178,3 +178,22 @@ tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
   .riepilogo { display: none; }
   body { background: #fff; font-size: 12pt; } .card { border: 0; padding: 0; } main { padding: 0; }
 }
+
+/* Banca: revisione dell'estratto conto */
+table.banca td { vertical-align: top; }
+table.banca td.come { min-width: 260px; max-width: 420px; }
+table.banca select.piccolo, table.banca input.descr-banca { font-size: 15px; padding: 6px 8px; margin-top: 4px; }
+table.banca .testo-banca { font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+table.banca tr.esclusa td { background: #f6f4ef; color: var(--tenue); }
+table.banca tr.incompleta td:first-child { box-shadow: inset 4px 0 0 #d08a1a; }
+.nota.piccola, .ok.piccola, .avviso.piccola { font-size: 14px; padding: 6px 10px; margin-top: 0; }
+.spunta-riga.piccola { font-size: 14px; margin-top: 6px; }
+
+/* Inizio: indice delle funzioni */
+.indice-funzioni .griglia { gap: 10px; }
+.funzione { display: block; border: 1px solid var(--linea); border-radius: 10px; padding: 10px 14px; text-decoration: none; color: var(--testo); background: #fff; }
+.funzione:hover { border-color: var(--blu); background: var(--blu-chiaro); }
+.funzione b { color: var(--blu); }
+.funzione span:last-child { display: block; font-size: 15px; color: var(--tenue); margin-top: 2px; }
+.solo-divisio { background: #fdf0d2; color: #7d4b00; }
+.indice-ridotto { margin: -6px 0 14px; }

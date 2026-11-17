@@ -38,6 +38,7 @@
     a { color: inherit; text-decoration: none; } .indice { columns: 2; }
   }
   @page { margin: 16mm 15mm; }
+  .pill-guida { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 13px; font-weight: 600; background: #f1ede4; }
 </style>
 </head>
 <body>
@@ -48,7 +49,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.6.3</span></p>
+  <p class="versione">Versione <span id="versione">0.7.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -67,6 +68,7 @@ e come usarlo durante l'anno. Non servono conoscenze tecniche.</p>
   <li><a href="#altre">Altre parrocchie</a></li>
   <li><a href="#giorno">Uso di ogni giorno</a></li>
   <li><a href="#fatture">Fatture e scadenze</a></li>
+  <li><a href="#banca">Estratti conto della banca</a></li>
   <li><a href="#trimestre">Ogni trimestre: i dati in UNIO</a></li>
   <li><a href="#anno">Fine anno: il Rendiconto</a></li>
   <li><a href="#copie">Copie di sicurezza</a></li>
@@ -85,8 +87,11 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
   <tr><td>Internet</td><td>Solo la prima volta e per lavorare insieme; per il resto Divisio funziona anche senza.</td></tr>
 </table>
 
-<div class="box attenzione"><b>Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
+<div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.7:</b> la pagina <b>Banca</b> (capitolo 11): si carica l'estratto conto scaricato dalla banca online (CSV o Excel, di qualunque banca);
+Divisio propone come registrare ogni movimento, riconosce i pagamenti delle fatture e i movimenti già registrati, e impara dalle scelte fatte.</div>
 
 <div class="box nota"><b>Novità della versione 0.6:</b> la pagina <b>Fatture</b> (capitolo 10): si caricano le fatture ricevute (XML di Aruba, anche firmati .p7m, e PDF),
 lo scadenzario mostra cosa pagare e quando, e solo le fatture <b>pagate</b> entrano in contabilità, dopo la conferma della voce di spesa proposta da Divisio.</div>
@@ -270,7 +275,44 @@ Quando si segna pagata una fattura, Divisio chiede se è <b>della parrocchia</b>
     Per i fornitori ricordati propone la scelta dell'ultima volta (es. metà e metà); negli altri casi lo chiede.</li>
 </ul>
 
-<h2 id="trimestre">11. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
+<h2 id="banca">11. Estratti conto della banca <span class="chi">tutti</span></h2>
+<p>Invece di scrivere a mano i movimenti della banca, si può caricare l'<b>elenco dei movimenti</b> scaricato dalla banca online.
+Divisio propone come registrare ognuno; <b>in contabilità non entra nulla finché lei non conferma</b>.</p>
+<h3>Caricare l'estratto conto</h3>
+<ol>
+  <li>Nella banca online cerchi l'elenco dei movimenti del conto e lo scarichi in formato <b>CSV</b> o <b>Excel</b> (per esempio un trimestre).
+    Vanno bene i file di tutte le banche; il PDF dell'estratto conto invece non si può leggere.</li>
+  <li>Divisio → <b>Banca</b>. Trascini il file nel riquadro, oppure <span class="bottone">Scegli il file…</span>.</li>
+  <li>Scelga su quale conto della parrocchia sono i movimenti (la banca va prima aggiunta in Impostazioni → Cassa e banche). La volta successiva Divisio lo sa già.</li>
+</ol>
+<p>Divisio riconosce da solo le colonne del file (data, importo, descrizione…). Se non ci riesce, apre <b>Colonne del file</b>:
+indichi lei quale colonna è la data, quale l'importo e quale la descrizione, poi <span class="bottone">Rileggi con queste colonne</span>.
+La scelta viene ricordata per i file successivi della stessa banca.</p>
+<h3>Controllare e confermare</h3>
+<p>Per ogni movimento Divisio propone se è un'entrata, un'uscita o uno spostamento tra cassa e banca, e la voce; accanto spiega perché:</p>
+<ul>
+  <li><span class="pill-guida">ricordato</span> è la scelta fatta l'ultima volta per lo stesso nome (chi ha pagato o chi ha ricevuto) e la stessa causale;</li>
+  <li><span class="pill-guida">fornitore conosciuto</span> è la voce usata per le fatture di quel fornitore;</li>
+  <li><span class="pill-guida">proposta</span> viene da parole della descrizione (per esempio "bollo", "colf", "offerta per ss. Messe", "versamento contanti");</li>
+  <li><span class="pill-guida">da scegliere</span>: Divisio non lo sa, la scelga lei dall'elenco.</li>
+</ul>
+<ul>
+  <li>Quando sceglie la voce per un movimento, Divisio la mette anche agli <b>altri movimenti dello stesso nome</b> ancora da decidere (per esempio tutti i bonifici mensili di uno stesso offerente).</li>
+  <li>I <b>versamenti di contanti</b> sono proposti come spostamento dalla Cassa alla banca: non sono entrate nuove.</li>
+  <li>Se un'uscita corrisponde a una <b>fattura da pagare</b> dello scadenzario (stesso importo e stesso fornitore o numero), Divisio propone di segnarla pagata: la fattura e la sua uscita si sistemano insieme.</li>
+  <li>I movimenti <b>già presenti in Divisio</b> (caricati da un estratto conto precedente, oppure scritti a mano o da una fattura pagata, con lo stesso importo e date vicine) non vengono registrati di nuovo: sono in "Non registrati". Se è davvero un movimento diverso, lo spunti.</li>
+  <li>La descrizione si può correggere; per non registrare un movimento basta togliere la spunta.</li>
+  <li>Nel <b>Riepilogo</b> Divisio mostra il saldo che avrà la banca dopo la registrazione: lo confronti con quello dell'estratto conto.</li>
+</ul>
+<p><span class="bottone">Registra … movimenti in contabilità</span> salva tutto insieme. <span class="bottone">Scarta l'importazione</span> chiude senza registrare nulla.</p>
+<div class="box attenzione"><b>Controlli sempre le proposte.</b> Divisio impara dalle sue scelte, ma all'inizio molte voci sono da scegliere a mano; le proposte "dalle parole" possono sbagliare.</div>
+<ul>
+  <li><b>Errore?</b> In fondo alla pagina, <b>Estratti conto già caricati</b> → <span class="bottone">Togli dalla contabilità</span> elimina tutti i movimenti registrati da quel file (le fatture pagate tornano "da pagare"). Un singolo movimento si corregge o si elimina dalla pagina Movimenti.</li>
+  <li>L'elenco <b>Nomi ricordati dagli estratti conto</b> mostra cosa Divisio ha imparato; ogni nome si può "dimenticare".</li>
+  <li>Il file viene letto solo su questo computer e non viene conservato.</li>
+</ul>
+
+<h2 id="trimestre">12. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
 <p>Il Rendiconto si invia sempre da UNIO, quindi UNIO deve avere i movimenti. Divisio li riassume in poche righe, una per voce (l'Economato diocesano ha approvato questo modo).</p>
 <ol>
   <li>Divisio → <b>Per UNIO</b>: scelga la cassa o banca e il trimestre.</li>
@@ -284,7 +326,7 @@ Quando si segna pagata una fattura, Divisio chiede se è <b>della parrocchia</b>
 <div class="box nota">Se dopo l'importazione si corregge o si aggiunge un movimento di quel trimestre, la volta successiva Divisio prepara <b>solo le differenze</b>:
 niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in un solo file; i rari movimenti senza cassa né banca vanno inseriti a mano in UNIO (Divisio li elenca).</div>
 
-<h2 id="anno">12. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
+<h2 id="anno">13. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
 <ol>
   <li>Divisio → <b>Rendiconto</b>: tutte le sezioni di UNIO (gestione, situazione patrimoniale, collette, contributo diocesano 3% e 10%, bilancio di previsione, bilancio analitico).</li>
   <li>Verifichi che UNIO abbia tutto: in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio → tutte le voci devono risultare "= UNIO".</li>
@@ -294,7 +336,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
     che trova nel Rendiconto dell'anno appena chiuso, alla Situazione patrimoniale. <i>Per ora si fa a mano.</i></li>
 </ol>
 
-<h2 id="copie">13. Copie di sicurezza <span class="chi">parroco</span></h2>
+<h2 id="copie">14. Copie di sicurezza <span class="chi">parroco</span></h2>
 <ul>
   <li>Impostazioni → <span class="bottone">Salva una copia su file</span>: scarica un file <i>Divisio-copia-data.json</i> con tutti i dati. Lo conservi su una chiavetta o in Google Drive.</li>
   <li>Divisio ricorda in Inizio se l'ultima copia è più vecchia di una settimana.</li>
@@ -302,7 +344,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
   <li>Con il lavoro insieme attivo, ogni file della cartella Divisio di Google Drive è anche una copia completa.</li>
 </ul>
 
-<h2 id="problemi">14. Se qualcosa non va</h2>
+<h2 id="problemi">15. Se qualcosa non va</h2>
 <table>
   <tr><th>Problema</th><th>Cosa fare</th></tr>
   <tr><td>In alto c'è <b>☁ Riattiva la condivisione</b></td><td>Lo clicchi e confermi il permesso.</td></tr>
@@ -313,11 +355,13 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
   <tr><td>"Divisio non riesce a salvare i dati"</td><td>Probabilmente è una finestra "in incognito": usi una finestra normale.</td></tr>
   <tr><td>Il Rendiconto non coincide con UNIO</td><td>La tabella delle differenze indica le voci. Cause tipiche: saldi di apertura (assenti in UNIO), movimenti non ancora portati in UNIO, movimenti su un'altra voce.</td></tr>
   <tr><td>Un PDF non viene letto, o i dati sono sbagliati</td><td>Corregga i campi a mano guardando l'immagine del PDF (o il link "Apri il PDF intero"). Se c'è anche l'XML della stessa fattura, carichi quello: è più preciso.</td></tr>
+  <tr><td>L'estratto conto non viene letto</td><td>Nella banca online lo scarichi in formato CSV o Excel (.xlsx). Se Divisio non riconosce le colonne, le indichi in <b>Colonne del file</b>. Un vecchio Excel .xls va salvato come .xlsx o CSV.</td></tr>
+  <tr><td>Dopo l'estratto conto il saldo della banca non coincide</td><td>Controlli i saldi di apertura (Impostazioni), i movimenti in "Non registrati" e quelli della banca scritti a mano con un importo diverso.</td></tr>
   <tr><td>In Fatture compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura "da pagare").</td></tr>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 16 novembre 2026 (versione 0.6) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 17 novembre 2026 (versione 0.7) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">
