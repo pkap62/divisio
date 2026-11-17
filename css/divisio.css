@@ -150,7 +150,9 @@ img.pdf-vista { display: block; width: 100%; max-width: 820px; border: 1px solid
 .filtro-fatture button { flex: 0 1 auto; min-width: 120px; padding: 8px 14px; font-size: 16px; }
 .riepilogo-fatture .saldo { background: #faf8f3; border-radius: 10px; padding: 10px 14px; }
 table.scadenze td { vertical-align: top; }
-tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
+tr.riga-scaduta td:first-child { color: var(--arancio); font-weight: 650; }
+tr.riga-presto td:first-child { color: var(--rosso); font-weight: 650; }
+.saldo .valore.arancio { color: var(--arancio); }
 .riga.stretta { margin-top: 8px; } .riga.stretta .campo { margin: 0; }
 
 /* piano dei conti */

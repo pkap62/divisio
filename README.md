@@ -7,6 +7,8 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.7.1** – Nello scadenzario le fatture che scadono entro 7 giorni sono in rosso, quelle già scadute in arancione.
+
 **0.7 – Estratti conto della banca**
 - Nuova pagina **Banca**: si carica l'elenco dei movimenti scaricato dalla banca online. Formati: CSV (separatore `;` `,` tabulazione, UTF-8 o Windows-1252), tabelle HTML salvate come `.xls`, Excel `.xlsx` (letto senza librerie). Colonne riconosciute dai titoli usati dalle banche italiane (data, valuta, importo con segno o addebiti/accrediti, segno D/A, descrizione, causale, categoria, saldo), righe di intestazione e di saldo saltate; se i titoli mancano le colonne si indovinano dai dati e si possono correggere a mano. L'abbinamento viene ricordato per i file successivi con le stesse colonne.
 - Per ogni movimento Divisio ricava il nome di chi paga o riceve e la causale (bonifici, disposizioni, addebiti diretti SDD con il loro mandato, POS) e propone tipo e voce: scelta ricordata per quel nome e quella causale, fornitore conosciuto dalle fatture, parole della descrizione. Le scelte si propagano agli altri movimenti dello stesso nome e vengono ricordate.

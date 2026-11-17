@@ -105,8 +105,8 @@ export function vista(ctx) {
   <div class="card" id="scadenzario"><div class="riga"><h3 class="spazio">Scadenzario</h3></div>
     <div class="griglia g4 riepilogo-fatture">
       <div class="saldo"><div class="etichetta">Da pagare</div><div class="valore">${eur(r.totale)}</div><div class="hint">${r.daPagare === 1 ? "1 scadenza" : `${r.daPagare} scadenze`}</div></div>
-      <div class="saldo"><div class="etichetta">Scadute</div><div class="valore ${r.scadute ? "neg" : ""}">${eur(r.totaleScadute)}</div><div class="hint">${r.scadute === 1 ? "1 fattura" : `${r.scadute} fatture`}</div></div>
-      <div class="saldo"><div class="etichetta">Entro 7 giorni</div><div class="valore">${eur(r.totalePresto)}</div><div class="hint">${r.presto === 1 ? "1 fattura" : `${r.presto} fatture`}</div></div>
+      <div class="saldo"><div class="etichetta">Scadute</div><div class="valore ${r.scadute ? "arancio" : ""}">${eur(r.totaleScadute)}</div><div class="hint">${r.scadute === 1 ? "1 fattura" : `${r.scadute} fatture`}</div></div>
+      <div class="saldo"><div class="etichetta">Entro 7 giorni</div><div class="valore ${r.presto ? "neg" : ""}">${eur(r.totalePresto)}</div><div class="hint">${r.presto === 1 ? "1 fattura" : `${r.presto} fatture`}</div></div>
     </div>
     <div class="scelta filtro-fatture">
       ${[["dapagare", "Da pagare"], ["pagate", "Pagate"], ["tutte", "Tutte"]].map(([k, n]) => `<button class="${filtro === k ? "on sposta" : ""}" data-azione="filtro" data-v="${k}">${n}</button>`).join("")}
@@ -191,11 +191,11 @@ function tabellaScadenze(el, ctx) {
     ${el.map(({ fattura: f, rata, giorni, urgenza }) => {
       const pagata = rata.stato === PAGATA;
       const stato = pagata ? `<span class="pill ok-pill">${f.notaCredito ? "rimborsata" : "pagata"} il ${dataIt(rata.pagataIl)}</span>${rata.fuori ? ` <span class="pill">fuori contabilità</span>` : ""}`
-        : urgenza === "scaduta" ? `<span class="pill ko-pill">scaduta ${giorniTesto(giorni)}</span>`
-        : urgenza === "presto" ? `<span class="pill presto-pill">scade ${giorniTesto(giorni)}</span>`
+        : urgenza === "scaduta" ? `<span class="pill presto-pill">scaduta ${giorniTesto(giorni)}</span>`
+        : urgenza === "presto" ? `<span class="pill ko-pill">scade ${giorniTesto(giorni)}</span>`
         : urgenza === "senza-data" ? `<span class="pill presto-pill">scadenza da indicare</span>` : `<span class="pill">da pagare</span>`;
       const quota = pagata ? rata.quotaTeatro : ricordo(ctx.arch, f)?.quotaTeatro;
-      return `<tr class="${urgenza === "scaduta" ? "riga-scaduta" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
+      return `<tr class="${urgenza === "scaduta" ? "riga-scaduta" : urgenza === "presto" ? "riga-presto" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
         <td><b>${esc(f.fornitore || "Fornitore?")}</b>${t.attivo && quota ? ` <span class="pill teatro-pill">teatro ${quota}%</span>` : ""}<br>
           <span class="hint">${f.notaCredito ? "Nota di credito" : TIPI_DOCUMENTO[f.tipoDoc] && f.tipoDoc !== "TD01" ? TIPI_DOCUMENTO[f.tipoDoc] : "Fattura"} n. ${esc(f.numero)} del ${dataIt(f.data)}${f.rate.length > 1 ? ` · rata ${rata.n} di ${f.rate.length}` : ""}</span>
           ${dettagli(f, rata, ctx)}</td>
