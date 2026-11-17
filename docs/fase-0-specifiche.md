@@ -103,7 +103,7 @@ Calcolato da tutti i movimenti dell'anno, voce = primi due livelli del codice.
 - **Computer**: Mac e Windows → browser consigliati Chrome o Edge (identici sui due sistemi).
 - **Saldi 2025**: non ancora chiusi → la schermata "Saldi di apertura" deve permettere di inserirli o correggerli in seguito.
 - **Movimenti UNIO**: esportabili da "Visualizzazioni" → servono per l'anno di prova 2026 (il file resta sul computer).
-- **Economato**: i movimenti riepilogativi in UNIO **vanno bene**.
+- **Economato**: non ha ancora approvato nulla (17/11/2026); i movimenti riepilogativi in UNIO sono una scelta da confermare.
 - **Attività commerciale (teatro)**: tenuta dalla commercialista, che fornisce i dati da registrare sotto "Gestione teatro"
   (`P02-05-04`) → Divisio non gestisce l'IVA; serve solo un modo guidato per registrare i dati ricevuti.
 - **Fatture**: quasi tutte XML da Aruba → caricamento di **più XML insieme** (es. tutto il trimestre); PDF rari → inserimento a mano con il PDF allegato (nessuna lettura automatica dei PDF nella prima versione).
