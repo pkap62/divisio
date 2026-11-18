@@ -3,15 +3,15 @@
 // togliere singoli movimenti e, anche dopo, togliere un'intera importazione.
 
 import { tabellaDaTesto, testoDelFile, leggiEstratto, impronta, CAMPI, saldoFinale } from "../dominio/estrattoConto.js";
-import { preparaRighe, completa, aggiornaStato, movimentoProposta, datiBanca, modalitaDaTesto, ricorda, importazioni, maiuscole, CASSA_CONTANTI } from "../dominio/banca.js";
-import { segnaPagata, tornaDaPagare, CONTO_TEATRO } from "../dominio/scadenzario.js";
+import { preparaRighe, completa, aggiornaStato, movimentoProposta, importoRegistrato, fuoriContabilita, datiBanca, modalitaDaTesto, ricorda, importazioni, maiuscole, CASSA_CONTANTI } from "../dominio/banca.js";
+import { segnaPagata, tornaDaPagare, GESTIONI, nomeGestione } from "../dominio/scadenzario.js";
 import { chiaveFornitore } from "../dominio/fatture.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { movimentiAnno, totaliPerConto, saldo } from "../dominio/saldi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
 import { nuovoId } from "../dominio/unione.js";
 import { esc, eur, dataIt, oggiISO, opzioniConti, toast, $ } from "./util.js";
-import { teatro } from "./fatture.js";
+import { teatro, fattureDellaParrocchia } from "./fatture.js";
 
 let imp = null;   // importazione in corso: { nomeFile, tabella, lettura, colonne, riga, cassa, righe, filtro, ricorda, errore }
 
@@ -76,7 +76,7 @@ function prepara(ctx) {
     if (!fornitori.has(k) && voce) fornitori.set(k, { chiave: k, nome: f.fornitore, voce, quotaTeatro: 0 });
   }
   imp.righe = preparaRighe(imp.lettura.righe, {
-    cassa: imp.cassa, movimenti: arch.movimenti(), fatture: arch.fatture(), memorie, fornitori: [...fornitori.values()],
+    cassa: imp.cassa, movimenti: arch.movimenti(), fatture: fattureDellaParrocchia(arch), memorie, fornitori: [...fornitori.values()],
     contiAttivi: new Set(arch.contiAttivi().map((c) => c.codice)), casse: casse(arch).map((c) => c.codice),
   }).map((p) => ({ ...p, quotaTeatro: t.attivo ? p.quotaTeatro : 0 }));
 }
@@ -225,8 +225,8 @@ function selettoreAltra(p, ctx) {
 
 function selettoreTeatro(p) {
   const q = Number(p.quotaTeatro) || 0;
-  const valori = [[0, "Della parrocchia"], [50, "Metà parrocchia e metà teatro"], [100, "Del teatro"]];
-  if (!valori.some(([v]) => v === q)) valori.push([q, `Teatro ${q}%`]);
+  const valori = GESTIONI.map((g) => [g.quota, g.quota === 50 ? "Al 50% (in contabilità metà)" : g.quota === 100 ? "Del teatro o di altra gestione (non si registra)" : g.nome]);
+  if (!valori.some(([v]) => v === q)) valori.push([q, nomeGestione(q)]);
   return `<select class="piccolo" data-cambia="quota" data-r="${esc(p.id)}" aria-label="Di chi è la spesa">${valori.map(([v, n]) => `<option value="${v}" ${v === q ? "selected" : ""}>${n}</option>`).join("")}</select>`;
 }
 
@@ -235,14 +235,18 @@ function riepilogoHTML(ctx) {
   const { arch } = ctx;
   const scelte = imp.righe.filter((p) => p.includi);
   const mancano = scelte.filter((p) => !completa(p));
-  const somma = (fn) => scelte.filter(fn).reduce((s, p) => s + Math.abs(p.importo), 0);
+  const somma = (fn) => scelte.filter(fn).reduce((s, p) => s + Math.abs(importoRegistrato(p)), 0);
+  // divisione delle fatture: parti del teatro o di altre gestioni che non entrano in contabilità
+  const fuori = scelte.filter((p) => importoRegistrato(p) !== p.importo);
+  const nonRegistrato = fuori.reduce((s, p) => s + Math.abs(p.importo - importoRegistrato(p)), 0);
+  const daRegistrare = scelte.filter((p) => importoRegistrato(p) !== 0).length;
   const fatture = scelte.filter((p) => p.stato === "fattura" && p.usaFattura).length;
   const esclusi = imp.righe.length - scelte.length;
   const nomeBanca = arch.nomeConto(imp.cassa);
   // saldo della banca in Divisio dopo la registrazione, alla data dell'ultimo movimento del file
   const ultima = imp.righe.map((p) => p.data).sort().at(-1);
   const anno = ultima.slice(0, 4);
-  const nuovi = scelte.filter((p) => p.data.slice(0, 4) === anno).map((p) => ({ data: p.data, righe: [{ conto: imp.cassa, dare: Math.max(0, p.importo), avere: Math.max(0, -p.importo) }] }));
+  const nuovi = scelte.filter((p) => p.data.slice(0, 4) === anno).map((p) => ({ data: p.data, righe: [{ conto: imp.cassa, dare: Math.max(0, importoRegistrato(p)), avere: Math.max(0, -importoRegistrato(p)) }] }));
   const prima = movimentiAnno(arch.movimenti(), anno).filter((m) => m.data <= ultima);
   const dopo = saldo(imp.cassa, totaliPerConto([...prima, ...nuovi.filter((m) => m.data <= ultima)]));
   const sf = saldoFinale(imp.lettura.righe);
@@ -257,14 +261,16 @@ function riepilogoHTML(ctx) {
       <div class="riga-bottoni"><button class="btn sec" data-azione="scarta">Chiudi</button></div>`;
   }
   return `<h3>Riepilogo</h3>
-    <p>Verranno registrati <b>${n_(scelte.length, "movimento", "movimenti")}</b>: entrate ${eur(somma((p) => p.importo > 0 && p.tipo !== "spostamento"))},
+    <p>Verranno registrati <b>${n_(daRegistrare, "movimento", "movimenti")}</b>: entrate ${eur(somma((p) => p.importo > 0 && p.tipo !== "spostamento"))},
       uscite ${eur(somma((p) => p.importo < 0 && p.tipo !== "spostamento"))}, spostamenti tra casse ${eur(somma((p) => p.tipo === "spostamento"))}${fatture ? `; ${n_(fatture, "fattura segnata pagata", "fatture segnate pagate")}` : ""}.
       ${esclusi ? `Non registrati: ${esclusi}.` : ""}</p>
+    ${nonRegistrato ? `<div class="nota">${eur(nonRegistrato)} di uscite non entrano in contabilità perché sono la parte del teatro o di altre gestioni
+      (fatture al 50% o di altra gestione, ${n_(fuori.length, "movimento", "movimenti")}). Per questo il saldo di Divisio sarà diverso da quello della banca di questa cifra.</div>` : ""}
     ${controllo}
     ${mancano.length ? `<div class="avviso">Manca la voce per ${n_(mancano.length, "movimento", "movimenti")}: la scelga oppure tolga la spunta. <a href="#" data-azione="filtro" data-v="da-completare">Mostrali</a></div>` : ""}
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="ricorda" ${imp.ricorda ? "checked" : ""}>
       Ricorda le scelte: la prossima volta Divisio le proporrà già per gli stessi nomi</label>
-    <div class="riga-bottoni"><button class="btn" data-azione="registra" ${!scelte.length || mancano.length ? "disabled" : ""}>Registra ${n_(scelte.length, "movimento", "movimenti")} in contabilità</button>
+    <div class="riga-bottoni"><button class="btn" data-azione="registra" ${!scelte.length || mancano.length ? "disabled" : ""}>${daRegistrare ? `Registra ${n_(daRegistrare, "movimento", "movimenti")} in contabilità` : "Conferma le scelte"}</button>
       <button class="btn sec" data-azione="scarta">Scarta l'importazione</button></div>`;
 }
 
@@ -402,7 +408,6 @@ export const azioni = {
     const scelte = imp.righe.filter((p) => p.includi);
     if (scelte.some((p) => !completa(p))) { toast("Mancano alcune voci"); return; }
     const t = teatro(arch);
-    const contoTeatro = t.conto || CONTO_TEATRO;
     const importazione = { id: nuovoId(), file: imp.nomeFile, il: new Date().toISOString() };
     const movimenti = [], fatture = new Map(), memorie = new Map(), fornitori = new Map();
     const oggi = oggiISO();
@@ -413,15 +418,17 @@ export const azioni = {
         const rata = f?.rate.find((r) => r.n === p.fattura.n);
         if (!rata) { toast(`La fattura del movimento del ${dataIt(p.data)} non c'è più nello scadenzario`); return; }
         let esito;
-        try { esito = segnaPagata(f, p.fattura.n, { data: p.data, modalita: modalitaDaTesto(p.descrizione) || rata.modalita, cassa: imp.cassa, voce: p.voce, quotaTeatro: t.attivo ? p.quotaTeatro : 0, contoTeatro }); }
+        try { esito = segnaPagata(f, p.fattura.n, { data: p.data, modalita: modalitaDaTesto(p.descrizione) || rata.modalita, cassa: imp.cassa, voce: p.voce, quotaTeatro: t.attivo ? p.quotaTeatro : 0 }); }
         catch (e) { toast(`${dataIt(p.data)}: ${e.message}`); return; }
-        fatture.set(f.id, esito.fattura);
-        m = { ...esito.movimento, banca: datiBanca(p, imp.cassa, importazione) };
+        fatture.set(f.id, t.attivo ? { ...esito.fattura, quotaTeatro: p.quotaTeatro } : esito.fattura);
+        m = esito.movimento ? { ...esito.movimento, banca: datiBanca(p, imp.cassa, importazione) } : null;   // null: del teatro o di altra gestione
         if (imp.ricorda) fornitori.set(chiaveFornitore(f), { nome: f.fornitore, voce: p.voce || arch.impostazione(chiaveFornitore(f))?.voce || "", ...(t.attivo ? { quotaTeatro: p.quotaTeatro } : {}) });
-      } else m = movimentoProposta(p, imp.cassa, importazione, { contoTeatro });
-      const err = verificaMovimento(m, { conti: arch.conti });
-      if (err.length) { toast(`Movimento del ${dataIt(p.data)} (${p.descr}): ${err[0]}`); return; }
-      movimenti.push(m);
+      } else m = t.attivo && fuoriContabilita(p) ? null : movimentoProposta(p, imp.cassa, importazione);
+      if (m) {
+        const err = verificaMovimento(m, { conti: arch.conti });
+        if (err.length) { toast(`Movimento del ${dataIt(p.data)} (${p.descr}): ${err[0]}`); return; }
+        movimenti.push(m);
+      }
       if (imp.ricorda && p.chiave && !(p.stato === "fattura" && p.usaFattura && !p.voce)) memorie.set(p.chiave, ricorda(memorie.get(p.chiave) ?? arch.impostazione(p.chiave), p, oggi));
     }
     const impostazioni = [...[...memorie].map(([chiave, valore]) => ({ chiave, valore })), ...[...fornitori].map(([chiave, valore]) => ({ chiave, valore }))];
@@ -431,7 +438,7 @@ export const azioni = {
     await arch.salvaInsieme({ movimenti, fatture: [...fatture.values()], impostazioni });
     const anni = [...new Set(movimenti.map((m) => m.data.slice(0, 4)))];
     imp = null;
-    toast(`Registrati ${n_(movimenti.length, "movimento", "movimenti")} ✓${anni.length > 1 || anni[0] !== String(ctx.anno) ? ` (anno ${anni.join(", ")})` : ""}`);
+    toast(`Registrati ${n_(movimenti.length, "movimento", "movimenti")} ✓${movimenti.length && (anni.length > 1 || anni[0] !== String(ctx.anno)) ? ` (anno ${anni.join(", ")})` : ""}`);
     ctx.aggiorna();
   },
   async togliImportazione(el, ev, ctx) {

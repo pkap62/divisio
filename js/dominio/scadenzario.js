@@ -11,7 +11,21 @@ import { nomeModalita } from "./fatture.js";
 
 export const DA_PAGARE = "da pagare";
 export const PAGATA = "pagata";
-export const CONTO_TEATRO = "P02-05-04";   // Debiti diversi – Gestione teatro
+export const CONTO_TEATRO = "P02-05-04";   // Debiti diversi – Gestione teatro: solo per i pagamenti registrati prima della versione 0.8
+
+/**
+ * Divisione delle fatture (funzione facoltativa, spenta all'inizio). Tre scelte; quota = parte che NON è della parrocchia:
+ *   0   della parrocchia               → entra tutta in contabilità
+ *   100 del teatro o di altra gestione → non entra in contabilità
+ *   50  al 50%                         → metà del totale (IVA compresa) entra in contabilità, l'altra metà no
+ */
+export const GESTIONI = [
+  { quota: 0, nome: "Della parrocchia", spiega: "entra tutta in contabilità" },
+  { quota: 100, nome: "Del teatro o di altra gestione", spiega: "non entra in contabilità" },
+  { quota: 50, nome: "Al 50%", spiega: "metà dell'importo (IVA compresa) entra in contabilità" },
+];
+export const gestioneValida = (q) => q === 0 || q === 50 || q === 100;
+export const nomeGestione = (q) => GESTIONI.find((g) => g.quota === q)?.nome ?? `Altra gestione ${q}%`;
 
 const dataIt = (d) => (d ? d.split("-").reverse().join("/") : "");
 const giorniTra = (da, a) => Math.round((Date.UTC(...a.split("-").map((x, i) => (i === 1 ? x - 1 : +x))) - Date.UTC(...da.split("-").map((x, i) => (i === 1 ? x - 1 : +x)))) / 864e5);
@@ -43,12 +57,14 @@ export function dividi(importo, quotaTeatro = 0) {
 
 /**
  * Righe in partita doppia del pagamento di una rata.
- *  fattura:        Dare voce (parte parrocchia) + Dare conto del teatro (parte teatro) / Avere cassa o banca
+ *  fattura:        Dare voce / Avere cassa o banca. Al 50%: solo la metà della parrocchia.
  *  nota di credito (rimborso): l'opposto, così la spesa diminuisce.
+ *  Solo per i pagamenti registrati prima della 0.8 (contoTeatro indicato): la parte del teatro andava su quel conto.
  */
-export function righePagamento(f, rata, { cassa, voce, quotaTeatro = 0, contoTeatro = CONTO_TEATRO }) {
+export function righePagamento(f, rata, { cassa, voce, quotaTeatro = 0, contoTeatro = "" }) {
   const { teatro, parrocchia } = dividi(rata.importo, quotaTeatro);
   if (!teatro) return scritturaSemplice({ tipo: f.notaCredito ? "entrata" : "uscita", importo: rata.importo, voce, cassa });
+  if (!contoTeatro) return scritturaSemplice({ tipo: f.notaCredito ? "entrata" : "uscita", importo: parrocchia, voce, cassa });
   const costo = [];
   if (parrocchia) costo.push({ conto: voce, importo: parrocchia });
   costo.push({ conto: contoTeatro, importo: teatro });
@@ -60,7 +76,8 @@ export function righePagamento(f, rata, { cassa, voce, quotaTeatro = 0, contoTea
 
 /**
  * Segna pagata la rata n. pagamento = {data, modalita, cassa, voce, quotaTeatro, contoTeatro, fuori}
- * fuori = true: pagata da un conto che non è della parrocchia (es. quello del teatro) → nessuna registrazione.
+ * fuori = true (o quota 100: del teatro o di altra gestione) → nessuna registrazione.
+ * quota 50: si registra solo la metà della parrocchia.
  * Restituisce {fattura, movimento} (movimento = null se fuori dalla contabilità).
  */
 export function segnaPagata(f, n, pagamento) {
@@ -68,19 +85,21 @@ export function segnaPagata(f, n, pagamento) {
   if (!rata) throw new Error("Rata inesistente.");
   if (rata.stato === PAGATA) throw new Error("Questa rata è già segnata come pagata.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(pagamento.data ?? "")) throw new Error("Manca la data del pagamento.");
-  const fuori = Boolean(pagamento.fuori);
+  const quota = Math.min(100, Math.max(0, Number(pagamento.quotaTeatro) || 0));
+  const contoTeatro = pagamento.contoTeatro || "";
+  const fuori = Boolean(pagamento.fuori) || (quota >= 100 && !contoTeatro);
   if (!fuori && !pagamento.cassa) throw new Error("Indichi la cassa o la banca da cui è stata pagata.");
   if (!fuori && dividi(rata.importo, pagamento.quotaTeatro).parrocchia && !pagamento.voce) throw new Error("Scelga la voce di spesa.");
   if (!(rata.importo > 0)) throw new Error("L'importo della rata deve essere maggiore di zero.");
 
   const movimento = fuori ? null : {
-    id: idMovimento(f, n), data: pagamento.data, descr: descrizione(f, rata),
+    id: idMovimento(f, n), data: pagamento.data, descr: descrizione(f, rata) + (quota && !contoTeatro ? ` – quota della parrocchia ${100 - quota}%` : ""),
     tipo: f.notaCredito ? "entrata" : "uscita", origine: "fattura", fattura: { id: f.id, rata: n },
     righe: righePagamento(f, rata, pagamento),
   };
   const nuovaRata = { ...rata, stato: PAGATA, pagataIl: pagamento.data, modalitaPagamento: pagamento.modalita || rata.modalita || "",
-    cassa: fuori ? "" : pagamento.cassa, voce: pagamento.voce || "", quotaTeatro: Number(pagamento.quotaTeatro) || 0,
-    contoTeatro: pagamento.contoTeatro || CONTO_TEATRO, fuori, movimentoId: movimento?.id ?? null };
+    cassa: fuori ? "" : pagamento.cassa, voce: pagamento.voce || "", quotaTeatro: quota,
+    contoTeatro, fuori, movimentoId: movimento?.id ?? null };
   return { fattura: { ...f, rate: f.rate.map((r) => (r.n === n ? nuovaRata : r)) }, movimento };
 }
 

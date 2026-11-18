@@ -9,7 +9,7 @@
 //  altrimenti chiede di scegliere la voce.
 
 import { scritturaSemplice } from "./scritture.js";
-import { righePagamento, PAGATA } from "./scadenzario.js";
+import { righePagamento, dividi, PAGATA } from "./scadenzario.js";
 import { REGOLE } from "./suggerimenti.js";
 import { chiaveFornitore } from "./fatture.js";
 
@@ -298,7 +298,7 @@ export function preparaRighe(righe, dati) {
       usateRate.add(`${fa.fattura.id}-${fa.rata.n}`);
       const ricordo = fornitori.find((x) => x.chiave === chiaveFornitore(fa.fattura)) ?? forn;
       const voce = usabile(ricordo?.voce) ? ricordo.voce : usabile(fa.rata.voce) ? fa.rata.voce : "";
-      return { ...p, stato: "fattura", fattura: { id: fa.fattura.id, n: fa.rata.n, motivo: fa.motivo }, usaFattura: true, voce, quotaTeatro: Number(ricordo?.quotaTeatro) || 0,
+      return { ...p, stato: "fattura", fattura: { id: fa.fattura.id, n: fa.rata.n, motivo: fa.motivo }, usaFattura: true, voce, quotaTeatro: Number(fa.fattura.quotaTeatro ?? ricordo?.quotaTeatro) || 0,
         livello: voce ? "fornitore" : "nessuno", motivo: `Paga la fattura ${fa.fattura.fornitore} n. ${fa.fattura.numero} (${fa.motivo}).` };
     }
 
@@ -339,6 +339,7 @@ export function preparaRighe(righe, dati) {
 /** Una proposta è "pronta" quando ha tutto quello che serve per registrarla. */
 export function completa(p) {
   if (p.stato === "fattura" && p.usaFattura) return Boolean(p.voce) || (p.quotaTeatro >= 100);
+  if (fuoriContabilita(p)) return true;
   if (p.tipo === "spostamento") return Boolean(p.altra);
   return Boolean(p.voce);
 }
@@ -347,9 +348,19 @@ export const aggiornaStato = (p) => (["gia-importato", "gia-registrato", "fattur
 
 /* ---------- registrazioni ---------- */
 
+/** Uscita del teatro o di un'altra gestione (divisione delle fatture accesa): non entra in contabilità. */
+export const fuoriContabilita = (p) => p.importo < 0 && p.tipo !== "spostamento" && (Number(p.quotaTeatro) || 0) >= 100;
+
+/** Importo che entra davvero in contabilità sulla banca (con segno): al 50% solo metà, fuori contabilità zero. */
+export function importoRegistrato(p) {
+  if (p.tipo === "spostamento" || p.importo > 0) return p.importo;
+  if (fuoriContabilita(p)) return 0;
+  return -dividi(-p.importo, p.quotaTeatro).parrocchia;
+}
+
 /**
  * Righe in partita doppia per una proposta (non per il pagamento di una fattura: quello lo fa segnaPagata).
- *  entrata: Dare banca / Avere voce   ·  uscita: Dare voce (+ teatro) / Avere banca
+ *  entrata: Dare banca / Avere voce   ·  uscita: Dare voce / Avere banca (al 50%: solo la metà della parrocchia)
  *  spostamento: i soldi entrano nella banca dall'altra cassa (importo +) o escono verso l'altra (importo −)
  */
 export function righeProposta(p, cassa, { contoTeatro } = {}) {
@@ -361,8 +372,9 @@ export function righeProposta(p, cassa, { contoTeatro } = {}) {
 
 /** Movimento di Divisio per una proposta. importazione = {id, file, il}. */
 export function movimentoProposta(p, cassa, importazione, opz = {}) {
+  const meta = p.tipo === "uscita" && p.quotaTeatro > 0 && p.quotaTeatro < 100 && !opz.contoTeatro ? ` – quota della parrocchia ${100 - p.quotaTeatro}%` : "";
   return {
-    id: p.id, data: p.data, descr: spazi(p.descr) || descrizioneProposta(p), tipo: p.tipo, righe: righeProposta(p, cassa, opz), origine: "banca",
+    id: p.id, data: p.data, descr: (spazi(p.descr) || descrizioneProposta(p)) + meta, tipo: p.tipo, righe: righeProposta(p, cassa, opz), origine: "banca",
     banca: datiBanca(p, cassa, importazione),
   };
 }

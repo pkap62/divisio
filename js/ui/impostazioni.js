@@ -46,23 +46,24 @@ function cardBanche(arch) {
   </div>`;
 }
 
-/* ---------- fatture del teatro (facoltativo, spento per tutti all'inizio) ---------- */
+/* ---------- fatture del teatro o di altre gestioni (facoltativo, spento per tutti all'inizio) ---------- */
 function cardTeatro(arch) {
   const t = teatro(arch);
-  const conti = [...arch.conti.values()].filter((c) => c.attivo !== false || c.codice === t.conto);
-  return `<div class="card"><h3>Fatture del teatro (attività commerciale)</h3>
-    <p class="hint">Solo per le parrocchie con un teatro, un cinema o un'altra attività commerciale seguita dal commercialista.
+  return `<div class="card"><h3>Fatture del teatro o di altre gestioni</h3>
+    <p class="hint">Solo per le parrocchie che ricevono anche fatture di un teatro, un cinema o un'altra gestione separata.
       Se non serve, la lasci spenta: non comparirà da nessuna parte.</p>
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="teatroAttivo" ${t.attivo ? "checked" : ""}>
-      Quando segno pagata una fattura, chiedimi se è della parrocchia, del teatro o di tutti e due (es. metà e metà)</label>
-    ${t.attivo ? `<label class="campo" for="t-conto">Conto per la parte del teatro</label>
-      <select id="t-conto" data-cambia="teatroConto">${opzioniConti(conti, { tipi: ["P", "A"], escludi: (c) => isCassaBanca(c), selezionato: t.conto, vuota: "— scegli il conto —" })}</select>
-      <p class="hint">Se la fattura è pagata da una cassa o banca della parrocchia, la parte del teatro va su questo conto (di solito «Gestione teatro», P02-05-04)
-        e non tra le uscite della parrocchia. Se invece è pagata dal conto del teatro, non si registra nulla.</p>
-      <label class="campo" for="t-parole">Parole che indicano il teatro</label>
+      Per ogni fattura chiedimi di chi è</label>
+    ${t.attivo ? `<p>Quando carica le fatture (e quando le segna pagate) Divisio chiede di scegliere tra:</p>
+      <ol class="passi">
+        <li><b>Della parrocchia</b>: entra in contabilità per intero.</li>
+        <li><b>Del teatro o di altra gestione</b>: non entra in contabilità; resta da parte, nell'elenco «Teatro e altre gestioni» della pagina Fatture.</li>
+        <li><b>Al 50%</b>: il totale con l'IVA si divide a metà e in contabilità entra solo una metà.</li>
+      </ol>
+      <p class="hint">Divisio ricorda la scelta fatta per ogni fornitore e la volta dopo la propone già; lei la vede sempre e può confermarla o cambiarla.</p>
+      <label class="campo" for="t-parole">Parole che indicano il teatro o l'altra gestione (facoltativo)</label>
       <input id="t-parole" type="text" value="${esc(t.parole.join(", "))}" placeholder="es. Sala della Comunità, cinema, teatro" data-cambia="teatroParole">
-      <p class="hint">Separate da virgole. Se una fattura le contiene (nell'intestazione o nella descrizione), Divisio propone "del teatro" e chiede di confermare.
-        Negli altri casi lo chiede, finché non ricorda la scelta fatta per quel fornitore.</p>` : ""}
+      <p class="hint">Separate da virgole. Se una fattura le contiene (nell'intestazione o nella descrizione), Divisio propone «del teatro o di altra gestione» e chiede di confermare.</p>` : ""}
   </div>`;
 }
 
@@ -192,17 +193,9 @@ export const cambia = {
   ...cambiaImporta,
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
   async teatroAttivo(el, ev, ctx) {
-    const t = teatro(ctx.arch);
-    await ctx.arch.salvaImpostazione("teatro", { ...t, attivo: el.checked });
-    const conto = ctx.arch.conti.get(t.conto);
-    if (el.checked && conto && conto.attivo === false) await ctx.arch.salvaConto({ codice: t.conto, attivo: true });
-    toast(el.checked ? "Divisione parrocchia / teatro attivata ✓" : "Divisione parrocchia / teatro spenta");
+    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), attivo: el.checked });
+    toast(el.checked ? "Fatture del teatro o di altre gestioni: scelta attivata ✓" : "Fatture del teatro o di altre gestioni: scelta spenta");
     ctx.aggiorna();
-  },
-  async teatroConto(el, ev, ctx) {
-    if (!el.value) return;
-    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), conto: el.value });
-    toast("Salvato ✓");
   },
   async teatroParole(el, ev, ctx) {
     const parole = el.value.split(",").map((p) => p.trim()).filter(Boolean);

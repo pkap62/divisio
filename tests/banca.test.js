@@ -1,6 +1,6 @@
-import { test, uguale, vero } from "./mini.js";
+import { test, uguale, vero, contiene } from "./mini.js";
 import { tabellaDaTesto, leggiEstratto, leggiData, leggiImporto, separatore, testoDelFile, saldoFinale, impronta } from "../js/dominio/estrattoConto.js";
-import { controparte, maiuscole, firma, preparaRighe, completa, movimentoProposta, ricorda, importazioni, trovaFattura, numeroNelTesto, impronteRighe } from "../js/dominio/banca.js";
+import { controparte, maiuscole, firma, preparaRighe, completa, movimentoProposta, importoRegistrato, fuoriContabilita, ricorda, importazioni, trovaFattura, numeroNelTesto, impronteRighe } from "../js/dominio/banca.js";
 import { righeDaFoglio, testiCondivisi, stiliData } from "../js/dati/xlsx.js";
 import { verificaMovimento, quadra } from "../js/dominio/scritture.js";
 import { sottocontiIniziali } from "../js/dominio/piano.js";
@@ -183,9 +183,13 @@ test("banca: registrazioni in quadratura (entrata, uscita, spostamento, teatro)"
   }
   const sp = movimentoProposta(p[8], BANCA, imp);
   uguale(sp.righe, [{ conto: BANCA, dare: 130500, avere: 0 }, { conto: "A02-01-01", dare: 0, avere: 130500 }]);
-  const teatro = movimentoProposta({ ...p[7], voce: "U08-01-01", quotaTeatro: 50 }, BANCA, imp, { contoTeatro: "P02-05-04" });
+  const meta = { ...p[7], voce: "U08-01-01", quotaTeatro: 50 };
+  const teatro = movimentoProposta(meta, BANCA, imp);
   vero(quadra(teatro.righe));
-  uguale(teatro.righe.map((r) => [r.conto, r.dare, r.avere]), [["U08-01-01", 60354, 0], ["P02-05-04", 60355, 0], [BANCA, 0, 120709]]);
+  uguale(teatro.righe.map((r) => [r.conto, r.dare, r.avere]), [["U08-01-01", 60354, 0], [BANCA, 0, 60354]], "al 50%: solo la metà della parrocchia");
+  contiene([teatro.descr], "quota della parrocchia 50%");
+  uguale([importoRegistrato(meta), importoRegistrato({ ...meta, quotaTeatro: 100 }), importoRegistrato(p[7])], [-60354, 0, -120709]);
+  vero(fuoriContabilita({ ...meta, quotaTeatro: 100 }) && completa({ ...meta, voce: "", quotaTeatro: 100 }), "altra gestione: non serve la voce");
   uguale(importazioni([movimentoProposta(p[0], BANCA, imp), movimentoProposta(p[1], BANCA, imp)]), [{ id: "imp1", file: "es.csv", il: imp.il, cassa: BANCA, n: 2, dal: "2026-03-31", al: "2026-03-31" }]);
 });
 

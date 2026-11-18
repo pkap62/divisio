@@ -74,25 +74,37 @@ test("scadenzario: nota di credito rimborsata riduce la spesa", () => {
   uguale(riepilogoAnno([movimento], 2026).uscite, -2440);
 });
 
-test("teatro: quota divisa al centesimo, parte del teatro su 'Gestione teatro'", () => {
+test("fatture al 50%: in contabilità entra solo la metà della parrocchia", () => {
   uguale(dividi(30501, 50), { teatro: 15251, parrocchia: 15250 });
   uguale(dividi(1000, 0), { teatro: 0, parrocchia: 1000 });
   const f = fattura(LUCE_RATE, "f2");
-  const { movimento } = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, voce: "U08-01-01", quotaTeatro: 50 });
-  uguale(movimento.righe, [{ conto: "U08-01-01", dare: 15250, avere: 0 }, { conto: "P02-05-04", dare: 15250, avere: 0 }, { conto: BANCA, dare: 0, avere: 30500 }]);
+  const { fattura: pagata, movimento } = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, voce: "U08-01-01", quotaTeatro: 50 });
+  uguale(movimento.righe, [{ conto: "U08-01-01", dare: 15250, avere: 0 }, { conto: BANCA, dare: 0, avere: 15250 }]);
   vero(quadra(movimento.righe));
   uguale(verificaMovimento(movimento, { conti }), []);
-  uguale(riepilogoAnno([movimento], 2026).uscite, 15250, "nel Rendiconto entra solo la parte della parrocchia");
+  contiene([movimento.descr], "quota della parrocchia 50%");
+  uguale(riepilogoAnno([movimento], 2026).uscite, 15250, "nel Rendiconto entra solo la metà");
+  uguale([pagata.rate[0].quotaTeatro, pagata.rate[0].contoTeatro, pagata.rate[0].fuori], [50, "", false]);
+  // nota di credito al 50%: anche il rimborso vale per metà
+  const nc = segnaPagata(fattura(NOTA_CREDITO, "nc"), 1, { data: "2026-11-25", cassa: CASSA, voce: "U01-02-02", quotaTeatro: 50 }).movimento;
+  uguale(nc.righe, [{ conto: CASSA, dare: 1220, avere: 0 }, { conto: "U01-02-02", dare: 0, avere: 1220 }]);
 });
 
-test("teatro: tutta del teatro e pagata dal conto del teatro → nessuna registrazione", () => {
+test("fatture del teatro o di altra gestione: nessuna registrazione", () => {
   const f = fattura(LUCE_RATE, "f2");
-  const { fattura: pagata, movimento } = segnaPagata(f, 1, { data: "2026-11-05", fuori: true, quotaTeatro: 100 });
+  const { fattura: pagata, movimento } = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, quotaTeatro: 100 });
   uguale(movimento, null);
   vero(pagata.rate[0].fuori);
   uguale(coerenza([pagata], () => undefined), [], "non manca nulla: era fuori dalla contabilità");
-  const tutta = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, quotaTeatro: 100 }).movimento;
-  uguale(tutta.righe, [{ conto: "P02-05-04", dare: 30500, avere: 0 }, { conto: BANCA, dare: 0, avere: 30500 }], "pagata dalla banca della parrocchia: senza voce di spesa");
+  uguale(segnaPagata(f, 1, { data: "2026-11-05", fuori: true, quotaTeatro: 100 }).movimento, null);
+});
+
+test("pagamenti registrati prima della 0.8: la parte del teatro resta su 'Gestione teatro'", () => {
+  const f = fattura(LUCE_RATE, "f2");
+  const { movimento } = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, voce: "U08-01-01", quotaTeatro: 50, contoTeatro: "P02-05-04" });
+  uguale(movimento.righe, [{ conto: "U08-01-01", dare: 15250, avere: 0 }, { conto: "P02-05-04", dare: 15250, avere: 0 }, { conto: BANCA, dare: 0, avere: 30500 }]);
+  const tutta = segnaPagata(f, 1, { data: "2026-11-05", cassa: BANCA, quotaTeatro: 100, contoTeatro: "P02-05-04" }).movimento;
+  uguale(tutta.righe, [{ conto: "P02-05-04", dare: 30500, avere: 0 }, { conto: BANCA, dare: 0, avere: 30500 }]);
 });
 
 test("scadenzario: ordine per scadenza, scadute e in arrivo, totali", () => {
@@ -142,11 +154,16 @@ test("proposta della voce: luce e caldaia riconosciute; nessuna proposta se non 
   uguale(proponiVoce({ fornitore: "Fioreria", descrizione: "fiori", righe: [] }, { contiAttivi: new Set(["U08-01-01"]) }).voce, "", "non propone voci fuori uso");
 });
 
-test("teatro: proposta dalla scelta ricordata o dalle parole; altrimenti chiede", () => {
+test("di chi è la fattura: proposta dalla scelta ricordata o dalle parole; altrimenti chiede", () => {
   const luce = fattura(LUCE_RATE, "l");
-  uguale(propostaTeatro(luce, { ricordo: { quotaTeatro: 50 } }), { quota: 50, motivo: "Per Energia Esempio S.p.A. l'ultima volta il 50% era del teatro.", chiedi: false });
+  uguale(propostaTeatro(luce, { ricordo: { quotaTeatro: 50 } }), { quota: 50, motivo: "Per Energia Esempio S.p.A. l'ultima volta ha scelto: al 50%.", chiedi: false });
+  uguale(propostaTeatro(luce, { ricordo: { voce: "U08-01-01", quotaTeatro: 0 } }).quota, 0, "della parrocchia, ricordata");
+  uguale(propostaTeatro(luce, { ricordo: { quotaTeatro: 100 } }).chiedi, false);
   const p = propostaTeatro(luce, { parole: ["Sala della Comunita"] });
   uguale([p.quota, p.chiedi], [100, true]);
-  uguale(propostaTeatro(fattura(FIORI, "f"), { parole: ["Sala della Comunità"] }).chiedi, true);
-  uguale(propostaTeatro(fattura(FIORI, "f"), { parole: ["Sala della Comunità"] }).quota, 0);
+  const nulla = propostaTeatro(fattura(FIORI, "f"), { parole: ["Sala della Comunità"] });
+  uguale([nulla.quota, nulla.chiedi], [null, true]);
+  const vecchia = propostaTeatro(luce, { ricordo: { quotaTeatro: 30 } });
+  uguale([vecchia.quota, vecchia.chiedi], [null, true], "una vecchia percentuale diversa non si propone più: chiede");
+  uguale(propostaTeatro(luce, { ricordo: { voce: "U08-01-01" } }).chiedi, true, "fornitore ricordato solo per la voce: chiede");
 });

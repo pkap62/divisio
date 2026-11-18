@@ -60,18 +60,20 @@ export function proponiVoce(f, { ricordo, pagate = [], contiAttivi }) {
   return { voce: "", motivo: voci.length > 1 ? "La fattura potrebbe riguardare più voci: scelga lei quella giusta." : "Divisio non sa quale voce usare: la scelga lei dall'elenco.", livello: "nessuno" };
 }
 
+const NOMI_GESTIONE = { 0: "della parrocchia", 50: "al 50%", 100: "del teatro o di altra gestione" };
+
 /**
- * Parte del teatro (solo se la funzione teatro è accesa).
+ * Di chi è la fattura (solo se la divisione delle fatture è accesa): 0 parrocchia, 50 al 50%, 100 teatro o altra gestione.
  * ricordo: {quotaTeatro} salvato per il fornitore; parole: frasi che indicano il teatro (scritte nelle Impostazioni).
- * Restituisce {quota, motivo, chiedi}: chiedi = true quando Divisio non è sicuro e deve chiedere.
+ * Restituisce {quota, motivo, chiedi}: chiedi = true quando Divisio non è sicuro e l'utente deve scegliere.
+ * quota = null quando non c'è nessuna proposta.
  */
 export function propostaTeatro(f, { ricordo, parole = [] }) {
-  if (ricordo && ricordo.quotaTeatro !== undefined && ricordo.quotaTeatro !== null) {
-    const q = Number(ricordo.quotaTeatro) || 0;
-    return { quota: q, motivo: q ? `Per ${nome(f)} l'ultima volta il ${q}% era del teatro.` : `Per ${nome(f)} l'ultima volta era tutta della parrocchia.`, chiedi: false };
-  }
+  const q = ricordo?.quotaTeatro;
+  if (q === 0 || q === 50 || q === 100) return { quota: q, motivo: `Per ${nome(f)} l'ultima volta ha scelto: ${NOMI_GESTIONE[q]}.`, chiedi: false };
   const testo = norm(`${f.intestatario} ${f.descrizione} ${(f.righe ?? []).join(" ")}`);
   const trovata = parole.map((p) => String(p).trim()).filter(Boolean).find((p) => testo.includes(norm(p)));
-  if (trovata) return { quota: 100, motivo: `La fattura contiene «${trovata}»: sembra del teatro. Lo confermi.`, chiedi: true };
-  return { quota: 0, motivo: "È della parrocchia o del teatro? Divisio non lo sa: lo indichi lei.", chiedi: true };
+  if (trovata) return { quota: 100, motivo: `La fattura contiene «${trovata}»: sembra del teatro o di un'altra gestione. Lo confermi.`, chiedi: true };
+  const prima = typeof q === "number" && q > 0 ? ` (l'ultima volta per ${nome(f)} era stata indicata una parte del ${q}%)` : "";
+  return { quota: null, motivo: `È della parrocchia, del teatro / di un'altra gestione o al 50%? Divisio non lo sa: lo scelga lei${prima}.`, chiedi: true };
 }

@@ -7,6 +7,13 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.8 – Nuovo logo; fatture del teatro o di altre gestioni**
+- Nuovo logo (icona dell'app, del browser e della Guida).
+- Funzione facoltativa, **spenta per tutti all'inizio** (Impostazioni → «Fatture del teatro o di altre gestioni»). Se accesa, per ogni fattura si sceglie fra tre possibilità: **della parrocchia** (entra in contabilità per intero), **del teatro o di altra gestione** (non entra in contabilità e resta da parte, nell'elenco «Teatro e altre gestioni»), **al 50%** (il totale con l'IVA si divide a metà e in contabilità entra una metà).
+- La scelta si fa quando si caricano le fatture e si ricontrolla quando si segnano pagate; Divisio la ricorda per ogni fornitore e la propone la volta dopo, ma va sempre confermata (riepilogo prima di aggiungere) e si può cambiare nei «Dettagli» della fattura.
+- Anche nella pagina Banca: al 50% si registra metà dell'uscita, quelle di altra gestione non si registrano (il riepilogo indica di quanto il saldo di Divisio differisce da quello della banca).
+- Prima di questa versione la parte del teatro andava sul conto «Gestione teatro» (P02-05-04): i pagamenti già registrati così restano com'erano.
+
 **0.7.2** – Scadenzario: tornati i colori di prima (fatture scadute in rosso, entro 7 giorni in arancione).
 
 **0.7 – Estratti conto della banca**

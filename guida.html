@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Divisio – Guida</title>
+<link rel="icon" href="icone/icona-32.png" type="image/png" sizes="32x32">
 <style>
   :root { --blu: #1f4e79; --blu-chiaro: #e7eef6; --oro: #a8761f; --testo: #1f2933; --tenue: #56616b; --linea: #e2ddd2;
           --verde: #2b7448; --verde-chiaro: #e6f4ec; --arancio: #7d4b00; --arancio-chiaro: #fff3dc; }
@@ -13,6 +14,7 @@
   header { border-bottom: 3px solid var(--blu); padding-bottom: 14px; margin-bottom: 24px; }
   .marchio { display: inline-flex; align-items: flex-end; font-family: "Avenir Next", Avenir, "Segoe UI", Arial, sans-serif; font-weight: 800;
              font-size: 44px; line-height: 1; letter-spacing: -.5px; color: var(--blu); }
+  header .logo { width: 64px; height: 64px; vertical-align: bottom; margin-right: 10px; }
   .marchio svg { height: .8em; width: auto; margin-left: .03em; }
   header p { margin: 6px 0 0; color: var(--tenue); }
   header p.autore { margin-top: 2px; font-size: 14px; font-style: italic; }
@@ -44,12 +46,13 @@
 <body>
 <div class="foglio">
 <header>
+  <img class="logo" src="icone/icona-192.png" alt="" width="64" height="64">
   <div class="marchio" aria-label="Divisio">Divisi<svg viewBox="0 0 66 80" aria-hidden="true">
     <ellipse cx="33" cy="41" rx="21" ry="30" transform="rotate(14 33 41)" fill="none" stroke="currentColor" stroke-width="11"/>
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.7.2</span></p>
+  <p class="versione">Versione <span id="versione">0.8.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>

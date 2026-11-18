@@ -3,7 +3,7 @@
 
 import { leggiFatturaPA, xmlDaP7m, testoDaByte, trovaDoppione, stessaFattura, chiaveFornitore, MODALITA, nomeModalita, modalitaInContanti, TIPI_DOCUMENTO } from "../dominio/fatture.js";
 import { leggiFatturaDaTesto } from "../dominio/fatturePDF.js";
-import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, CONTO_TEATRO } from "../dominio/scadenzario.js";
+import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, GESTIONI, gestioneValida, nomeGestione } from "../dominio/scadenzario.js";
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
@@ -16,7 +16,8 @@ let pag = null;      // pagamento in compilazione
 let filtro = locale.leggi("fatture-filtro", "dapagare");
 
 /* ---------- impostazioni che servono qui ---------- */
-export const teatro = (arch) => ({ attivo: false, conto: CONTO_TEATRO, parole: [], ...arch.impostazione("teatro", {}) });
+// Divisione delle fatture parrocchia / 50% / teatro o altra gestione: SPENTA per tutti finché non la si accende nelle Impostazioni.
+export const teatro = (arch) => ({ attivo: false, parole: [], ...arch.impostazione("teatro", {}) });
 const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const ricordo = (arch, f) => arch.impostazione(chiaveFornitore(f));
 const parrocchia = (arch) => arch.impostazione("parrocchia", {});
@@ -25,7 +26,20 @@ const parrocchia = (arch) => arch.impostazione("parrocchia", {});
 export function problemi(arch) {
   return coerenza(arch.fatture(), (id) => arch.movimento(id), arch.movimenti().filter((m) => m.fattura));
 }
-export const elencoScadenze = (arch) => scadenze(arch.fatture(), oggiISO());
+/** Fattura del teatro o di altra gestione, scelta quando è stata caricata: resta fuori dallo scadenzario e dalla contabilità. */
+export const diAltraGestione = (arch, f) => teatro(arch).attivo && f.quotaTeatro === 100 && f.rate.every((r) => r.stato !== PAGATA);
+/** Fatture che riguardano la contabilità della parrocchia (quelle di altre gestioni no). */
+export const fattureDellaParrocchia = (arch) => arch.fatture().filter((f) => !diAltraGestione(arch, f));
+export const elencoScadenze = (arch) => scadenze(fattureDellaParrocchia(arch), oggiISO());
+
+/** Etichetta piccola con la scelta parrocchia / 50% / altra gestione (niente per "della parrocchia"). */
+const pillaGestione = (q) => (q === 50 ? ` <span class="pill teatro-pill">al 50%</span>` : q === 100 ? ` <span class="pill teatro-pill">altra gestione</span>`
+  : q > 0 ? ` <span class="pill teatro-pill">teatro ${q}%</span>` : "");
+
+/** Pulsanti delle tre scelte. attributi: testo da aggiungere a ogni pulsante (data-azione, ecc.). */
+const pulsantiGestione = (scelta, attributi, piccoli = false) => `<div class="scelta ${piccoli ? "piccola" : ""}">${GESTIONI.map((g) =>
+  `<button type="button" class="${scelta === g.quota ? "on sposta" : ""}" ${attributi} data-q="${g.quota}" title="${esc(g.spiega)}">${esc(g.nome)}</button>`).join("")}</div>`;
+const spiegaGestione = (q) => (gestioneValida(q) ? `<p class="hint">${esc(nomeGestione(q))}: ${esc(GESTIONI.find((g) => g.quota === q).spiega)}.</p>` : "");
 
 /* ---------- lettura dei file ---------- */
 const estensione = (nome) => (/\.(xml|p7m|pdf)$/i.exec(nome)?.[1] ?? "").toLowerCase();
@@ -57,6 +71,14 @@ async function leggiFile(file, arch) {
   }
 }
 
+/** Proposta "di chi è" per una fattura letta (solo con la divisione accesa): dalla scelta ricordata o dalle parole. */
+function proponiGestione(v, arch) {
+  const t = teatro(arch);
+  if (!t.attivo || !v.dati || v.errore) return v;
+  const pt = propostaTeatro(v.dati, { ricordo: ricordo(arch, v.dati), parole: t.parole });
+  return { ...v, quota: pt.quota, quotaScelta: !pt.chiedi, quotaMotivo: pt.motivo, quotaRicordata: !pt.chiedi };
+}
+
 /** Ricontrolla i doppioni (con lo scadenzario e tra i file appena scelti). */
 function segnaDoppioni(arch) {
   const gia = arch.fatture();
@@ -77,7 +99,7 @@ async function carica(files, ctx) {
   ctx.aggiorna();
   for (const file of lista) {
     const voci = await leggiFile(file, ctx.arch);
-    carico.voci.push(...voci.map((v) => ({ ...v, id: Math.random().toString(36).slice(2) })));
+    carico.voci.push(...voci.map((v) => proponiGestione({ ...v, id: Math.random().toString(36).slice(2) }, ctx.arch)));
     carico.inLettura--;
     segnaDoppioni(ctx.arch);
     ctx.aggiorna();
@@ -91,8 +113,13 @@ const opzioniModalita = (scelta) => `<option value="">— non indicata —</opti
 
 export function vista(ctx) {
   const { arch } = ctx;
-  const el = elencoScadenze(arch);
+  const tutte = scadenze(arch.fatture(), oggiISO());
+  const altre = tutte.filter((x) => diAltraGestione(arch, x.fattura));
+  const el = tutte.filter((x) => !diAltraGestione(arch, x.fattura));
   const r = riepilogo(el);
+  if (filtro === "altre" && !altre.length) filtro = "dapagare";
+  const filtri = [["dapagare", "Da pagare"], ["pagate", "Pagate"], ["tutte", "Tutte"], ...(altre.length ? [["altre", `Teatro e altre gestioni (${altre.length})`]] : [])];
+  const mostrate = filtro === "altre" ? altre : filtro === "tutte" ? tutte : el.filter((x) => (filtro === "pagate") === (x.rata.stato === PAGATA));
   const pr = problemi(arch);
   return `
   <h2>Fatture e scadenze</h2>
@@ -109,9 +136,11 @@ export function vista(ctx) {
       <div class="saldo"><div class="etichetta">Entro 7 giorni</div><div class="valore">${eur(r.totalePresto)}</div><div class="hint">${r.presto === 1 ? "1 fattura" : `${r.presto} fatture`}</div></div>
     </div>
     <div class="scelta filtro-fatture">
-      ${[["dapagare", "Da pagare"], ["pagate", "Pagate"], ["tutte", "Tutte"]].map(([k, n]) => `<button class="${filtro === k ? "on sposta" : ""}" data-azione="filtro" data-v="${k}">${n}</button>`).join("")}
+      ${filtri.map(([k, n]) => `<button class="${filtro === k ? "on sposta" : ""}" data-azione="filtro" data-v="${k}">${n}</button>`).join("")}
     </div>
-    ${tabellaScadenze(el.filter((x) => filtro === "tutte" || (filtro === "pagate") === (x.rata.stato === PAGATA)), ctx)}
+    ${filtro === "altre" ? `<p class="hint">Fatture del teatro o di altre gestioni: non sono da pagare con i soldi della parrocchia e non entrano in contabilità.
+      Se una è finita qui per sbaglio, apra «Dettagli» e scelga «Della parrocchia» o «Al 50%».</p>` : ""}
+    ${tabellaScadenze(mostrate, ctx)}
   </div>
   ${vistaFornitori(arch)}`;
 }
@@ -144,17 +173,27 @@ const CAMPI = [["fornitore", "Fornitore", "text"], ["piva", "Partita IVA", "text
 function vistaCarico(ctx) {
   const valide = carico.voci.filter((v) => v.dati && !v.errore && !v.doppione && !v.tolta);
   const daControllare = valide.filter((v) => v.dati.incerti?.length && !v.controllato);
+  const divisione = teatro(ctx.arch).attivo;
+  const senzaScelta = divisione ? valide.filter((v) => !v.quotaScelta) : [];
+  const conta = (q) => valide.filter((v) => v.quotaScelta && v.quota === q).length;
+  const fatture = (n) => (n === 1 ? "1 fattura" : `${n} fatture`);
+  const riassunto = divisione && valide.length && !senzaScelta.length
+    ? `<div class="nota">Riepilogo delle sue scelte: <b>${fatture(conta(0))}</b> della parrocchia (entrano in contabilità per intero),
+        <b>${fatture(conta(100))}</b> del teatro o di altra gestione (non entrano in contabilità), <b>${fatture(conta(50))}</b> al 50% (entra metà).
+        Se qualcosa non va, la cambi sopra prima di aggiungere.</div>` : "";
   return `<div class="card evidenza" id="carico"><h3>Fatture lette: controlli e aggiunga</h3>
     ${carico.inLettura ? `<div class="nota">Lettura in corso… (${carico.inLettura} ${carico.inLettura === 1 ? "file" : "file"} ancora da leggere)</div>` : ""}
-    ${carico.voci.filter((v) => !v.tolta).map((v) => vistaVoce(v)).join("")}
+    ${carico.voci.filter((v) => !v.tolta).map((v) => vistaVoce(v, divisione)).join("")}
+    ${riassunto}
     <div class="riga-bottoni">
-      <button class="btn" data-azione="aggiungi" ${!valide.length || daControllare.length || carico.inLettura ? "disabled" : ""}>Aggiungi ${valide.length === 1 ? "1 fattura" : `${valide.length} fatture`} allo scadenzario</button>
+      <button class="btn" data-azione="aggiungi" ${!valide.length || daControllare.length || senzaScelta.length || carico.inLettura ? "disabled" : ""}>${divisione ? "Confermo le scelte: aggiungi" : "Aggiungi"} ${fatture(valide.length)} allo scadenzario</button>
       <button class="btn sec" data-azione="annullaCarico">Annulla</button></div>
-    ${daControllare.length ? `<p class="hint">Prima di aggiungere, controlli i campi in arancione e spunti "Ho controllato" (${daControllare.length === 1 ? "1 fattura" : `${daControllare.length} fatture`}).</p>` : ""}
+    ${daControllare.length ? `<p class="hint">Prima di aggiungere, controlli i campi in arancione e spunti "Ho controllato" (${fatture(daControllare.length)}).</p>` : ""}
+    ${senzaScelta.length ? `<p class="hint">Prima di aggiungere, scelga di chi è ogni fattura: della parrocchia, del teatro / altra gestione o al 50% (${senzaScelta.length === 1 ? "manca per 1 fattura" : `mancano ${senzaScelta.length} fatture`}).</p>` : ""}
   </div>`;
 }
 
-function vistaVoce(v) {
+function vistaVoce(v, divisione) {
   const titolo = `<div class="riga"><b class="spazio">${esc(v.nomeFile)}</b>
     ${v.errore ? `<span class="pill ko-pill">non letta</span>` : v.doppione ? `<span class="pill presto-pill">doppione</span>` : v.tipo === "pdf" ? `<span class="pill">PDF</span>` : `<span class="pill ok-pill">XML</span>`}
     <button class="btn sec piccolo" data-azione="togliVoce" data-v="${v.id}">Non caricare</button></div>`;
@@ -180,7 +219,11 @@ function vistaVoce(v) {
   const pdf = v.urlPDF ? `<details ${inc.size ? "open" : ""} data-chiave="pdf-${v.id}"><summary>Guarda il PDF</summary>
       ${(v.immagini ?? []).map((src, i) => `<img class="pdf-vista" src="${src}" alt="Pagina ${i + 1} del PDF ${esc(v.nomeFile)}">`).join("")}
       <p class="hint"><a href="${v.urlPDF}" target="_blank" rel="noopener">Apri il PDF intero in un'altra scheda</a></p></details>` : "";
-  return `<div class="voce-carico">${titolo}${tipoDoc}${avvisi}${campi}${spunta}${pdf}</div>`;
+  const gestione = divisione ? `<div class="gestione-voce"><label class="campo">Di chi è questa fattura?</label>
+      <div class="${v.quotaScelta ? "nota" : "avviso"} piccola">${esc(v.quotaMotivo || "")}${v.quotaRicordata ? " La confermi o la cambi." : ""}</div>
+      ${pulsantiGestione(v.quotaScelta ? v.quota : null, `data-azione="voceGestione" data-v="${v.id}"`)}
+      ${v.quotaScelta ? spiegaGestione(v.quota) : ""}</div>` : "";
+  return `<div class="voce-carico">${titolo}${tipoDoc}${avvisi}${campi}${gestione}${spunta}${pdf}</div>`;
 }
 
 function tabellaScadenze(el, ctx) {
@@ -190,17 +233,18 @@ function tabellaScadenze(el, ctx) {
     <tr><th>Scadenza</th><th>Fornitore e fattura</th><th class="n">Importo</th><th>Stato</th></tr>
     ${el.map(({ fattura: f, rata, giorni, urgenza }) => {
       const pagata = rata.stato === PAGATA;
-      const stato = pagata ? `<span class="pill ok-pill">${f.notaCredito ? "rimborsata" : "pagata"} il ${dataIt(rata.pagataIl)}</span>${rata.fuori ? ` <span class="pill">fuori contabilità</span>` : ""}`
+      const altra = diAltraGestione(ctx.arch, f);
+      const stato = altra ? `<span class="pill">fuori contabilità</span>` : pagata ? `<span class="pill ok-pill">${f.notaCredito ? "rimborsata" : "pagata"} il ${dataIt(rata.pagataIl)}</span>${rata.fuori ? ` <span class="pill">fuori contabilità</span>` : ""}`
         : urgenza === "scaduta" ? `<span class="pill ko-pill">scaduta ${giorniTesto(giorni)}</span>`
         : urgenza === "presto" ? `<span class="pill presto-pill">scade ${giorniTesto(giorni)}</span>`
         : urgenza === "senza-data" ? `<span class="pill presto-pill">scadenza da indicare</span>` : `<span class="pill">da pagare</span>`;
-      const quota = pagata ? rata.quotaTeatro : ricordo(ctx.arch, f)?.quotaTeatro;
-      return `<tr class="${urgenza === "scaduta" ? "riga-scaduta" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
-        <td><b>${esc(f.fornitore || "Fornitore?")}</b>${t.attivo && quota ? ` <span class="pill teatro-pill">teatro ${quota}%</span>` : ""}<br>
+      const quota = pagata ? rata.quotaTeatro : f.quotaTeatro;
+      return `<tr class="${urgenza === "scaduta" && !altra ? "riga-scaduta" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
+        <td><b>${esc(f.fornitore || "Fornitore?")}</b>${t.attivo ? pillaGestione(quota) : ""}<br>
           <span class="hint">${f.notaCredito ? "Nota di credito" : TIPI_DOCUMENTO[f.tipoDoc] && f.tipoDoc !== "TD01" ? TIPI_DOCUMENTO[f.tipoDoc] : "Fattura"} n. ${esc(f.numero)} del ${dataIt(f.data)}${f.rate.length > 1 ? ` · rata ${rata.n} di ${f.rate.length}` : ""}</span>
           ${dettagli(f, rata, ctx)}</td>
         <td class="n ${f.notaCredito ? "pos" : ""}">${f.notaCredito ? "−" : ""}${eur(rata.importo)}</td>
-        <td>${stato}${pagata ? "" : `<div><button class="btn piccolo" data-azione="apriPagamento" data-id="${esc(f.id)}" data-n="${rata.n}">${f.notaCredito ? "Segna come rimborsata" : "Segna come pagata"}</button></div>`}</td></tr>`;
+        <td>${stato}${pagata || altra ? "" : `<div><button class="btn piccolo" data-azione="apriPagamento" data-id="${esc(f.id)}" data-n="${rata.n}">${f.notaCredito ? "Segna come rimborsata" : "Segna come pagata"}</button></div>`}</td></tr>`;
     }).join("")}</table></div>`;
 }
 
@@ -219,6 +263,9 @@ function dettagli(f, rata, ctx) {
          <div class="riga-bottoni stretta"><button class="btn pericolo piccolo" data-azione="tornaDaPagare" data-id="${esc(f.id)}" data-n="${rata.n}">Torna da pagare</button></div>`
       : `<div class="riga stretta"><label class="campo" for="sc-${esc(f.id)}-${rata.n}">Scadenza</label>
            <input id="sc-${esc(f.id)}-${rata.n}" type="date" value="${esc(rata.scadenza)}" style="max-width:200px" data-cambia="scadenza" data-id="${esc(f.id)}" data-n="${rata.n}"></div>
+         ${nessunaPagata && teatro(ctx.arch).attivo ? `<label class="campo">Di chi è questa fattura?</label>
+           ${pulsantiGestione(gestioneValida(f.quotaTeatro) ? f.quotaTeatro : null, `data-azione="cambiaGestione" data-id="${esc(f.id)}"`, true)}
+           ${gestioneValida(f.quotaTeatro) ? spiegaGestione(f.quotaTeatro) : `<p class="hint">Non ancora scelto: Divisio lo chiederà quando la segnerà pagata.</p>`}` : ""}
          ${nessunaPagata ? `<div class="riga-bottoni stretta"><button class="btn pericolo piccolo" data-azione="togliFattura" data-id="${esc(f.id)}">Togli dallo scadenzario</button></div>` : ""}`}
   </details>`;
 }
@@ -234,10 +281,12 @@ function apriPagamento(ctx, id, n) {
   const pagate = ctx.arch.fatture().filter((x) => x.id !== f.id && chiaveFornitore(x) === chiaveFornitore(f) && x.rate.some((r) => r.stato === PAGATA && r.voce));
   const proposta = proponiVoce(f, { ricordo: ricordo(ctx.arch, f), pagate, contiAttivi: new Set(ctx.arch.contiAttivi().map((c) => c.codice)) });
   const t = teatro(ctx.arch);
-  const pt = t.attivo ? propostaTeatro(f, { ricordo: ricordo(ctx.arch, f), parole: t.parole }) : null;
+  const pt = !t.attivo ? null : gestioneValida(f.quotaTeatro)
+    ? { quota: f.quotaTeatro, motivo: `Scelta quando ha caricato la fattura: ${nomeGestione(f.quotaTeatro).toLowerCase()}. La confermi o la cambi.`, chiedi: false }
+    : propostaTeatro(f, { ricordo: ricordo(ctx.arch, f), parole: t.parole });
   const oggi = oggiISO();
   pag = { id, n, data: oggi, modalita: mod, cassa, voce: proposta.voce, cerca: "", proposta, pt,
-    quota: pt ? pt.quota : 0, quotaScelta: pt ? !pt.chiedi : true, fuori: false, ricorda: true, errore: "" };
+    quota: pt ? pt.quota ?? 0 : 0, quotaScelta: pt ? !pt.chiedi : true, ricorda: true, errore: "" };
 }
 
 const quotaPag = () => (Number(pag.quota) || 0);
@@ -245,7 +294,7 @@ const quotaPag = () => (Number(pag.quota) || 0);
 function candidatoPagamento(ctx) {
   const f = ctx.arch.fattura(pag.id);
   const t = teatro(ctx.arch);
-  return { f, pagamento: { data: pag.data, modalita: pag.modalita, cassa: pag.cassa, voce: pag.voce, quotaTeatro: t.attivo ? quotaPag() : 0, contoTeatro: t.conto || CONTO_TEATRO, fuori: t.attivo && quotaPag() === 100 && pag.fuori } };
+  return { f, pagamento: { data: pag.data, modalita: pag.modalita, cassa: pag.cassa, voce: pag.voce, quotaTeatro: t.attivo ? quotaPag() : 0, fuori: t.attivo && quotaPag() === 100 } };
 }
 
 function vistaPagamento(ctx) {
@@ -254,10 +303,10 @@ function vistaPagamento(ctx) {
   const rata = f.rate.find((r) => r.n === pag.n);
   const t = teatro(ctx.arch);
   const nc = f.notaCredito;
-  const { teatro: parteTeatro, parrocchia: parteParrocchia } = dividi(rata.importo, pagamento.quotaTeatro);
+  const { parrocchia: parteParrocchia } = dividi(rata.importo, pagamento.quotaTeatro);
   const serveVoce = !pagamento.fuori && parteParrocchia > 0;
   let anteprima = "";
-  if (pagamento.fuori) anteprima = `<div class="nota">Pagata dal conto del teatro: <b>in contabilità non verrà registrato nulla</b>.</div>`;
+  if (pagamento.fuori && pag.quotaScelta) anteprima = `<div class="nota">È del teatro o di un'altra gestione: la fattura sarà segnata pagata, ma <b>in contabilità non verrà registrato nulla</b>.</div>`;
   else if (pag.cassa && (!serveVoce || pag.voce) && pag.quotaScelta) {
     const m = { data: pag.data, descr: descrizione(f, rata), tipo: nc ? "entrata" : "uscita", righe: righePagamento(f, rata, pagamento) };
     const err = verificaMovimento(m, { conti: ctx.arch.conti });
@@ -274,15 +323,11 @@ function vistaPagamento(ctx) {
       <div><label class="campo" for="p-data">${nc ? "Data del rimborso" : "Data del pagamento"}</label><input id="p-data" type="date" value="${esc(pag.data)}" data-cambia="pagData"></div>
       <div><label class="campo" for="p-mod">Come è stata pagata</label><select id="p-mod" data-cambia="pagModalita">${opzioniModalita(pag.modalita)}</select></div>
     </div>
-    ${t.attivo ? `<label class="campo">Di chi è questa spesa?</label>
+    ${t.attivo ? `<label class="campo">Di chi è questa fattura?</label>
       ${pag.pt ? `<div class="${pag.pt.chiedi && !pag.quotaScelta ? "avviso" : "nota"}">${esc(pag.pt.motivo)}</div>` : ""}
-      <div class="scelta">${[[0, "Della parrocchia"], [50, "Metà e metà"], [100, "Del teatro"]].map(([q, nome]) =>
-        `<button type="button" class="${pag.quotaScelta && quotaPag() === q && !pag.altraQuota ? "on sposta" : ""}" data-azione="pagQuota" data-v="${q}">${nome}</button>`).join("")}
-        <button type="button" class="${pag.quotaScelta && pag.altraQuota ? "on sposta" : ""}" data-azione="pagQuota" data-v="altra">Altra percentuale</button></div>
-      ${pag.altraQuota ? `<div class="riga"><label for="p-quota">Parte del teatro (%)</label><input id="p-quota" type="text" inputmode="numeric" style="max-width:120px" value="${esc(pag.quota)}" data-cambia="pagQuotaAltra"></div>` : ""}
-      ${pag.quotaScelta && pagamento.quotaTeatro > 0 && pagamento.quotaTeatro < 100 ? `<p class="hint">Parrocchia ${eur(parteParrocchia)} · teatro ${eur(parteTeatro)} (su «${esc(ctx.arch.nomeConto(t.conto))}»)</p>` : ""}
-      ${pag.quotaScelta && quotaPag() === 100 ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="pagFuori" ${pag.fuori ? "checked" : ""}>
-        Pagata dal conto del teatro, non da una cassa o banca della parrocchia (non va registrata)</label>` : ""}` : ""}
+      ${pulsantiGestione(pag.quotaScelta ? quotaPag() : null, `data-azione="pagQuota"`)}
+      ${pag.quotaScelta && quotaPag() === 50 ? `<p class="hint">Al 50%: in contabilità entra <b>${eur(parteParrocchia)}</b>, metà del totale di ${eur(rata.importo)} (IVA compresa). L'altra metà non viene registrata.</p>`
+        : pag.quotaScelta ? spiegaGestione(quotaPag()) : ""}` : ""}
     ${pagamento.fuori ? "" : `<label class="campo">${nc ? "Dove sono arrivati i soldi" : "Da dove sono usciti i soldi"}</label>
       <div class="scelta">${casse(ctx.arch).map((c) => `<button type="button" class="${c.codice === pag.cassa ? "on sposta" : ""}" data-azione="pagCassa" data-v="${c.codice}">${esc(c.nome)}</button>`).join("")}</div>`}
     ${serveVoce ? `<label class="campo" for="p-voce">Voce di spesa</label>
@@ -294,7 +339,7 @@ function vistaPagamento(ctx) {
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="pagRicorda" ${pag.ricorda ? "checked" : ""}>
       Ricorda questa scelta per ${esc(f.fornitore || "questo fornitore")}: la prossima volta Divisio la proporrà già</label>
     ${pag.errore ? `<div class="errore">${esc(pag.errore)}</div>` : ""}
-    <div class="riga-bottoni"><button class="btn" data-azione="confermaPagamento" ${pronto ? "" : "disabled"}>${pagamento.fuori ? "Conferma: segna pagata" : nc ? "Conferma: segna rimborsata e registra" : "Conferma: segna pagata e registra"}</button>
+    <div class="riga-bottoni"><button class="btn" data-azione="confermaPagamento" ${pronto ? "" : "disabled"}>${pagamento.fuori ? "Conferma: segna pagata (senza registrare)" : nc ? "Conferma: segna rimborsata e registra" : "Conferma: segna pagata e registra"}</button>
       <button class="btn sec" data-azione="annullaPagamento">Annulla</button></div>
   </div>`;
 }
@@ -304,9 +349,9 @@ function vistaFornitori(arch) {
   if (!ricordati.length) return "";
   const t = teatro(arch);
   return `<div class="card"><details data-chiave="fornitori"><summary>Fornitori ricordati (${ricordati.length})</summary>
-    <p class="hint">Per questi fornitori Divisio propone già la voce${t.attivo ? " e la parte del teatro" : ""} scelta l'ultima volta.</p>
+    <p class="hint">Per questi fornitori Divisio propone già la voce${t.attivo ? " e la scelta parrocchia / 50% / altra gestione" : ""} dell'ultima volta.</p>
     <table>${ricordati.sort((a, b) => String(a.valore.nome).localeCompare(String(b.valore.nome))).map((i) => `<tr><td>${esc(i.valore.nome)}</td>
-      <td>${i.valore.voce ? `${esc(arch.nomeConto(i.valore.voce))} <span class="codice">${i.valore.voce}</span>` : "—"}${t.attivo && i.valore.quotaTeatro ? ` <span class="pill teatro-pill">teatro ${i.valore.quotaTeatro}%</span>` : ""}</td>
+      <td>${i.valore.voce ? `${esc(arch.nomeConto(i.valore.voce))} <span class="codice">${i.valore.voce}</span>` : t.attivo && gestioneValida(i.valore.quotaTeatro) ? esc(nomeGestione(i.valore.quotaTeatro)) : "—"}${t.attivo ? pillaGestione(i.valore.quotaTeatro) : ""}</td>
       <td class="n"><button class="btn sec piccolo" data-azione="dimentica" data-chiave="${esc(i.chiave)}">Dimentica</button></td></tr>`).join("")}</table>
   </details></div>`;
 }
@@ -351,8 +396,6 @@ export const cambia = {
   pagData(el, ev, ctx) { pag.data = el.value; ctx.aggiorna(); },
   pagModalita(el, ev, ctx) { pag.modalita = el.value; if (modalitaInContanti(el.value) && ctx.arch.conti.has("A02-01-01")) pag.cassa = "A02-01-01"; ctx.aggiorna(); },
   pagVoce(el, ev, ctx) { pag.voce = el.value; ctx.aggiorna(); },
-  pagQuotaAltra(el, ev, ctx) { const q = Math.round(Number(String(el.value).replace(",", "."))); pag.quota = q >= 0 && q <= 100 ? q : 0; ctx.aggiorna(); },
-  pagFuori(el, ev, ctx) { pag.fuori = el.checked; ctx.aggiorna(); },
   pagRicorda(el) { pag.ricorda = el.checked; },
 };
 
@@ -369,24 +412,44 @@ export const azioni = {
       if (![d.imponibile, d.iva, d.totale].every((x) => Number.isInteger(x)) || d.totale <= 0) { toast(`${nome}: controlli gli importi`); return; }
       if (d.rate.some((r) => !(r.importo > 0))) { toast(`${nome}: l'importo da pagare deve essere maggiore di zero`); return; }
     }
+    const divisione = teatro(ctx.arch).attivo;
+    if (divisione && valide.some((v) => !v.quotaScelta)) { toast("Scelga di chi è ogni fattura"); return; }
     el.disabled = true;
-    const fatture = valide.map((v) => nuovaFattura({ ...v.dati, avvisi: (v.dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile }));
-    await ctx.arch.salvaInsieme({ fatture });
+    const fatture = valide.map((v) => {
+      const f = nuovaFattura({ ...v.dati, avvisi: (v.dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile });
+      return divisione ? { ...f, quotaTeatro: v.quota } : f;
+    });
+    // la scelta parrocchia / 50% / altra gestione viene ricordata per ogni fornitore
+    const ricordi = new Map();
+    if (divisione) for (const f of fatture) {
+      const prima = ricordo(ctx.arch, f);
+      ricordi.set(chiaveFornitore(f), { ...prima, nome: f.fornitore, voce: prima?.voce || "", quotaTeatro: f.quotaTeatro });
+    }
+    await ctx.arch.salvaInsieme({ fatture, impostazioni: [...ricordi].map(([chiave, valore]) => ({ chiave, valore })) });
     for (const v of carico.voci) if (v.urlPDF) URL.revokeObjectURL(v.urlPDF);
     const saltate = carico.voci.filter((v) => v.doppione && !v.tolta).length;
     carico = null;
     filtro = "dapagare";
-    toast(`${fatture.length === 1 ? "1 fattura aggiunta" : `${fatture.length} fatture aggiunte`} allo scadenzario ✓${saltate ? ` (${saltate} ${saltate === 1 ? "doppione saltato" : "doppioni saltati"})` : ""}`);
+    const altre = fatture.filter((f) => divisione && f.quotaTeatro === 100).length;
+    toast(`${fatture.length === 1 ? "1 fattura aggiunta" : `${fatture.length} fatture aggiunte`} ✓${altre ? ` (${altre} del teatro o di altra gestione: fuori contabilità)` : ""}${saltate ? ` (${saltate} ${saltate === 1 ? "doppione saltato" : "doppioni saltati"})` : ""}`);
     ctx.aggiorna();
   },
   apriPagamento(el, ev, ctx) { apriPagamento(ctx, el.dataset.id, Number(el.dataset.n)); pag.scorri = true; ctx.aggiorna(); },
   annullaPagamento(el, ev, ctx) { pag = null; ctx.aggiorna(); },
   pagCassa(el, ev, ctx) { pag.cassa = el.dataset.v; ctx.aggiorna(); },
-  pagQuota(el, ev, ctx) {
-    pag.quotaScelta = true;
-    if (el.dataset.v === "altra") { pag.altraQuota = true; if (![0, 50, 100].includes(quotaPag())) pag.quota = quotaPag(); else pag.quota = 30; }
-    else { pag.altraQuota = false; pag.quota = Number(el.dataset.v); }
-    if (quotaPag() !== 100) pag.fuori = false;
+  pagQuota(el, ev, ctx) { pag.quotaScelta = true; pag.quota = Number(el.dataset.q); ctx.aggiorna(); },
+  voceGestione(el, ev, ctx) {
+    const v = voce(el);
+    Object.assign(v, { quota: Number(el.dataset.q), quotaScelta: true, quotaRicordata: false, quotaMotivo: "Scelta da lei." });
+    ctx.aggiorna();
+  },
+  async cambiaGestione(el, ev, ctx) {
+    const f = ctx.arch.fattura(el.dataset.id);
+    if (!f) return;
+    const q = Number(el.dataset.q);
+    const prima = ricordo(ctx.arch, f);
+    await ctx.arch.salvaInsieme({ fatture: [{ ...f, quotaTeatro: q }], impostazioni: [{ chiave: chiaveFornitore(f), valore: { ...prima, nome: f.fornitore, voce: prima?.voce || "", quotaTeatro: q } }] });
+    toast(`${nomeGestione(q)} ✓${q === 100 ? " (non entra in contabilità)" : ""}`);
     ctx.aggiorna();
   },
   async confermaPagamento(el, ev, ctx) {
@@ -398,8 +461,9 @@ export const azioni = {
       if (err.length) { pag.errore = err[0]; ctx.aggiorna(); return; }
     }
     el.disabled = true;
-    const impostazioni = pag.ricorda ? [{ chiave: chiaveFornitore(f), valore: { nome: f.fornitore, voce: pagamento.voce || ricordo(ctx.arch, f)?.voce || "", ...(teatro(ctx.arch).attivo ? { quotaTeatro: pagamento.quotaTeatro } : {}) } }] : [];
-    await ctx.arch.salvaInsieme({ fatture: [esito.fattura], movimenti: esito.movimento ? [esito.movimento] : [], impostazioni });
+    const divisione = teatro(ctx.arch).attivo;
+    const impostazioni = pag.ricorda ? [{ chiave: chiaveFornitore(f), valore: { ...ricordo(ctx.arch, f), nome: f.fornitore, voce: pagamento.voce || ricordo(ctx.arch, f)?.voce || "", ...(divisione ? { quotaTeatro: pagamento.quotaTeatro } : {}) } }] : [];
+    await ctx.arch.salvaInsieme({ fatture: [divisione ? { ...esito.fattura, quotaTeatro: pagamento.quotaTeatro } : esito.fattura], movimenti: esito.movimento ? [esito.movimento] : [], impostazioni });
     const anno = pagamento.data.slice(0, 4);
     toast(esito.movimento ? `Pagata e registrata in contabilità ✓${anno !== String(ctx.anno) ? ` (nell'anno ${anno})` : ""}` : "Segnata come pagata ✓ (nessuna registrazione)");
     pag = null;

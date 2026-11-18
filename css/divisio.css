@@ -17,6 +17,7 @@ a { color: var(--blu); }
 /* testata e menu */
 .testata { background: var(--blu); color: #fff; padding: 12px 0; }
 .testata-riga { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.testata .logo { width: 44px; height: 44px; margin-right: -4px; flex: none; }
 .testata h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
 /* scritta "Divisio": lettere piene e arrotondate, "o" finale disegnata (ovale inclinato con barra di divisione dorata) */
 .testata h1.marchio { display: inline-flex; align-items: flex-end; font-family: "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -103,6 +104,8 @@ input.n { text-align: right; min-width: 110px; }
 .scelta button { flex: 1; min-width: 140px; border: 2px solid var(--linea); background: #fff; border-radius: 10px; padding: 12px; font: inherit; font-size: 18px; cursor: pointer; color: var(--testo); }
 .scelta button.on.entrata { border-color: var(--verde); background: var(--verde-chiaro); color: var(--verde); font-weight: 650; }
 .scelta button.on.uscita { border-color: var(--rosso); background: var(--rosso-chiaro); color: var(--rosso); font-weight: 650; }
+.scelta.piccola button { font-size: 15px; padding: 8px 10px; min-width: 120px; }
+.gestione-voce { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--linea); }
 .scelta button.on.sposta { border-color: var(--blu); background: var(--blu-chiaro); color: var(--blu); font-weight: 650; }
 .spunta { white-space: nowrap; font-size: 15px; color: var(--tenue); }
 
