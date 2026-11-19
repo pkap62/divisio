@@ -66,11 +66,13 @@ export function vistaCard() {
     return `<div class="card">${titolo}
       <p>Lei e i collaboratori potete registrare anche nello stesso momento: ogni computer scrive il proprio file nella cartella condivisa e legge quelli degli altri.</p>
       <ol class="passi">
-        <li>Su ogni computer installi <b>Google Drive per desktop</b> e acceda con l'<b>account Google della parrocchia</b>.</li>
-        <li>Nel Google Drive della parrocchia crei una cartella chiamata <b>Divisio</b> (basta farlo una volta).</li>
-        <li>Prema qui sotto <b>"Scegli la cartella condivisa"</b> e selezioni quella cartella.
-          Sul Mac la trova nel Finder alla voce "Google Drive"; su Windows nell'unità "Google Drive (G:)".</li>
-        <li>Ripeta il punto 3 su ogni computer. Ricordi di scrivere il nome di chi lo usa (più in basso in questa pagina).</li>
+        <li>Nel Google Drive della parrocchia crei una cartella chiamata <b>Divisio</b> (basta farlo una volta) e la condivida con ogni collaboratore.</li>
+        <li>Su ogni computer installi <b>Google Drive per desktop</b>: il parroco accede con l'<b>account della parrocchia</b>, un collaboratore con il <b>proprio account</b>.</li>
+        <li><b>Solo per i collaboratori</b>: in drive.google.com → <i>Condivisi con me</i> → clic destro su <b>Divisio</b> →
+          <i>Organizza</i> → <i>Aggiungi scorciatoia</i> → <i>Il mio Drive</i>. Senza questo passaggio la cartella non compare sul computer.</li>
+        <li>Prema qui sotto <b>"Scegli la cartella condivisa"</b> e selezioni la cartella Divisio:
+          sul Mac nel Finder alla voce "Google Drive" → "Il mio Drive"; su Windows nell'unità "Google Drive (G:)" → "Il mio Drive".</li>
+        <li>Ripeta il punto 4 su ogni computer. Ricordi di scrivere il nome di chi lo usa (più in basso in questa pagina).</li>
       </ol>
       <div class="nota">Da quel momento i dati della parrocchia saranno salvati anche in quella cartella del Google Drive della parrocchia:
         li può vedere chi ha accesso all'account. Divisio non li invia da nessun'altra parte.</div>
