@@ -1,6 +1,6 @@
 // Caricamento dei movimenti esportati da UNIO (file di esempio INVENTATO, stesso formato).
 import { test, uguale, vero, contiene } from "./mini.js";
-import { leggiEstrattoConto, aMovimenti, campiCSV, tipoDaRighe } from "../js/dominio/importaUNIO.js";
+import { leggiEstrattoConto, aMovimenti, campiCSV, tipoDaRighe, daDivisio, separaDoppioniDivisio, fatturaNelCommento } from "../js/dominio/importaUNIO.js";
 import { verificaMovimento } from "../js/dominio/scritture.js";
 import { calcolaRendiconto } from "../js/dominio/rendiconto.js";
 import { saldiCSV, leggiSaldiUNIO, confronta } from "../js/dominio/unio.js";
@@ -82,4 +82,65 @@ test("UNIO: il Rendiconto dei movimenti caricati coincide con quello calcolato d
   uguale(R.voci.get("P02-03"), 20000, "ritenuta da versare");
   // "UNIO" esporta i saldi: il confronto deve dare tutte le voci uguali
   vero(confronta(R, leggiSaldiUNIO(saldiCSV(R, { icsc: "0000000" }))).every((x) => x.uguale));
+});
+
+/* ---------- file "AMM_PRIMA_NOTA" (dati INVENTATI, stesse colonne dell'esportazione di UNIO) ---------- */
+const INTEST_PN = "Icsc;Azienda;Nome Azienda;Esercizio;Data registrazione;Numero registrazione;Data documento;Numero documento;Causale;Commento;Commento riga;Codice gruppo;Codice conto;Codice sottoconto;Descrizione;Dare;Avere";
+const pn = (n, data, causale, comm, g, c, s, nome, dare, avere, rigaComm = comm, es = "2026") =>
+  `0000000;A1;PARROCCHIA DI PROVA;${es};${data};${n};;;${causale};${q(comm)};${q(rigaComm)};${g};${c};${s};${nome};${dare};${avere}`;
+const PRIMA_NOTA = "\uFEFF" + [INTEST_PN,
+  pn(11, "30/11/2026", "Offerte ordinarie", "Candele novembre", "A02", "01", "01", "Cassa", "46,81", "0"),
+  pn(11, "30/11/2026", "Offerte ordinarie", "Candele novembre", "E01", "04", "02", "Offerte per lumi votivi", "0", "46,81"),
+  pn(12, "30/11/2026", "Offerte per Sacramenti", "Funerali novembre", "A02", "01", "01", "Cassa", "850", "0"),
+  pn(12, "30/11/2026", "Offerte per Sacramenti", "Funerali novembre", "E01", "03", "05", "Funerali", "0", "300", "Esequie A"),
+  pn(12, "30/11/2026", "Offerte per Sacramenti", "Funerali novembre", "E01", "03", "05", "Funerali", "0", "550", "Esequie B"),
+  pn(13, "04/11/2026", "Spese diverse", "", "U08", "02", "09", "Spese diverse", "48,5", "0", ""),
+  pn(13, "04/11/2026", "Spese diverse", "", "A02", "01", "01", "Cassa", "0", "48,5", ""),
+  pn(14, "16/11/2026", "MOVIMENTO DI PRIMA NOTA", "[E01-02-01] Collette domenicali – 4° trim. 2026 (3 mov.)", "A02", "01", "01", "Cassa", "350,62", "0"),
+  pn(14, "16/11/2026", "MOVIMENTO DI PRIMA NOTA", "[E01-02-01] Collette domenicali – 4° trim. 2026 (3 mov.)", "E01", "02", "01", "Collette domenicali", "0", "350,62"),
+  pn(15, "16/11/2026", "MOVIMENTO DI PRIMA NOTA", "[U08-01-01] Energia elettrica – 4° trim. 2026 (1 mov.)", "U08", "01", "01", "Energia elettrica", "90", "0"),
+  pn(15, "16/11/2026", "MOVIMENTO DI PRIMA NOTA", "[U08-01-01] Energia elettrica – 4° trim. 2026 (1 mov.)", "A02", "01", "02", "Banca Esempio", "0", "90"),
+  pn(1, "10/01/2025", "Offerte per Collette", "Colletta anno prima", "A02", "01", "01", "Cassa", "100", "0", "Colletta anno prima", "2025"),
+  pn(1, "10/01/2025", "Offerte per Collette", "Colletta anno prima", "E01", "02", "01", "Collette domenicali", "0", "100", "Colletta anno prima", "2025"),
+].join("\r\n") + "\r\n";
+
+test("UNIO: legge anche il file AMM_PRIMA_NOTA (Codice gruppo / conto / sottoconto, causale)", () => {
+  const l = leggiEstrattoConto(PRIMA_NOTA);
+  vero(l.ok, l.errore);
+  uguale(l.problemi, []);
+  uguale(l.anno, 2026);
+  uguale(l.registrazioni.length, 6);
+  const fun = l.registrazioni.find((x) => x.numero === "12" && !x.anno);
+  uguale(fun.righe, [{ conto: "A02-01-01", dare: 85000, avere: 0 }, { conto: "E01-03-05", dare: 0, avere: 30000 }, { conto: "E01-03-05", dare: 0, avere: 55000 }]);
+  uguale(l.registrazioni.find((x) => x.numero === "13").descr, "Spese diverse", "senza commenti si usa la causale");
+  // stesso numero in esercizi diversi: due movimenti distinti
+  const ids = aMovimenti(l.registrazioni, l.anno).map((m) => m.id);
+  vero(ids.includes("unio-2025-1") && ids.includes("unio-2026-11"), ids.join());
+  uguale(new Set(ids).size, ids.length, "identificativi tutti diversi");
+});
+
+test("UNIO: le registrazioni arrivate da Divisio si saltano solo se in Divisio ci sono già", () => {
+  const l = leggiEstrattoConto(PRIMA_NOTA);
+  const coll = l.registrazioni.find((x) => x.numero === "14");
+  uguale(coll.daDivisio, { trimestre: "T4", anno: 2026, casse: ["A02-01-01"] });
+  uguale(daDivisio({ descr: "Candele novembre", righe: [] }), null);
+  // Divisio azzerato: si carica tutto
+  uguale(separaDoppioniDivisio(l.registrazioni, []).saltate.length, 0);
+  // in Divisio ci sono movimenti della cassa nel 4° trimestre (non della banca): si salta solo il riepilogo della cassa
+  const propri = [{ id: "x", data: "2026-10-04", tipo: "entrata", righe: [{ conto: "A02-01-01", dare: 10000, avere: 0 }, { conto: "E01-02-01", dare: 0, avere: 10000 }] }];
+  const s = separaDoppioniDivisio(l.registrazioni, propri);
+  uguale(s.saltate.map((x) => x.numero), ["14"]);
+  // i movimenti caricati da UNIO o eliminati non contano
+  uguale(separaDoppioniDivisio(l.registrazioni, [{ ...propri[0], origine: "UNIO" }, { ...propri[0], id: "y", eliminato: true }]).saltate.length, 0);
+});
+
+test("UNIO: i pagamenti di fatture già pagate in Divisio non si caricano di nuovo", () => {
+  uguale(fatturaNelCommento("Fattura LO SPURGO S.P.A. nr. 1/497 del 30/01/2026 - Fornitura Generica"), { numero: "1/497", data: "2026-01-30" });
+  uguale(fatturaNelCommento("Offerte parrocchiani"), null);
+  const reg = (numero, descr) => ({ numero, data: "2026-02-28", descr, righe: [{ conto: "U08-02-09", dare: 100, avere: 0 }, { conto: "A02-01-02", dare: 0, avere: 100 }] });
+  const regs = [reg("1", "Fattura Ditta Prova Srl nr. 1/497 del 30/01/2026 - Fornitura"), reg("2", "Fattura Altra Ditta nr. 55 del 30/01/2026 - Fornitura")];
+  const fatture = [{ id: "f1", numero: "497", data: "2026-01-30" }, { id: "f2", numero: "55", data: "2026-01-30" }];
+  const pagata = { id: "pag-f1", data: "2026-02-28", tipo: "uscita", fattura: { id: "f1", rata: 1 }, righe: regs[0].righe };
+  const s = separaDoppioniDivisio(regs, [pagata], fatture);
+  uguale(s.saltate.map((x) => x.numero), ["1"], "f2 non è pagata in Divisio: si carica");
 });

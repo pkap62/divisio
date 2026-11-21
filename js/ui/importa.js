@@ -1,6 +1,6 @@
 // Caricamento in Divisio dei movimenti già registrati in UNIO (anno di prova), con anteprima e annullamento.
 
-import { leggiEstrattoConto, aMovimenti } from "../dominio/importaUNIO.js";
+import { leggiEstrattoConto, aMovimenti, separaDoppioniDivisio } from "../dominio/importaUNIO.js";
 import { movimentiAnno } from "../dominio/saldi.js";
 import { nuovoIstante } from "../dominio/unione.js";
 import { esc, dataIt, locale, toast } from "./util.js";
@@ -17,7 +17,7 @@ export function vistaCard(ctx) {
   return `<div class="card"><h3>Caricare i movimenti da UNIO (anno di prova)</h3>
     <p>Per provare Divisio con i dati veri: si caricano i movimenti già registrati in UNIO e poi, nella pagina Rendiconto, si controlla che le cifre coincidano.</p>
     <ol class="passi">
-      <li>In UNIO esporti i movimenti in partita doppia (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>.</li>
+      <li>In UNIO esporti i movimenti della <b>Prima Nota</b> (file <b>AMM_PRIMA_NOTA</b>; va bene anche l'estratto conto <b>AMM_ESTRATTOCONTO</b> con <b>tutti i conti</b>).</li>
       <li>Lo carichi qui sotto: prima di caricare, Divisio le mostra cosa contiene.</li>
       <li>In UNIO esporti anche il CSV dei saldi del Rendiconto e lo carichi nella pagina Rendiconto per il confronto.</li>
     </ol>
@@ -39,6 +39,11 @@ function vistaAnteprima(ctx) {
       dal ${dataIt(date[0])} al ${dataIt(date.at(-1))}. Tutti in quadratura.</div>
     ${a.problemi.length ? `<div class="avviso">${a.problemi.length === 1 ? "1 registrazione di UNIO non verrà caricata" : `${a.problemi.length} registrazioni di UNIO non verranno caricate`}:</div>
       <details><summary>Vedi quali e perché</summary><ul>${a.problemi.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></details>` : ""}
+    ${a.saltate.length ? `<div class="nota">${a.saltate.length === 1 ? "1 registrazione di UNIO è già" : `${a.saltate.length} registrazioni di UNIO sono già`} in Divisio
+        (riepiloghi arrivati in UNIO dalla pagina «Per UNIO», oppure fatture già segnate pagate in Divisio): ${a.saltate.length === 1 ? "non verrà caricata" : "non verranno caricate"}, per non contarle due volte.</div>
+      <details><summary>Vedi quali</summary><ul>${a.saltate.map((r) => `<li>${dataIt(r.data)} – ${esc(r.descr)}</li>`).join("")}</ul></details>` : ""}
+    ${a.daDivisio ? `<div class="nota">${a.daDivisio === 1 ? "1 registrazione arrivata" : `${a.daDivisio} registrazioni arrivate`} in UNIO da Divisio
+        ${a.daDivisio === 1 ? "verrà caricata come riepilogo" : "verranno caricate come riepiloghi"}, perché in Divisio quei movimenti non ci sono più.</div>` : ""}
     ${a.giaPresenti ? `<div class="nota">${a.giaPresenti === 1 ? "1 di questi movimenti era già stato caricato: verrà aggiornato, non duplicato." : `${a.giaPresenti} di questi movimenti erano già stati caricati: verranno aggiornati, non duplicati.`}</div>` : ""}
     ${a.altriDellAnno ? `<div class="avviso">Nel ${a.anno} ci sono già ${a.altriDellAnno} movimenti inseriti a mano in Divisio: si sommeranno a quelli di UNIO.</div>` : ""}
     ${a.nuovi.length ? `<div class="nota">${a.nuovi.length === 1 ? "Verrà aggiunto 1 sottoconto che esiste" : `Verranno aggiunti ${a.nuovi.length} sottoconti che esistono`} solo in UNIO: ${a.nuovi.map((x) => `${esc(x.nome)} <span class="codice">${x.codice}</span>`).join(", ")}.</div>` : ""}
@@ -56,10 +61,12 @@ export const cambia = {
     if (!file) return;
     const l = leggiEstrattoConto(await file.text());
     if (!l.ok) { anteprima = { nomeFile: file.name, errore: l.errore }; ctx.aggiorna(); return; }
-    const movimenti = aMovimenti(l.registrazioni, l.anno);
+    const { daCaricare, saltate } = separaDoppioniDivisio(l.registrazioni, ctx.arch.movimenti(), ctx.arch.fatture());
+    const movimenti = aMovimenti(daCaricare, l.anno);
     const conti = ctx.arch.conti;
     anteprima = {
-      nomeFile: file.name, anno: l.anno, movimenti, problemi: l.problemi, usaNomi: true,
+      nomeFile: file.name, anno: l.anno, movimenti, problemi: l.problemi, usaNomi: true, saltate,
+      daDivisio: daCaricare.filter((r) => r.daDivisio).length,
       nomiDiversi: [...l.nomi].filter(([c, n]) => conti.has(c) && conti.get(c).nome !== n).map(([codice, unio]) => ({ codice, attuale: conti.get(codice).nome, unio })),
       nuovi: [...l.nomi].filter(([c]) => !conti.has(c)).map(([codice, nome]) => ({ codice, nome })),
       giaPresenti: movimenti.filter((m) => ctx.arch.movimento(m.id)).length,

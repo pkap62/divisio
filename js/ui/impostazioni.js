@@ -237,7 +237,7 @@ export const cambia = {
   },
 };
 
-function salvaCopia(ctx, suffisso = "") {
+export function salvaCopia(ctx, suffisso = "") {
   const ora = new Date();
   scarica(`Divisio-copia-${oggiISO()}${suffisso ? "-" + suffisso : ""}.json`, JSON.stringify(creaBackup(ctx.arch.esporta(), ora)), "application/json");
   locale.scrivi("ultimaCopia", ora.toISOString());

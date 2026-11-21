@@ -13,21 +13,38 @@ async function caricaLettore() {
   return lettore;
 }
 
-/** Riga per riga: i pezzi di testo alla stessa altezza vengono uniti, da sinistra a destra. */
-function righeDellaPagina(items) {
+/**
+ * Riga per riga: i pezzi di testo alla stessa altezza vengono uniti, da sinistra a destra.
+ * Ogni riga ha anche le singole parole con la loro posizione sulla pagina (x da sinistra, y dall'alto,
+ * in frazioni della pagina: 0 = bordo sinistro/alto, 1 = bordo destro/basso), per leggere i valori
+ * scritti SOTTO un'etichetta (tabelle) e per ricordare dove un fornitore scrive i suoi dati.
+ */
+function righeDellaPagina(items, vista, p) {
   const perAltezza = [];
   for (const it of items) {
     if (!it.str?.trim()) continue;
-    const y = it.transform[5], x = it.transform[4];
-    let riga = perAltezza.find((r) => Math.abs(r.y - y) < Math.max(2, (it.height || 8) * 0.4));
+    const [x, y] = vista.convertToViewportPoint(it.transform[4], it.transform[5]);
+    const [x2] = vista.convertToViewportPoint(it.transform[4] + (it.width || 0), it.transform[5]);
+    const alto = Math.max(2, (it.height || 8) * 0.4);
+    let riga = perAltezza.find((r) => Math.abs(r.y - y) < alto);
     if (!riga) { riga = { y, pezzi: [] }; perAltezza.push(riga); }
-    riga.pezzi.push({ x, s: it.str });
+    riga.pezzi.push({ x: Math.min(x, x2), x2: Math.max(x, x2), s: it.str });
   }
-  return perAltezza.sort((a, b) => b.y - a.y).map((r) => r.pezzi.sort((a, b) => a.x - b.x).map((q) => q.s).join(" "));
+  const W = vista.width, H = vista.height;
+  return perAltezza.sort((a, b) => a.y - b.y).map((r) => {
+    const pezzi = r.pezzi.sort((a, b) => a.x - b.x);
+    // parole con la posizione stimata in proporzione ai caratteri del pezzo
+    const parole = pezzi.flatMap((q) => {
+      const largo = (q.x2 - q.x) / Math.max(1, q.s.length);
+      return [...q.s.matchAll(/\S+/g)].map((m) => ({ s: m[0], x: (q.x + m.index * largo) / W, x2: (q.x + (m.index + m[0].length) * largo) / W }));
+    });
+    return { p, y: r.y / H, testo: pezzi.map((q) => q.s).join(" "), parole };
+  });
 }
 
 /**
- * Restituisce { testo, immagini }: il testo delle prime pagine (una riga per riga visiva)
+ * Restituisce { testo, righe, immagini }: il testo delle prime pagine (una riga per riga visiva), le stesse righe con
+ * la posizione delle parole
  * e l'immagine delle prime pagine, da mostrare accanto ai campi da controllare.
  * Le immagini si disegnano con lo stesso lettore, così si vedono in qualunque browser.
  */
@@ -40,7 +57,7 @@ export async function leggiPDF(buffer, { maxPagine = 4, maxImmagini = 2, larghez
   try {
     for (let p = 1; p <= Math.min(doc.numPages, maxPagine); p++) {
       const pagina = await doc.getPage(p);
-      righe.push(...righeDellaPagina((await pagina.getTextContent()).items));
+      righe.push(...righeDellaPagina((await pagina.getTextContent()).items, pagina.getViewport({ scale: 1 }), p));
       if (p <= maxImmagini && disegna) {
         try {
           const base = pagina.getViewport({ scale: 1 });
@@ -61,5 +78,5 @@ export async function leggiPDF(buffer, { maxPagine = 4, maxImmagini = 2, larghez
   } finally {
     doc.destroy();
   }
-  return { testo: righe.join("\n"), immagini };
+  return { testo: righe.map((r) => r.testo).join("\n"), righe, immagini };
 }

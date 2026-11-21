@@ -62,7 +62,8 @@ export function vista(ctx) {
   <div class="card solo-schermo" style="margin-top:16px"><h3>Confronta con UNIO</h3>
     <p class="hint">In UNIO, pagina Rendiconto Parrocchiale, prema <b>"Esporta saldi Patrimoniali e di Gestione in .csv"</b> e carichi qui il file.
       Divisio controlla le 54 voci una per una. Il file viene letto solo su questo computer.</p>
-    <label class="btn sec piccolo">Carica il CSV di UNIO…<input type="file" accept=".csv,text/csv" hidden data-cambia="confronto"></label>
+    <div class="riga-bottoni stretta"><label class="btn sec piccolo">${unio ? "Carica un altro CSV di UNIO…" : "Carica il CSV di UNIO…"}<input type="file" accept=".csv,text/csv" hidden data-cambia="confronto"></label>
+      ${unio ? `<button class="btn pericolo piccolo" data-azione="togliConfronto">Azzera il confronto</button>` : ""}</div>
     ${unio ? esitoConfronto(ctx, confronto) : ""}
   </div>
 
@@ -155,6 +156,7 @@ export const cambia = {
 
 export const azioni = {
   stampa() { window.print(); },
+  togliConfronto(el, ev, ctx) { unio = null; toast("Confronto con UNIO azzerato"); ctx.aggiorna(); },
   vai: (el, ev, ctx) => ctx.vai(el.dataset.pagina),
   csv(el, ev, ctx) {
     const { R, P } = calcola(ctx);

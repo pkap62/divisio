@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.8.1</span></p>
+  <p class="versione">Versione <span id="versione">0.9.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,10 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.9:</b> le fatture <b>PDF</b> si leggono molto meglio (anche i dati in tabella) e Divisio
+<b>ricorda le correzioni</b> per ogni fornitore; la scritta <b>PAGATA</b> sul PDF diventa una proposta di pagamento (capitolo 10).
+Si caricano da UNIO anche i movimenti della <b>Prima Nota</b> (capitolo 7). Nuovi pulsanti per <b>azzerare</b> i movimenti di un anno e il confronto con UNIO (capitoli 7 e 12).</div>
 
 <div class="box nota"><b>Novità della versione 0.7:</b> la pagina <b>Banca</b> (capitolo 11): si carica l'estratto conto scaricato dalla banca online (CSV o Excel, di qualunque banca);
 Divisio propone come registrare ogni movimento, riconosce i pagamenti delle fatture e i movimenti già registrati, e impara dalle scelte fatte.</div>
@@ -205,7 +209,8 @@ Se ancora non va, avvisare il parroco: per quel computer si può accedere a Goog
 <h2 id="prova">7. Anno di prova 2026 <span class="chi">parroco</span></h2>
 <p>Prima di partire davvero il 1° gennaio 2027, si caricano in Divisio i movimenti 2026 già registrati in UNIO e si controlla che i due Rendiconti coincidano.</p>
 <ol>
-  <li>In UNIO esporti i movimenti in partita doppia (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>, senza filtri.
+  <li>In UNIO esporti i movimenti della <b>Prima Nota</b> (file <b>AMM_PRIMA_NOTA</b>). Va bene anche l'estratto conto
+    (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>, senza filtri.
     <br><i>Se si esporta solo qualche conto, Divisio lo riconosce e avvisa.</i></li>
   <li>In Divisio: Impostazioni → <b>"Caricare i movimenti da UNIO"</b> → scelga il file, guardi l'anteprima e prema <span class="bottone">Carica</span>.</li>
   <li>In UNIO, pagina Rendiconto Parrocchiale: <span class="bottone">Esporta saldi Patrimoniali e di Gestione in .csv</span>.</li>
@@ -213,6 +218,13 @@ Se ancora non va, avvisare il parroco: per quel computer si può accedere a Goog
 </ol>
 <div class="box attenzione">Per un confronto alla pari <b>non inserisca i saldi di apertura 2026 prima del confronto</b>: in UNIO non ci sono. Li potrà aggiungere dopo.
 Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</span> riporta tutto com'era.</div>
+<ul>
+  <li><b>Niente doppioni:</b> nel file di UNIO ci possono essere righe arrivate da Divisio (quelle che cominciano con il codice tra parentesi quadre, es. <b>[E01-02-01]</b>)
+    o pagamenti di fatture già segnate pagate in Divisio. Se in Divisio ci sono già, Divisio non le carica di nuovo e nell'anteprima dice quali sono.</li>
+  <li><b>Ricominciare da capo:</b> Movimenti → in fondo <b>"Azzera i movimenti del …"</b> cancella tutti i movimenti dell'anno scelto in alto
+    (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.</li>
+  <li>Nel Rendiconto, <span class="bottone">Azzera il confronto</span> toglie il CSV di UNIO caricato (le scritte "= UNIO").</li>
+</ul>
 
 <h2 id="altre">8. Altre parrocchie (confratelli) <span class="chi">altre parrocchie</span></h2>
 <p>Divisio è pensato per tutte le parrocchie della Diocesi di Firenze: il piano dei conti e il Rendiconto sono già quelli diocesani.</p>
@@ -255,6 +267,13 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 Dai PDF li ricava dal testo e può sbagliare: per questo li mostra accanto all'immagine del PDF. I PDF <b>scansionati</b> (fotografie) non si possono leggere:
 i campi vanno scritti a mano guardando il PDF.</div>
 <ul>
+  <li><b>Divisio impara:</b> quando aggiunge una fattura PDF, Divisio ricorda per quel fornitore il nome, la partita IVA e <b>dove</b> sono scritti numero, date e importi,
+    comprese le correzioni fatte da lei. La volta dopo riconosce il fornitore (dalla partita IVA, dall'IBAN, dall'e-mail o dal sito) e compila i campi da solo.
+    Serve soprattutto quando il nome del fornitore è solo nel <b>logo</b>: è un'immagine e non si può leggere, quindi la prima volta va scritto a mano.</li>
+  <li><b>Scritta PAGATA:</b> se sul PDF c'è "PAGATA" (o "PAGATO") con una data, dopo aver aggiunto le fatture Divisio apre subito
+    <span class="bottone">Segna come pagata</span> con quella data: controlli voce e cassa e confermi, oppure <span class="bottone">Annulla</span> se non è stata pagata.</li>
+</ul>
+<ul>
   <li><b>Doppioni:</b> se una fattura (stesso fornitore, numero e data) è già nello scadenzario, o compare due volte tra i file scelti (es. XML e PDF della stessa fattura),
     Divisio lo dice e non la carica di nuovo.</li>
   <li>I file restano sul computer e Divisio non li conserva: tenga gli originali nella solita cartella.</li>
@@ -272,7 +291,7 @@ In "Dettagli" si vedono tutti i dati, si corregge la scadenza o si toglie una fa
     oppure parole della fattura come "luce" o "caldaia"). Se non è sicuro non propone nulla e chiede di sceglierla dall'elenco.</li>
   <li>Sotto si vede la registrazione in partita doppia che verrà salvata. <span class="bottone">Conferma</span>: la fattura diventa pagata e l'uscita entra in contabilità.</li>
   <li>Con "Ricorda questa scelta" (già spuntato), la volta successiva per quel fornitore la proposta è già quella giusta.
-    L'elenco dei fornitori ricordati è in fondo alla pagina (si possono "dimenticare").</li>
+    L'elenco dei fornitori ricordati è in fondo alla pagina, con quelli di cui Divisio sa leggere il PDF (si possono "dimenticare").</li>
 </ol>
 <ul>
   <li><b>Errore?</b> Nelle fatture pagate, "Dettagli" → <span class="bottone">Torna da pagare</span>: la fattura torna nello scadenzario e la sua uscita viene tolta dalla contabilità.
@@ -340,6 +359,8 @@ La scelta viene ricordata per i file successivi della stessa banca.</p>
 </ol>
 <div class="box nota">Se dopo l'importazione si corregge o si aggiunge un movimento di quel trimestre, la volta successiva Divisio prepara <b>solo le differenze</b>:
 niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in un solo file; i rari movimenti senza cassa né banca vanno inseriti a mano in UNIO (Divisio li elenca).</div>
+<div class="box attenzione">In fondo alla pagina Per UNIO, <b>"Azzera le importazioni segnate del …"</b> fa dimenticare a Divisio tutti i "Ho importato in UNIO" dell'anno:
+i file torneranno completi. Lo usi solo se quei dati <b>non</b> sono più in UNIO (per esempio se ricomincia la prova da capo), altrimenti in UNIO risulterebbero doppi.</div>
 
 <h2 id="anno">13. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
 <ol>
@@ -376,7 +397,7 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 17 novembre 2026 (versione 0.7) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.9) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

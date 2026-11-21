@@ -7,6 +7,21 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.9 – PDF letti meglio e ricordati; Prima Nota di UNIO; azzeramenti**
+- Fatture **PDF**: il lettore usa anche la posizione delle parole sulla pagina (valori scritti sotto l'etichetta, in tabella), controlla gli importi tra loro
+  (imponibile + IVA = totale, con l'aliquota), riconosce numero e data della fattura senza confonderli con proforma, documenti commerciali o R.E.A.,
+  il nome del fornitore sopra la sua partita IVA o come beneficiario del bonifico allegato, le scadenze al plurale e le parole con le legature perse ("Partta IVA").
+- **Memoria per fornitore** (impostazioni `modello-pdf:…`): quando si aggiunge una fattura PDF Divisio ricorda nome, partita IVA e la posizione di numero, date e importi,
+  con le correzioni dell'utente; la volta dopo riconosce il fornitore da partita IVA, IBAN, e-mail o sito (un identificativo comune a più fornitori non conta)
+  e legge i dati da lì. Elenco in «Fornitori ricordati», con «Dimentica».
+- Scritta **PAGATA / PAGATO con la data** sul PDF: dopo l'aggiunta Divisio apre «Segna come pagata» con quella data (una fattura dopo l'altra, sempre con conferma).
+- Caricamento da UNIO anche del file **AMM_PRIMA_NOTA** (colonne «Codice gruppo/conto/sottoconto», causale, più esercizi). Non si caricano i doppioni:
+  riepiloghi arrivati in UNIO dalla pagina Per UNIO se in Divisio ci sono già i movimenti di quella cassa e trimestre, pagamenti di fatture già pagate in Divisio.
+- **Azzera i movimenti** dell'anno (pagina Movimenti, con copia di sicurezza automatica; le fatture pagate con quei movimenti tornano da pagare),
+  **Azzera il confronto** con UNIO (pagina Rendiconto) e **Azzera le importazioni segnate** dell'anno (pagina Per UNIO).
+
+**0.8.1** – Guida e Impostazioni: scorciatoia in "Il mio Drive" per i collaboratori.
+
 **0.8 – Nuovo logo; fatture del teatro o di altre gestioni**
 - Nuovo logo (icona dell'app, del browser e della Guida).
 - Funzione facoltativa, **spenta per tutti all'inizio** (Impostazioni → «Fatture del teatro o di altre gestioni»). Se accesa, per ogni fattura si sceglie fra tre possibilità: **della parrocchia** (entra in contabilità per intero), **del teatro o di altra gestione** (non entra in contabilità e resta da parte, nell'elenco «Teatro e altre gestioni»), **al 50%** (il totale con l'IVA si divide a metà e in contabilità entra una metà).
@@ -45,7 +60,7 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 - Fase 1 – registro dei movimenti (entrate/uscite e partita doppia), saldi di apertura, copia di sicurezza, esportazione CSV.
 - Fase 2 – Rendiconto Parrocchiale completo (gestione, patrimoniale, collette, contributo, previsione, analitico), stampa/PDF, CSV nel formato UNIO e confronto voce per voce con il CSV esportato da UNIO.
 - Fase 3 – ponte verso UNIO: per ogni cassa/banca e trimestre un file riepilogativo (una riga per sottoconto, codice all'inizio della descrizione) nel formato dell'"Importazione Prima Nota" di UNIO, foglio guida stampabile, registro delle importazioni e, dopo, solo le differenze; promemoria in Inizio.
-- Fase 5 (in corso) – anno di prova: caricamento dei movimenti già registrati in UNIO (file "AMM_ESTRATTOCONTO", tutti i conti) con anteprima, nomi dei sottoconti di UNIO, nessun doppione e annullamento; poi confronto del Rendiconto con il CSV dei saldi di UNIO.
+- Fase 5 (in corso) – anno di prova: caricamento dei movimenti già registrati in UNIO (file "AMM_PRIMA_NOTA" oppure "AMM_ESTRATTOCONTO" con tutti i conti) con anteprima, nomi dei sottoconti di UNIO, nessun doppione e annullamento; poi confronto del Rendiconto con il CSV dei saldi di UNIO.
 - Fase 4 – fatture ricevute e scadenzario (versione 0.6, vedi Novità).
 - Estratti conto della banca (versione 0.7, vedi Novità).
 - Condivisione – più persone (Mac e Windows) lavorano insieme tramite una cartella "Divisio" nel Google Drive della parrocchia (Google Drive per desktop): ogni computer scrive il proprio file `divisio-<computer>.json` e legge quelli degli altri; per ogni record vince la modifica più recente. Richiede Chrome o Edge.

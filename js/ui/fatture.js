@@ -2,7 +2,7 @@
 // Regola: in contabilità entra solo una fattura PAGATA, e solo dopo la conferma dell'utente.
 
 import { leggiFatturaPA, xmlDaP7m, testoDaByte, trovaDoppione, stessaFattura, chiaveFornitore, MODALITA, nomeModalita, modalitaInContanti, TIPI_DOCUMENTO } from "../dominio/fatture.js";
-import { leggiFatturaDaTesto } from "../dominio/fatturePDF.js";
+import { leggiFatturaDaTesto, imparaModello } from "../dominio/fatturePDF.js";
 import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, GESTIONI, gestioneValida, nomeGestione } from "../dominio/scadenzario.js";
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
 import { verificaMovimento } from "../dominio/scritture.js";
@@ -13,6 +13,7 @@ import { tabellaRighe } from "./elenco.js";
 
 let carico = null;   // { voci:[…], inLettura } — fatture lette e non ancora aggiunte
 let pag = null;      // pagamento in compilazione
+let coda = [];       // fatture appena aggiunte con la scritta "PAGATA" sul PDF: si propone di segnarle pagate, una dopo l'altra
 let filtro = locale.leggi("fatture-filtro", "dapagare");
 
 /* ---------- impostazioni che servono qui ---------- */
@@ -21,6 +22,12 @@ export const teatro = (arch) => ({ attivo: false, parole: [], ...arch.impostazio
 const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const ricordo = (arch, f) => arch.impostazione(chiaveFornitore(f));
 const parrocchia = (arch) => arch.impostazione("parrocchia", {});
+/** Dove Divisio ricorda come è fatto il PDF di un fornitore (vedi imparaModello). */
+const chiaveModello = (f) => chiaveFornitore(f).replace(/^fornitore:/, "modello-pdf:");
+const opzioniPDF = (arch) => {
+  const par = parrocchia(arch);
+  return { escludiPiva: [par.codiceFiscale, par.partitaIva].filter(Boolean), nomiParrocchia: [par.nome].filter(Boolean) };
+};
 
 /** Problemi tra scadenzario e contabilità (usato anche dalla pagina Inizio). */
 export function problemi(arch) {
@@ -58,11 +65,10 @@ async function leggiFile(file, arch) {
     }
     if (tipo === "pdf") {
       const { leggiPDF } = await import("../dati/pdf.js");
-      const { testo, immagini } = await leggiPDF(await file.arrayBuffer());
+      const { testo, righe, immagini } = await leggiPDF(await file.arrayBuffer());
       const noti = new Map(arch.fatture().filter((f) => f.piva).map((f) => [f.piva, f.fornitore]));
-      const par = parrocchia(arch);
-      const dati = leggiFatturaDaTesto(testo, { escludiPiva: [par.codiceFiscale, par.partitaIva].filter(Boolean), fornitoriNoti: noti });
-      return [{ ...base, dati, immagini, urlPDF: URL.createObjectURL(file), controllato: false }];
+      const dati = leggiFatturaDaTesto(testo, { righe, ...opzioniPDF(arch), fornitoriNoti: noti, modelli: arch.impostazioniCon("modello-pdf:") });
+      return [{ ...base, dati, righe, immagini, urlPDF: URL.createObjectURL(file), controllato: false }];
     }
     return [{ ...base, errore: "Questo tipo di file non è una fattura: servono file .xml, .p7m o .pdf." }];
   } catch (e) {
@@ -213,7 +219,8 @@ function vistaVoce(v, divisione) {
       <select id="m-${v.id}" class="${inc.has("modalita") ? "incerto" : ""}" data-cambia="modalitaVoce" data-v="${v.id}">${opzioniModalita(d.rate[0].modalita)}</select></div>`;
   const campi = `<div class="griglia g4">${CAMPI.map(campo).join("")}${rate}${modalita}</div>`;
   const avvisi = (d.avvisi ?? []).map((a) => `<div class="avviso">${esc(a)}</div>`).join("");
-  const tipoDoc = d.notaCredito ? `<div class="nota">È una <b>nota di credito</b>: quando la segnerà come rimborsata, la spesa diminuirà.</div>` : "";
+  const tipoDoc = (d.notaCredito ? `<div class="nota">È una <b>nota di credito</b>: quando la segnerà come rimborsata, la spesa diminuirà.</div>` : "")
+    + (d.modello ? `<div class="ok piccola">Fornitore già visto: Divisio ha cercato i dati dove li aveva trovati le altre volte.</div>` : "");
   const spunta = inc.size ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="controllato" data-v="${v.id}" ${v.controllato ? "checked" : ""}>
       Ho controllato i campi in arancione${v.tipo === "pdf" ? " guardando il PDF" : ""}</label>` : "";
   const pdf = v.urlPDF ? `<details ${inc.size ? "open" : ""} data-chiave="pdf-${v.id}"><summary>Guarda il PDF</summary>
@@ -289,6 +296,21 @@ function apriPagamento(ctx, id, n) {
     quota: pt ? pt.quota ?? 0 : 0, quotaScelta: pt ? !pt.chiedi : true, ricorda: true, errore: "" };
 }
 
+/** Apre "Segna come pagata" per la prossima fattura con la scritta PAGATA, con la data e la modalità lette dal PDF. */
+function prossimaDellaCoda(ctx) {
+  while (coda.length) {
+    const x = coda.shift();
+    const f = ctx.arch.fattura(x.id);
+    if (!f || f.rate[0].stato === PAGATA) continue;
+    apriPagamento(ctx, x.id, 1);
+    pag.data = x.data;
+    if (x.modalita) pag.modalita = x.modalita;
+    pag.dalPDF = { data: x.data, rimaste: coda.length };
+    pag.scorri = true;
+    return;
+  }
+}
+
 const quotaPag = () => (Number(pag.quota) || 0);
 
 function candidatoPagamento(ctx) {
@@ -319,6 +341,9 @@ function vistaPagamento(ctx) {
   return `<div class="card evidenza" id="pagamento">
     <h3>${nc ? "Segna come rimborsata" : "Segna come pagata"}: ${esc(descrizione(f, rata))}</h3>
     <p class="lead">Importo: <b>${eur(rata.importo)}</b>${rata.scadenza ? ` · scadenza ${dataIt(rata.scadenza)}` : ""}</p>
+    ${pag.dalPDF ? `<div class="nota">Sul PDF c'è scritto che è stata pagata il <b>${dataIt(pag.dalPDF.data)}</b>: controlli i dati qui sotto e confermi.
+      Se non è stata pagata, prema «Annulla»: resterà da pagare.${pag.dalPDF.rimaste ? ` Dopo, Divisio proporrà ${pag.dalPDF.rimaste === 1 ? "l'altra fattura segnata" : `le altre ${pag.dalPDF.rimaste} fatture segnate`} PAGATA
+      (<a href="#" data-azione="saltaCoda">non ora</a>).` : ""}</div>` : ""}
     <div class="griglia g2">
       <div><label class="campo" for="p-data">${nc ? "Data del rimborso" : "Data del pagamento"}</label><input id="p-data" type="date" value="${esc(pag.data)}" data-cambia="pagData"></div>
       <div><label class="campo" for="p-mod">Come è stata pagata</label><select id="p-mod" data-cambia="pagModalita">${opzioniModalita(pag.modalita)}</select></div>
@@ -346,13 +371,20 @@ function vistaPagamento(ctx) {
 
 function vistaFornitori(arch) {
   const ricordati = arch.impostazioniCon("fornitore:");
-  if (!ricordati.length) return "";
+  const modelli = arch.impostazioniCon("modello-pdf:");
+  if (!ricordati.length && !modelli.length) return "";
   const t = teatro(arch);
-  return `<div class="card"><details data-chiave="fornitori"><summary>Fornitori ricordati (${ricordati.length})</summary>
-    <p class="hint">Per questi fornitori Divisio propone già la voce${t.attivo ? " e la scelta parrocchia / 50% / altra gestione" : ""} dell'ultima volta.</p>
+  const pdf = modelli.length ? `<p class="hint" style="margin-top:16px">Fatture PDF: Divisio ricorda dove questi fornitori scrivono i loro dati
+      (nome, partita IVA, numero, date, importi, come corretti da lei) e li riconosce dalla partita IVA, dall'IBAN, dall'e-mail o dal sito.</p>
+    <table>${modelli.sort((a, b) => String(a.valore.nome).localeCompare(String(b.valore.nome))).map((i) => `<tr><td>${esc(i.valore.nome)}</td>
+      <td class="hint">${i.valore.piva ? `P. IVA ${esc(i.valore.piva)} · ` : ""}${i.valore.volte === 1 ? "1 fattura" : `${i.valore.volte} fatture`}</td>
+      <td class="n"><button class="btn sec piccolo" data-azione="dimentica" data-chiave="${esc(i.chiave)}">Dimentica</button></td></tr>`).join("")}</table>` : "";
+  return `<div class="card"><details data-chiave="fornitori"><summary>Fornitori ricordati (${Math.max(ricordati.length, modelli.length)})</summary>
+    ${ricordati.length ? `<p class="hint">Per questi fornitori Divisio propone già la voce${t.attivo ? " e la scelta parrocchia / 50% / altra gestione" : ""} dell'ultima volta.</p>` : ""}
     <table>${ricordati.sort((a, b) => String(a.valore.nome).localeCompare(String(b.valore.nome))).map((i) => `<tr><td>${esc(i.valore.nome)}</td>
       <td>${i.valore.voce ? `${esc(arch.nomeConto(i.valore.voce))} <span class="codice">${i.valore.voce}</span>` : t.attivo && gestioneValida(i.valore.quotaTeatro) ? esc(nomeGestione(i.valore.quotaTeatro)) : "—"}${t.attivo ? pillaGestione(i.valore.quotaTeatro) : ""}</td>
       <td class="n"><button class="btn sec piccolo" data-azione="dimentica" data-chiave="${esc(i.chiave)}">Dimentica</button></td></tr>`).join("")}</table>
+    ${pdf}
   </details></div>`;
 }
 
@@ -416,7 +448,8 @@ export const azioni = {
     if (divisione && valide.some((v) => !v.quotaScelta)) { toast("Scelga di chi è ogni fattura"); return; }
     el.disabled = true;
     const fatture = valide.map((v) => {
-      const f = nuovaFattura({ ...v.dati, avvisi: (v.dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile });
+      const { impronte, pagata, modello, ...dati } = v.dati;
+      const f = nuovaFattura({ ...dati, avvisi: (dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli|proporrà/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile });
       return divisione ? { ...f, quotaTeatro: v.quota } : f;
     });
     // la scelta parrocchia / 50% / altra gestione viene ricordata per ogni fornitore
@@ -425,17 +458,30 @@ export const azioni = {
       const prima = ricordo(ctx.arch, f);
       ricordi.set(chiaveFornitore(f), { ...prima, nome: f.fornitore, voce: prima?.voce || "", quotaTeatro: f.quotaTeatro });
     }
-    await ctx.arch.salvaInsieme({ fatture, impostazioni: [...ricordi].map(([chiave, valore]) => ({ chiave, valore })) });
+    // per i PDF: Divisio impara dove stanno i dati di quel fornitore (con le correzioni fatte qui), per leggerli da solo la volta dopo
+    const modelli = new Map();
+    valide.forEach((v, i) => {
+      const f = fatture[i];
+      if (v.tipo !== "pdf" || !v.righe || !f.fornitore) return;
+      const chiave = chiaveModello(f);
+      modelli.set(chiave, imparaModello(v.righe, f, { precedente: modelli.get(chiave) ?? ctx.arch.impostazione(chiave), ...opzioniPDF(ctx.arch) }));
+    });
+    const salvate = await ctx.arch.salvaInsieme({ fatture, impostazioni: [...ricordi, ...modelli].map(([chiave, valore]) => ({ chiave, valore })) });
+    // fatture con la scritta "PAGATA" sul PDF: si propone subito di segnarle pagate (sempre con conferma)
+    coda = valide.map((v, i) => ({ v, f: salvate.fatture[i] })).filter(({ v, f }) => v.dati.pagata?.data && f.rate.length === 1)
+      .map(({ v, f }) => ({ id: f.id, data: v.dati.pagata.data, modalita: v.dati.pagata.modalita }));
     for (const v of carico.voci) if (v.urlPDF) URL.revokeObjectURL(v.urlPDF);
     const saltate = carico.voci.filter((v) => v.doppione && !v.tolta).length;
     carico = null;
     filtro = "dapagare";
     const altre = fatture.filter((f) => divisione && f.quotaTeatro === 100).length;
     toast(`${fatture.length === 1 ? "1 fattura aggiunta" : `${fatture.length} fatture aggiunte`} ✓${altre ? ` (${altre} del teatro o di altra gestione: fuori contabilità)` : ""}${saltate ? ` (${saltate} ${saltate === 1 ? "doppione saltato" : "doppioni saltati"})` : ""}`);
+    prossimaDellaCoda(ctx);
     ctx.aggiorna();
   },
   apriPagamento(el, ev, ctx) { apriPagamento(ctx, el.dataset.id, Number(el.dataset.n)); pag.scorri = true; ctx.aggiorna(); },
-  annullaPagamento(el, ev, ctx) { pag = null; ctx.aggiorna(); },
+  annullaPagamento(el, ev, ctx) { pag = null; prossimaDellaCoda(ctx); ctx.aggiorna(); },
+  saltaCoda(el, ev, ctx) { coda = []; pag = null; ctx.aggiorna(); },
   pagCassa(el, ev, ctx) { pag.cassa = el.dataset.v; ctx.aggiorna(); },
   pagQuota(el, ev, ctx) { pag.quotaScelta = true; pag.quota = Number(el.dataset.q); ctx.aggiorna(); },
   voceGestione(el, ev, ctx) {
@@ -467,6 +513,7 @@ export const azioni = {
     const anno = pagamento.data.slice(0, 4);
     toast(esito.movimento ? `Pagata e registrata in contabilità ✓${anno !== String(ctx.anno) ? ` (nell'anno ${anno})` : ""}` : "Segnata come pagata ✓ (nessuna registrazione)");
     pag = null;
+    prossimaDellaCoda(ctx);
     ctx.aggiorna();
   },
   async tornaDaPagare(el, ev, ctx) {

@@ -99,10 +99,31 @@ export function vista(ctx) {
   </details></div>` : ""}
   <p class="hint solo-schermo">Divisio prepara i dati per UNIO a partire dall'anno
     <select data-cambia="dal" aria-label="Primo anno" style="width:auto;font-size:15px;padding:4px 8px">${[2026, 2027, 2028, 2029].map((a) =>
-      `<option ${a === primoAnnoUNIO(ctx.arch) ? "selected" : ""}>${a}</option>`).join("")}</select> e ricorda i trimestri da portare in UNIO nella pagina Inizio.</p>`;
+      `<option ${a === primoAnnoUNIO(ctx.arch) ? "selected" : ""}>${a}</option>`).join("")}</select> e ricorda i trimestri da portare in UNIO nella pagina Inizio.</p>
+  ${vistaAzzeraInvii(ctx)}`;
+}
+
+const inviiAnno = (arch, anno) => invii(arch).filter((x) => x.anno === anno);
+
+function vistaAzzeraInvii(ctx) {
+  const n = inviiAnno(ctx.arch, ctx.anno).length;
+  if (!n) return "";
+  return `<div class="card solo-schermo"><details data-chiave="azzera-invii"><summary>Azzera le importazioni segnate del ${ctx.anno}</summary>
+    <p>Divisio ricorda ${n === 1 ? "1 importazione segnata" : `${n} importazioni segnate`} con «Ho importato in UNIO» nel ${ctx.anno} (tutte le casse e banche)
+      e prepara solo le novità. Azzerando, Divisio dimentica queste importazioni e prepara di nuovo i file <b>completi</b> di ogni trimestre.</p>
+    <p class="hint">Serve, per esempio, se ha cancellato le importazioni in UNIO o se ricomincia la prova da capo. In UNIO non cambia nulla:
+      se quei dati sono ancora in UNIO, importandoli di nuovo risulterebbero doppi.</p>
+    <button class="btn pericolo" data-azione="azzeraInvii">Azzera le importazioni segnate del ${ctx.anno}</button></details></div>`;
 }
 
 export const azioni = {
+  async azzeraInvii(el, ev, ctx) {
+    const n = inviiAnno(ctx.arch, ctx.anno).length;
+    if (!n || !confirm(`Dimenticare le ${n} importazioni in UNIO segnate nel ${ctx.anno}?\n\nDivisio preparerà di nuovo i file completi di ogni trimestre. In UNIO non cambia nulla.`)) return;
+    await ctx.arch.salvaImpostazione("unio-invii", invii(ctx.arch).filter((x) => x.anno !== ctx.anno));
+    toast("Importazioni segnate azzerate ✓");
+    ctx.aggiorna();
+  },
   cassa(el, ev, ctx) { sel.cassa = el.dataset.v; ctx.aggiorna(); },
   vai: (el, ev, ctx) => ctx.vai(el.dataset.pagina),
   stampa() { window.print(); },
