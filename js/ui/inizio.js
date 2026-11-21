@@ -18,8 +18,8 @@ const FUNZIONI = [
   { pagina: "movimenti", titolo: "Movimenti", testo: "Cercare, correggere ed eliminare i movimenti; scaricarli in Excel." },
   { pagina: "fatture", titolo: "Fatture e scadenze", testo: "Legge da sola le fatture elettroniche (XML di Aruba, anche firmate) e i PDF; scadenzario con le fatture scadute o in scadenza; quando una fattura è pagata propone la voce di spesa e la ricorda per il fornitore.", solo: true },
   { pagina: "banca", titolo: "Estratti conto della banca", testo: "Carica i movimenti scaricati dalla banca online (CSV o Excel, di ogni banca), propone come registrarli, riconosce le fatture pagate e i doppioni, e impara dalle scelte fatte.", solo: true },
-  { pagina: "rendiconto", titolo: "Rendiconto parrocchiale", testo: "Tutte le sezioni del Rendiconto della Diocesi di Firenze, da stampare; confronto voce per voce con i saldi esportati da UNIO." },
-  { pagina: "unio", titolo: "Per UNIO", testo: "Prepara il file da importare in UNIO, una riga per voce, e ricorda i trimestri ancora da portare; dopo una correzione prepara solo le differenze." },
+  { pagina: "rendiconto", titolo: "Rendiconto parrocchiale", testo: "Tutte le sezioni del Rendiconto della Diocesi di Firenze, da stampare; se si vuole (facoltativo), confronto voce per voce con i saldi esportati da UNIO." },
+  { pagina: "unio", titolo: "Per UNIO", testo: "Prepara il file da importare in UNIO ogni trimestre (oppure, a fine anno, si ricopiano a mano le cifre nel Rendiconto di UNIO), una riga per voce, e ricorda i trimestri ancora da portare; dopo una correzione prepara solo le differenze." },
   { pagina: "impostazioni", titolo: "Lavorare insieme e copie", testo: "Parroco e collaboratori lavorano insieme tramite il Google Drive della parrocchia; copie di sicurezza; Divisio funziona anche senza internet." },
 ];
 

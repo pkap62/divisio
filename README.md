@@ -7,6 +7,12 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.10.1 – Due modi per portare i dati in UNIO**
+- Il **confronto con UNIO** (pagina Rendiconto) è segnato come **facoltativo**, anche in Inizio, Per UNIO e Guida.
+- Guida, capitolo 12: **due modi**. 1) ogni trimestre con il file di Divisio importato in Partita Doppia; 2) per chi non usa UNIO e non vi inserisce nessun movimento:
+  a fine anno si ricopiano a mano le voci del Rendiconto di gestione di Divisio nel Rendiconto Parrocchiale di UNIO. Appena in UNIO si inserisce una registrazione,
+  UNIO blocca il Rendiconto Parrocchiale e non si può più compilare a mano. Breve rimando anche nella pagina Per UNIO.
+
 **0.10 – Idee prese dall'Amministrazione di UNIO**
 - Rendiconto: riquadro **«Prima di inviare il Rendiconto da UNIO»** con quello che UNIO chiede alla Diocesi di Firenze per approvarlo (scheda anagrafica, Consiglio per gli Affari Economici,
   previsione, situazione fiscale, assicurazioni; allegati: verbale CPAE, estratti conto di dicembre, bilanci delle attività commerciali, titoli, libretto, mutui), da spuntare anno per anno

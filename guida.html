@@ -72,7 +72,7 @@ e come usarlo durante l'anno. Non servono conoscenze tecniche.</p>
   <li><a href="#giorno">Uso di ogni giorno</a></li>
   <li><a href="#fatture">Fatture e scadenze</a></li>
   <li><a href="#banca">Estratti conto della banca</a></li>
-  <li><a href="#trimestre">Ogni trimestre: i dati in UNIO</a></li>
+  <li><a href="#trimestre">I dati in UNIO: due modi</a></li>
   <li><a href="#anno">Fine anno: il Rendiconto</a></li>
   <li><a href="#copie">Copie di sicurezza</a></li>
   <li><a href="#problemi">Se qualcosa non va</a></li>
@@ -92,6 +92,9 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.10.1:</b> il <b>confronto con UNIO</b> è indicato come facoltativo, e il capitolo 12 spiega i <b>due modi</b>
+per portare i dati in UNIO: ogni trimestre con i file di Divisio, oppure a fine anno a mano nel Rendiconto Parrocchiale di UNIO.</div>
 
 <div class="box nota"><b>Novità della versione 0.10</b> (idee prese dall'Amministrazione di UNIO): nel Rendiconto un <b>promemoria</b> di quello che UNIO chiede
 prima dell'invio e il segno «inviato», con un avviso se poi si corregge quell'anno; la previsione si può <b>ricopiare dall'anno prima</b> (capitolo 13).
@@ -212,13 +215,14 @@ Se ancora non va, avvisare il parroco: per quel computer si può accedere a Goog
 
 <h2 id="prova">7. Anno di prova 2026 <span class="chi">parroco</span></h2>
 <p>Prima di partire davvero il 1° gennaio 2027, si caricano in Divisio i movimenti 2026 già registrati in UNIO e si controlla che i due Rendiconti coincidano.</p>
+<div class="box nota">Il <b>confronto con UNIO</b> (punti 3 e 4) è <b>facoltativo</b>: serve solo per fidarsi delle cifre di Divisio. Divisio funziona anche senza.</div>
 <ol>
   <li>In UNIO esporti i movimenti della <b>Prima Nota</b> (file <b>AMM_PRIMA_NOTA</b>). Va bene anche l'estratto conto
     (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>, senza filtri.
     <br><i>Se si esporta solo qualche conto, Divisio lo riconosce e avvisa.</i></li>
   <li>In Divisio: Impostazioni → <b>"Caricare i movimenti da UNIO"</b> → scelga il file, guardi l'anteprima e prema <span class="bottone">Carica</span>.</li>
-  <li>In UNIO, pagina Rendiconto Parrocchiale: <span class="bottone">Esporta saldi Patrimoniali e di Gestione in .csv</span>.</li>
-  <li>In Divisio, pagina <b>Rendiconto</b> (anno 2026) → <span class="bottone">Carica il CSV di UNIO…</span>: accanto a ogni voce compare "= UNIO" in verde oppure la cifra di UNIO in rosso.</li>
+  <li><i>Facoltativo.</i> In UNIO, pagina Rendiconto Parrocchiale: <span class="bottone">Esporta saldi Patrimoniali e di Gestione in .csv</span>.</li>
+  <li><i>Facoltativo.</i> In Divisio, pagina <b>Rendiconto</b> (anno 2026) → <span class="bottone">Carica il CSV di UNIO…</span>: accanto a ogni voce compare "= UNIO" in verde oppure la cifra di UNIO in rosso.</li>
 </ol>
 <div class="box attenzione">Per un confronto alla pari <b>non inserisca i saldi di apertura 2026 prima del confronto</b>: in UNIO non ci sono. Li potrà aggiungere dopo.
 Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</span> riporta tutto com'era.</div>
@@ -237,7 +241,7 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <li>Ogni parrocchia segue i capitoli 3 e 4 sui propri computer. I dati di una parrocchia non sono mai visibili alle altre.</li>
   <li>Per lavorare insieme, ogni parrocchia usa una cartella <b>Divisio nel proprio Google Drive</b> (capitolo 5).
     <b>Mai</b> collegare la stessa cartella a due parrocchie diverse: i conti si mescolerebbero.</li>
-  <li>Il passaggio dei dati a UNIO (capitolo 11) è previsto dall'anno indicato in fondo alla pagina "Per UNIO" (di solito il primo anno intero in cui si usa Divisio).</li>
+  <li>Il passaggio dei dati a UNIO (capitolo 12) è previsto dall'anno indicato in fondo alla pagina "Per UNIO" (di solito il primo anno intero in cui si usa Divisio).</li>
 </ol>
 <div class="box attenzione"><b>Un sacerdote con due parrocchie sullo stesso computer</b> deve usare <b>due profili diversi di Chrome</b>
 (menu del profilo, in alto a destra → <i>Aggiungi</i>), uno per parrocchia: ogni profilo ha i suoi dati.</div>
@@ -354,8 +358,16 @@ La scelta viene ricordata per i file successivi della stessa banca.</p>
   <li>Il file viene letto solo su questo computer e non viene conservato.</li>
 </ul>
 
-<h2 id="trimestre">12. Ogni trimestre: i dati in UNIO <span class="chi">parroco</span></h2>
-<p>Il Rendiconto si invia sempre da UNIO, quindi UNIO deve avere i movimenti. Divisio li riassume in poche righe, una per voce.</p>
+<h2 id="trimestre">12. I dati in UNIO: due modi <span class="chi">parroco</span></h2>
+<p>Il Rendiconto si invia sempre da UNIO. Per portare in UNIO le cifre di Divisio ci sono <b>due modi</b>: ne scelga uno e lo tenga per tutto l'anno.</p>
+<table>
+  <tr><th>Modo</th><th>Per chi</th></tr>
+  <tr><td><b>1. Ogni trimestre</b>, con i file di Divisio</td><td>Chi vuole avere in UNIO anche i movimenti (come oggi).</td></tr>
+  <tr><td><b>2. Una volta all'anno, a mano</b>, nel Rendiconto Parrocchiale di UNIO</td><td>Chi non vuole usare UNIO per niente e non vi inserisce nessun movimento.</td></tr>
+</table>
+
+<h3>Primo modo: ogni trimestre, con i file di Divisio</h3>
+<p>UNIO riceve i movimenti e calcola da sé il Rendiconto. Divisio li riassume in poche righe, una per voce.</p>
 <ol>
   <li>Divisio → <b>Per UNIO</b>: scelga la cassa o banca e il trimestre.</li>
   <li><span class="bottone">Scarica il file per UNIO</span> (va nella cartella Download).</li>
@@ -370,10 +382,24 @@ niente viene contato due volte. Gli spostamenti tra cassa e banca compaiono in u
 <div class="box attenzione">In fondo alla pagina Per UNIO, <b>"Azzera le importazioni segnate del …"</b> fa dimenticare a Divisio tutti i "Ho importato in UNIO" dell'anno:
 i file torneranno completi. Lo usi solo se quei dati <b>non</b> sono più in UNIO (per esempio se ricomincia la prova da capo), altrimenti in UNIO risulterebbero doppi.</div>
 
+<h3>Secondo modo: una volta all'anno, a mano</h3>
+<p>Per chi non vuole usare UNIO per niente: in UNIO non si inserisce <b>nessun movimento</b>, si registra tutto solo in Divisio.</p>
+<ol>
+  <li>Durante l'anno si registra solo in Divisio. La pagina <b>Per UNIO</b> e i promemoria dei trimestri nella pagina Inizio non servono: li può ignorare.</li>
+  <li>A fine anno: Divisio → <b>Rendiconto</b> → riquadro <b>Rendiconto di gestione</b>. Conviene stamparlo con <span class="bottone">Stampa / PDF</span>.</li>
+  <li>In UNIO: <b>Rendiconto Parrocchiale</b> → scriva a mano, voce per voce, le cifre del Rendiconto di gestione di Divisio.</li>
+  <li>Poi completi e invii il Rendiconto da UNIO, come al capitolo 13.</li>
+</ol>
+<div class="box attenzione"><b>Importante:</b> appena in UNIO si inserisce <b>anche una sola registrazione</b> (un movimento in Partita Doppia o un'importazione),
+UNIO <b>blocca il Rendiconto Parrocchiale</b>: le caselle non si possono più scrivere a mano. Per questo, con il secondo modo, in UNIO non si registra mai nulla,
+e i due modi non si mescolano nello stesso anno.</div>
+
 <h2 id="anno">13. Fine anno: il Rendiconto <span class="chi">parroco</span></h2>
 <ol>
   <li>Divisio → <b>Rendiconto</b>: tutte le sezioni di UNIO (gestione, situazione patrimoniale, collette, contributo diocesano 3% e 10%, bilancio di previsione, bilancio analitico).</li>
-  <li>Verifichi che UNIO abbia tutto: in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio → tutte le voci devono risultare "= UNIO".</li>
+  <li><i>Facoltativo</i> (primo modo del capitolo 12): per controllare che UNIO abbia tutto, in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio
+    → tutte le voci devono risultare "= UNIO". Il Rendiconto di Divisio è completo anche senza questo controllo.</li>
+  <li>Con il <b>secondo modo</b> del capitolo 12: ricopi a mano nel Rendiconto Parrocchiale di UNIO le cifre del <b>Rendiconto di gestione</b> di Divisio.</li>
   <li>Per il Consiglio per gli Affari Economici: <span class="bottone">Stampa / PDF</span>.</li>
   <li>Bilancio di previsione: si può partire da <span class="bottone">Copia la previsione del …</span> (quella dell'anno prima) oppure da
     <span class="bottone">Parti dalle cifre vere del …</span> (entrate e uscite dell'anno prima), e poi correggere le cifre.</li>

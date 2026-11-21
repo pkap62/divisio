@@ -47,9 +47,11 @@ export function vista(ctx) {
   <h2>Prepara i dati per UNIO</h2>
   <p class="lead">Divisio riassume i movimenti di una cassa o banca in poche righe, una per voce.
     In UNIO si carica il file e per ogni riga si sceglie il codice scritto all'inizio.</p>
+  <p class="hint solo-schermo">C'è anche un secondo modo, per chi non vuole registrare nulla in UNIO: a fine anno si ricopiano a mano le cifre del Rendiconto di Divisio
+    nel Rendiconto Parrocchiale di UNIO. Attenzione: funziona solo se in UNIO non c'è <b>nessuna</b> registrazione. Vedi la <a href="guida.html#trimestre" target="_blank" rel="noopener">Guida, capitolo 12</a>.</p>
 
   ${ctx.anno < primoAnnoUNIO(ctx.arch) ? `<div class="nota solo-schermo">Il passaggio dei dati a UNIO tramite Divisio parte dal <b>${primoAnnoUNIO(ctx.arch)}</b>.
-    I movimenti del ${ctx.anno} sono già stati inseriti direttamente in UNIO: per quest'anno non importi nulla, usi solo il confronto nella pagina Rendiconto.</div>` : ""}
+    I movimenti del ${ctx.anno} sono già stati inseriti direttamente in UNIO: per quest'anno non importi nulla. Se vuole, può controllarli con il confronto (facoltativo) nella pagina Rendiconto.</div>` : ""}
   <div class="card solo-schermo">
     <div class="griglia g2">
       <div><label class="campo">Cassa o banca</label><div class="scelta">${cs.map((c) =>
@@ -70,7 +72,7 @@ export function vista(ctx) {
         come conto di riferimento scelga <b>${nomeCassa}</b> <span class="codice">${sel.cassa.split("-").join(" – ")}</span>, poi carichi il file.</li>
       <li>Per ogni riga scelga in UNIO il <b>Gruppo, Conto e Sottoconto</b> scritti tra parentesi quadre (li trova anche nel foglio guida qui sotto) e completi l'importazione.</li>
       <li>Torni qui e prema <b>"Ho importato in UNIO"</b>: la prossima volta Divisio preparerà solo le novità.</li>
-      <li>Per controllare: in UNIO esporti il CSV dei saldi e lo carichi nella pagina <a href="#" data-azione="vai" data-pagina="rendiconto">Rendiconto</a>.</li>
+      <li>Se vuole controllare (facoltativo): in UNIO esporti il CSV dei saldi e lo carichi nella pagina <a href="#" data-azione="vai" data-pagina="rendiconto">Rendiconto</a>.</li>
     </ol>
     <div class="riga-bottoni"><button class="btn" data-azione="scarica">Scarica il file per UNIO</button>
       <button class="btn sec" data-azione="stampa">Stampa il foglio guida</button>

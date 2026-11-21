@@ -62,7 +62,8 @@ export function vista(ctx) {
              : `<div class="errore">✗ Lo stato patrimoniale non torna: controlli i movimenti in partita doppia.</div>`}
   ${!ctx.arch.movimento(`apertura-${ctx.anno}`) ? `<div class="avviso solo-schermo">Mancano i saldi di apertura ${ctx.anno}: cassa, banche e patrimonio partono da zero.</div>` : ""}
 
-  <div class="card solo-schermo" style="margin-top:16px"><h3>Confronta con UNIO</h3>
+  <div class="card solo-schermo" style="margin-top:16px"><h3>Confronta con UNIO <span class="pill">facoltativo</span></h3>
+    <p class="hint"><b>Non è obbligatorio:</b> serve solo per controllare che UNIO e Divisio abbiano le stesse cifre. Il Rendiconto di Divisio è completo anche senza.</p>
     <p class="hint">In UNIO, pagina Rendiconto Parrocchiale, prema <b>"Esporta saldi Patrimoniali e di Gestione in .csv"</b> e carichi qui il file.
       Divisio controlla le 54 voci una per una. Il file viene letto solo su questo computer.</p>
     <div class="riga-bottoni stretta"><label class="btn sec piccolo">${unio ? "Carica un altro CSV di UNIO…" : "Carica il CSV di UNIO…"}<input type="file" accept=".csv,text/csv" hidden data-cambia="confronto"></label>
