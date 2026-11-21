@@ -1,6 +1,6 @@
 import { test, uguale, vero } from "./mini.js";
 import { scritturaSemplice, scritturaApertura } from "../js/dominio/scritture.js";
-import { riepilogoAnno, totaliPerConto, saldo, movimentiAnno } from "../js/dominio/saldi.js";
+import { riepilogoAnno, totaliPerConto, saldo, movimentiAnno, saldiProgressivi } from "../js/dominio/saldi.js";
 
 const CASSA = "A02-01-01", BANCA = "A02-01-02";
 let id = 1;
@@ -42,4 +42,16 @@ test("i movimenti eliminati non contano", () => {
 
 test("il riepilogo considera solo l'anno richiesto", () => {
   uguale(riepilogoAnno([...anno2026, ...altroAnno], 2025).entrate, 99999);
+});
+
+test("saldo progressivo di una cassa, movimento per movimento", () => {
+  // l'apertura inserita per ultima viene comunque contata per prima
+  const lista = [...anno2026.slice(1).reverse(), anno2026[0]];
+  const cassa = saldiProgressivi(lista, CASSA);
+  uguale([...cassa.values()], [85000, 126000, 141000, 71000, 127000]);
+  uguale(cassa.has(anno2026[3].id), false, "l'uscita dalla banca non tocca la cassa");
+  uguale(cassa.get(anno2026[6 - 1].id), 127000);
+  const banca = saldiProgressivi(anno2026, BANCA);
+  uguale([...banca.values()], [1240000, 1221360, 1291360, 1205360]);
+  uguale(saldiProgressivi([{ ...anno2026[1], eliminato: true }], CASSA).size, 0, "gli eliminati non contano");
 });

@@ -26,6 +26,24 @@ export function saldo(conto, totali) {
   return crescInDare(conto) ? x.dare - x.avere : x.avere - x.dare;
 }
 
+/**
+ * Saldo progressivo di un conto (per esempio la cassa): dopo ogni movimento che lo tocca, quanto c'è.
+ * Ordine: data, a parità di data prima i saldi di apertura, poi l'ordine di inserimento.
+ * Restituisce Map id del movimento → saldo naturale dopo quel movimento.
+ */
+export function saldiProgressivi(movimenti, conto) {
+  const ordine = (a, b) => a.data.localeCompare(b.data) || (b.tipo === "apertura") - (a.tipo === "apertura")
+    || String(a.creatoIl ?? "").localeCompare(String(b.creatoIl ?? "")) || String(a.id).localeCompare(String(b.id));
+  const verso = crescInDare(conto) ? 1 : -1;
+  const progressivi = new Map();
+  let s = 0;
+  for (const m of movimenti.filter((x) => !x.eliminato && x.righe.some((r) => r.conto === conto)).sort(ordine)) {
+    for (const r of m.righe) if (r.conto === conto) s += verso * (r.dare - r.avere);
+    progressivi.set(m.id, s);
+  }
+  return progressivi;
+}
+
 /** Somma dei saldi naturali dei conti il cui tipo è tra quelli indicati. */
 export function sommaPerTipo(totali, tipi) {
   let s = 0;

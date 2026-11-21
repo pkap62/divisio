@@ -20,10 +20,11 @@ export function tabellaRighe(righe, arch) {
     <tr class="tot"><td>Totale ${dare === avere ? "✓" : "✗"}</td><td class="n">${eur(dare)}</td><td class="n">${eur(avere)}</td></tr></table>`;
 }
 
-export function tabellaMovimenti(lista, arch, { dettagli = false } = {}) {
+/** progressivo (facoltativo): Map id → saldo della cassa scelta dopo quel movimento, mostrato in una colonna in più. */
+export function tabellaMovimenti(lista, arch, { dettagli = false, progressivo = null } = {}) {
   if (!lista.length) return `<p class="hint">Nessun movimento.</p>`;
   return `<div class="scorri"><table class="movimenti">
-    <tr><th>Data</th><th>Descrizione</th><th>Voce</th><th>Cassa / banca</th><th class="n">Importo</th></tr>
+    <tr><th>Data</th><th>Descrizione</th><th>Voce</th><th>Cassa / banca</th><th class="n">Importo</th>${progressivo ? `<th class="n">Saldo dopo</th>` : ""}</tr>
     ${lista.map((m) => {
       const d = descrivi(m, arch);
       const classe = d.segno > 0 ? "pos" : d.segno < 0 ? "neg" : "";
@@ -33,8 +34,10 @@ export function tabellaMovimenti(lista, arch, { dettagli = false } = {}) {
           ${m.tipo === "apertura"
             ? `<p class="hint">I saldi di apertura si cambiano da Impostazioni.</p>`
             : `<div class="riga-bottoni"><button class="btn sec piccolo" data-azione="modifica" data-id="${esc(m.id)}">Modifica</button>
+               ${m.fattura ? "" : `<button class="btn sec piccolo" data-azione="copia" data-id="${esc(m.id)}">Registra di nuovo uguale</button>`}
                <button class="btn pericolo piccolo" data-azione="elimina" data-id="${esc(m.id)}">Elimina</button></div>`}
         </details>` : ""}</td>
-        <td>${d.voce}</td><td>${d.cassa}</td><td class="n ${classe}">${d.segno > 0 ? "+" : d.segno < 0 ? "−" : ""}${eur(d.importo)}</td></tr>`;
+        <td>${d.voce}</td><td>${d.cassa}</td><td class="n ${classe}">${d.segno > 0 ? "+" : d.segno < 0 ? "−" : ""}${eur(d.importo)}</td>${progressivo
+          ? `<td class="n ${(progressivo.get(m.id) ?? 0) < 0 ? "neg" : ""}">${progressivo.has(m.id) ? eur(progressivo.get(m.id)) : ""}</td>` : ""}</tr>`;
     }).join("")}</table></div>`;
 }

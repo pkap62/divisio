@@ -1,7 +1,7 @@
 // Rendiconto su un anno INVENTATO, con tutti i risultati calcolati a mano (vedi commenti).
 import { test, uguale, vero, contiene } from "./mini.js";
 import { scritturaSemplice, scritturaApertura } from "../js/dominio/scritture.js";
-import { calcolaRendiconto, totaliPrevisione } from "../js/dominio/rendiconto.js";
+import { calcolaRendiconto, totaliPrevisione, previsioneDaConsuntivo, statoInvio, PROMEMORIA_INVIO } from "../js/dominio/rendiconto.js";
 import { saldiCSV, leggiSaldiUNIO, confronta, VOCI_UNIO } from "../js/dominio/unio.js";
 import { sottocontiIniziali } from "../js/dominio/piano.js";
 
@@ -129,4 +129,20 @@ test("confronto con UNIO: lettura del CSV e differenze voce per voce", () => {
 
   vero(!leggiSaldiUNIO("Data;Descrizione;Uscite;Entrate\r\n01/01/2026;x;1;0").ok, "file sbagliato rifiutato");
   vero(!leggiSaldiUNIO("").ok);
+});
+
+test("previsione ripresa dal consuntivo", () => {
+  const prev = previsioneDaConsuntivo(R);
+  uguale(totaliPrevisione(prev), { entrate: R.entrate, uscite: R.uscite, avanzo: R.avanzo });
+  vero(Object.keys(prev).every((g) => /^[EU]\d\d$/.test(g) && prev[g] !== 0), "solo gruppi di entrate e uscite, senza zeri");
+});
+
+test("promemoria per l'invio del Rendiconto", () => {
+  const totale = PROMEMORIA_INVIO.reduce((s, g) => s + g.voci.length, 0);
+  uguale(statoInvio(), { spunte: {}, inviato: "", fatte: 0, totale, completo: false });
+  const tutte = Object.fromEntries(PROMEMORIA_INVIO.flatMap((g) => g.voci.map(([k]) => [k, true])));
+  uguale(statoInvio({ spunte: { verbale: true, altro: true } }).fatte, 1, "le chiavi sconosciute non contano");
+  const s = statoInvio({ spunte: tutte, inviato: "2027-03-10" });
+  vero(s.completo);
+  uguale(s.inviato, "2027-03-10");
 });

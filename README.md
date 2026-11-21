@@ -7,6 +7,15 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.10 – Idee prese dall'Amministrazione di UNIO**
+- Rendiconto: riquadro **«Prima di inviare il Rendiconto da UNIO»** con quello che UNIO chiede alla Diocesi di Firenze per approvarlo (scheda anagrafica, Consiglio per gli Affari Economici,
+  previsione, situazione fiscale, assicurazioni; allegati: verbale CPAE, estratti conto di dicembre, bilanci delle attività commerciali, titoli, libretto, mutui), da spuntare anno per anno
+  (impostazione `invio-rendiconto-AAAA`), e segno **«inviato da UNIO il…»**: poi Registra, Movimenti ed Elimina avvisano che le correzioni di quell'anno vanno fatte anche in UNIO
+  (UNIO in quel caso blocca le registrazioni; Divisio avvisa soltanto).
+- Bilancio di previsione: **Copia la previsione dell'anno prima** o **Parti dalle cifre vere dell'anno prima** (come «Copia da esercizio precedente» di UNIO), con conferma se è già compilata.
+- Movimenti: **Registra di nuovo uguale** nei Dettagli (come «Copia movimento» di UNIO; non per i pagamenti di fatture) e, scegliendo una sola cassa o banca,
+  la colonna **Saldo dopo** (come l'estratto conto «con progressivi» di UNIO), calcolata su tutto l'anno partendo dai saldi di apertura.
+
 **0.9 – PDF letti meglio e ricordati; Prima Nota di UNIO; azzeramenti**
 - Fatture **PDF**: il lettore usa anche la posizione delle parole sulla pagina (valori scritti sotto l'etichetta, in tabella), controlla gli importi tra loro
   (imponibile + IVA = totale, con l'aliquota), riconosce numero e data della fattura senza confonderli con proforma, documenti commerciali o R.E.A.,

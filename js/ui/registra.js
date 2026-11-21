@@ -3,7 +3,7 @@
 import { scritturaSemplice, verificaMovimento, analizza } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale, formatEuro } from "../dominio/importi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
-import { esc, eur, dataPerAnno, opzioniConti, toast, $ } from "./util.js";
+import { esc, eur, dataIt, dataPerAnno, opzioniConti, rendicontoInviato, toast, $ } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
 
 let F = null;   // stato del modulo in compilazione
@@ -34,6 +34,11 @@ function daMovimento(m) {
 /** Chiamata prima di mostrare la pagina. opz: {tipo} per un nuovo movimento, {modifica:id} per correggerne uno. */
 export function prepara(ctx, opz = {}) {
   if (opz.modifica) { const m = ctx.arch.movimento(opz.modifica); if (m) { F = daMovimento(m); return; } }
+  if (opz.copia) {
+    // "Registra di nuovo": stesso movimento, ma nuovo e con la data di oggi (o dell'anno scelto)
+    const m = ctx.arch.movimento(opz.copia);
+    if (m) { F = { ...daMovimento(m), id: null, data: dataPerAnno(ctx.anno), copiaDa: { descr: m.descr, data: m.data } }; return; }
+  }
   if (!F || opz.tipo || F.id) F = nuovo(ctx, opz.tipo || "entrata");
   if (F.data.slice(0, 4) !== String(ctx.anno)) F.data = dataPerAnno(ctx.anno);
 }
@@ -64,6 +69,9 @@ export function vista(ctx) {
   return F.modo === "pd" ? vistaPD(ctx) : vistaSemplice(ctx);
 }
 
+const notaCopia = () => (F.copiaDa && !F.id
+  ? `<div class="nota">Copiato da «${esc(F.copiaDa.descr)}» del ${dataIt(F.copiaDa.data)}: controlli data e importo, poi prema Registra.</div>` : "");
+
 const notaFattura = (ctx) => (F.id && ctx.arch.movimento(F.id)?.fattura
   ? `<div class="nota">Questo movimento viene da una fattura pagata (pagina Fatture). Si può correggere qui; per annullare il pagamento, usi "Torna da pagare" nella pagina Fatture.</div>` : "");
 
@@ -77,7 +85,7 @@ function vistaSemplice(ctx) {
   return `
   ${intestazione(F.id ? "Correggi il movimento" : "Registra un movimento", "Sono pratico: usa la partita doppia", "modoPD")}
   <p class="lead">Compili i campi: Divisio scrive da solo la registrazione in partita doppia.</p>
-  ${notaFattura(ctx)}
+  ${notaFattura(ctx)}${notaCopia()}
   <div class="card">
     <div class="scelta">
       <button class="${F.tipo === "entrata" ? "on entrata" : ""}" data-azione="tipo" data-v="entrata">+ Entrata</button>
@@ -109,7 +117,7 @@ function vistaPD(ctx) {
   return `
   ${intestazione(F.id ? "Correggi il movimento" : "Registra in partita doppia", "Torna alla modalità semplice", "modoSemplice")}
   <p class="lead">Per chi conosce la partita doppia: il movimento si salva solo se Dare = Avere.</p>
-  ${notaFattura(ctx)}
+  ${notaFattura(ctx)}${notaCopia()}
   <div class="card">
     <div class="griglia g2">
       <div><label class="campo" for="p-data">Data</label><input id="p-data" type="date" value="${F.data}" data-input="data"></div>
@@ -137,6 +145,12 @@ function aggiornaAnteprima(ctx) {
   const errori = completo ? verificaMovimento(mov, { conti: ctx.arch.conti, anno: ctx.anno }) : [];
   const msg = [];
   if (importoNonValido) msg.push(`<div class="errore">Importo non valido: scriva per esempio 50 oppure 1.250,50</div>`);
+  // Rendiconto di quell'anno già inviato da UNIO (anche l'anno della data di prima, se si sta correggendo)
+  const anni = new Set([F.data?.slice(0, 4), F.id ? ctx.arch.movimento(F.id)?.data.slice(0, 4) : null].filter(Boolean));
+  for (const a of anni) {
+    const inviato = rendicontoInviato(ctx.arch, Number(a));
+    if (inviato) msg.push(`<div class="avviso">Il Rendiconto ${a} risulta già <b>inviato da UNIO il ${dataIt(inviato)}</b>: quello che registra o corregge qui va riportato anche in UNIO.</div>`);
+  }
   if (F.data && F.data.slice(0, 4) !== String(ctx.anno)) msg.push(`<div class="avviso">La data è fuori dall'anno ${ctx.anno} (l'anno si cambia in alto).</div>`);
   if (F.modo === "semplice" && F.voce && tipoDi(F.voce) === "PG") {
     msg.push(`<div class="nota">${F.tipo === "entrata"

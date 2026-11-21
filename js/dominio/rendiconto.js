@@ -64,6 +64,46 @@ export function calcolaRendiconto(movimenti, anno, { conti } = {}) {
   };
 }
 
+/**
+ * Bilancio di previsione già compilato con i totali per gruppo di un Rendiconto calcolato
+ * (per partire dalle cifre vere di un anno). Solo i gruppi con un importo diverso da zero.
+ */
+export function previsioneDaConsuntivo(R) {
+  const prev = {};
+  for (const g of GRUPPI) if ((g.tipo === "E" || g.tipo === "U") && R.gruppi.get(g.codice)) prev[g.codice] = R.gruppi.get(g.codice);
+  return prev;
+}
+
+/**
+ * Cosa chiede UNIO alla Diocesi di Firenze prima di approvare il Rendiconto
+ * (pagina Rendiconto Parrocchiale di UNIO, novembre 2026). Si spunta in Divisio, anno per anno.
+ */
+export const PROMEMORIA_INVIO = [
+  { gruppo: "Da compilare in UNIO", voci: [
+    ["anagrafica", "Scheda anagrafica della parrocchia (abitanti, indirizzo, codice fiscale, parroco…)"],
+    ["cpae", "Componenti del Consiglio per gli Affari Economici e data in cui ha approvato il Rendiconto"],
+    ["previsione", "Bilancio di previsione"],
+    ["fiscale", "Situazione fiscale (Modello Unico, 770, dichiarazione IVA, IMU, consulente)"],
+    ["assicurazioni", "Assicurazioni (compagnia; incendio, furto, infortuni, responsabilità civile)"],
+  ] },
+  { gruppo: "Allegati richiesti da UNIO", voci: [
+    ["verbale", "Verbale di approvazione del Consiglio per gli Affari Economici"],
+    ["estrattiConto", "Estratti conto di dicembre"],
+    ["attivita", "Bilanci delle attività collegate alla parrocchia (attività commerciali, per esempio il teatro)"],
+    ["titoli", "Estratti conto dei titoli"],
+    ["libretto", "Copia del libretto di risparmio"],
+    ["mutui", "Documenti di mutui e interessi"],
+  ] },
+];
+
+/** Stato del promemoria salvato (impostazione "invio-rendiconto-AAAA"): quante voci sono spuntate e se è stato inviato. */
+export function statoInvio(valore = {}) {
+  const spunte = valore.spunte ?? {};
+  const chiavi = PROMEMORIA_INVIO.flatMap((g) => g.voci.map(([k]) => k));
+  const fatte = chiavi.filter((k) => spunte[k]).length;
+  return { spunte, inviato: valore.inviato || "", fatte, totale: chiavi.length, completo: fatte === chiavi.length };
+}
+
 /** Bilancio di previsione: un importo per gruppo (E01…E04, U01…U10). */
 export function totaliPrevisione(previsione = {}) {
   const somma = (t) => GRUPPI.filter((g) => g.tipo === t).reduce((s, g) => s + (previsione[g.codice] || 0), 0);

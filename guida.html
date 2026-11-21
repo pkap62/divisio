@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.9.1</span></p>
+  <p class="versione">Versione <span id="versione">0.10.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,10 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.10</b> (idee prese dall'Amministrazione di UNIO): nel Rendiconto un <b>promemoria</b> di quello che UNIO chiede
+prima dell'invio e il segno «inviato», con un avviso se poi si corregge quell'anno; la previsione si può <b>ricopiare dall'anno prima</b> (capitolo 13).
+In Movimenti: <b>Registra di nuovo uguale</b> e il <b>saldo dopo ogni movimento</b> di una cassa o banca (capitolo 9).</div>
 
 <div class="box nota"><b>Novità della versione 0.9:</b> le fatture <b>PDF</b> si leggono molto meglio (anche i dati in tabella) e Divisio
 <b>ricorda le correzioni</b> per ogni fornitore; la scritta <b>PAGATA</b> sul PDF diventa una proposta di pagamento (capitolo 10).
@@ -248,7 +252,11 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td><b>collette imperate</b> (Giornata missionaria, Quaresima di carità…)</td><td>La raccolta è un'<b>entrata</b> sulla voce della colletta; il versamento alla Diocesi è un'<b>uscita</b> sulla stessa voce.
     Divisio la tiene da parte: non la conta tra le entrate della parrocchia e in Inizio ricorda quanto resta da versare.</td></tr>
   <tr><td><b>correggere</b> o <b>eliminare</b></td><td>Movimenti → apra "Dettagli" sul movimento → <span class="bottone">Modifica</span> o <span class="bottone">Elimina</span> (chiede sempre conferma).</td></tr>
+  <tr><td>una cosa che si ripete (colletta della domenica, candele del mese…)</td><td>Movimenti → "Dettagli" su un movimento uguale → <span class="bottone">Registra di nuovo uguale</span>:
+    si apre Registra già compilato, con la data di oggi. Controlli data e importo e prema <span class="bottone">Registra</span>.</td></tr>
   <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo; <span class="bottone">Scarica in CSV (Excel)</span>.</td></tr>
+  <tr><td>controllare la cassa o la banca</td><td>Movimenti → in "Cassa / banca" scelga una sola cassa o banca: compare la colonna <b>Saldo dopo</b>, cioè quanto c'era dopo ogni movimento.
+    Si confronta con i contanti contati o con l'estratto conto.</td></tr>
 </table>
 <div class="box ok">Divisio non lascia salvare un movimento sbagliato: ogni registrazione è in partita doppia con Dare = Avere, e la pagina Inizio controlla sempre che i conti tornino.</div>
 
@@ -367,7 +375,13 @@ i file torneranno completi. Lo usi solo se quei dati <b>non</b> sono più in UNI
   <li>Divisio → <b>Rendiconto</b>: tutte le sezioni di UNIO (gestione, situazione patrimoniale, collette, contributo diocesano 3% e 10%, bilancio di previsione, bilancio analitico).</li>
   <li>Verifichi che UNIO abbia tutto: in UNIO esporti il CSV dei saldi e lo carichi nel Rendiconto di Divisio → tutte le voci devono risultare "= UNIO".</li>
   <li>Per il Consiglio per gli Affari Economici: <span class="bottone">Stampa / PDF</span>.</li>
-  <li>L'invio in Curia, la scheda anagrafica, le "Altre informazioni" e gli allegati si fanno in UNIO, come sempre.</li>
+  <li>Bilancio di previsione: si può partire da <span class="bottone">Copia la previsione del …</span> (quella dell'anno prima) oppure da
+    <span class="bottone">Parti dalle cifre vere del …</span> (entrate e uscite dell'anno prima), e poi correggere le cifre.</li>
+  <li>L'invio in Curia, la scheda anagrafica, le "Altre informazioni" e gli allegati si fanno in UNIO, come sempre. In fondo al Rendiconto di Divisio
+    c'è il riquadro <b>Prima di inviare il Rendiconto da UNIO</b>: l'elenco di quello che UNIO chiede alla Diocesi di Firenze (scheda anagrafica, Consiglio per gli Affari Economici,
+    situazione fiscale, assicurazioni, verbale, estratti conto di dicembre, bilanci delle attività commerciali, titoli, libretto, mutui), da spuntare man mano.</li>
+  <li>Dopo l'invio da UNIO: <span class="bottone">Segna il Rendiconto … come inviato</span>, con la data. Da quel momento, se si registra, corregge o elimina un movimento di quell'anno,
+    Divisio ricorda che la stessa modifica va fatta anche in UNIO.</li>
   <li>Anno nuovo: in alto scelga il nuovo anno e in Impostazioni inserisca i <b>saldi di apertura</b> (cassa, banche, collette da versare, crediti e debiti al 31 dicembre),
     che trova nel Rendiconto dell'anno appena chiuso, alla Situazione patrimoniale. <i>Per ora si fa a mano.</i></li>
 </ol>
@@ -397,7 +411,7 @@ i file torneranno completi. Lo usi solo se quei dati <b>non</b> sono più in UNI
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.9) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.10) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

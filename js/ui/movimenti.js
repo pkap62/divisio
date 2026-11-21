@@ -1,10 +1,10 @@
 // Pagina "Movimenti": elenco con ricerca e filtri, correzione, eliminazione, esportazione CSV.
 
-import { movimentiAnno } from "../dominio/saldi.js";
+import { movimentiAnno, saldiProgressivi } from "../dominio/saldi.js";
 import { movimentiCSV, perData } from "../dominio/csv.js";
 import { casseInOrdine } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
-import { esc, eur, dataIt, norm, scarica, toast, $ } from "./util.js";
+import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, $ } from "./util.js";
 import { tabellaMovimenti } from "./elenco.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 import { salvaCopia } from "./impostazioni.js";
@@ -27,8 +27,13 @@ function filtrati({ arch, anno }) {
 function elenco(ctx) {
   const lista = filtrati(ctx);
   const somma = (s) => lista.reduce((t, m) => { const a = analizza(m); return t + (a.segno === s ? a.importo : 0); }, 0);
-  return `${tabellaMovimenti(lista, ctx.arch, { dettagli: true })}
-    <p class="hint">${lista.length} movimenti · entrate di cassa ${eur(somma(1))} · uscite ${eur(somma(-1))}</p>`;
+  // scelta una sola cassa o banca: saldo dopo ogni movimento, calcolato su tutto l'anno (anche se si cerca o si sceglie un periodo)
+  const progressivo = filtro.cassa ? saldiProgressivi(movimentiAnno(ctx.arch.movimenti(), ctx.anno), filtro.cassa) : null;
+  const finale = progressivo?.size ? [...progressivo.values()].at(-1) : null;
+  return `${tabellaMovimenti(lista, ctx.arch, { dettagli: true, progressivo })}
+    <p class="hint">${lista.length} movimenti · entrate di cassa ${eur(somma(1))} · uscite ${eur(somma(-1))}</p>
+    ${progressivo ? `<p class="hint">«Saldo dopo»: quanto c'era in ${esc(ctx.arch.nomeConto(filtro.cassa))} dopo ogni movimento, partendo dal saldo di inizio anno.
+      Saldo dopo l'ultimo movimento del ${ctx.anno}: <b>${eur(finale ?? 0)}</b>. Serve per confrontarlo con i contanti contati o con l'estratto conto della banca.</p>` : ""}`;
 }
 
 export function vista(ctx) {
@@ -37,7 +42,10 @@ export function vista(ctx) {
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>
     <button class="btn sec piccolo" data-azione="csv">Scarica in CSV (Excel)</button></div>
-  <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere o eliminare.</p>
+  <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere, eliminare o registrare di nuovo lo stesso movimento.
+    Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento.</p>
+  ${rendicontoInviato(ctx.arch, ctx.anno) ? `<div class="nota">Il Rendiconto ${ctx.anno} risulta già inviato da UNIO il ${dataIt(rendicontoInviato(ctx.arch, ctx.anno))}:
+    le correzioni ai movimenti del ${ctx.anno} vanno fatte anche in UNIO.</div>` : ""}
   <div class="card"><div class="griglia g4">
     <div><label class="campo" for="m-cerca">Cerca</label><input id="m-cerca" type="search" value="${esc(filtro.testo)}" placeholder="es. funerale" data-input="testo"></div>
     <div><label class="campo" for="m-cassa">Cassa / banca</label><select id="m-cassa" data-cambia="cassa">${opz([["", "Tutte"], ...casse.map((c) => [c.codice, c.nome])], filtro.cassa)}</select></div>
@@ -108,17 +116,20 @@ export const azioni = {
     ctx.aggiorna();
   },
   modifica: (el, ev, ctx) => ctx.vai("registra", { modifica: el.dataset.id }),
+  copia: (el, ev, ctx) => ctx.vai("registra", { copia: el.dataset.id }),
   async elimina(el, ev, ctx) {
     const m = ctx.arch.movimento(el.dataset.id);
     if (!m) return;
     const f = m.fattura ? ctx.arch.fattura(m.fattura.id) : undefined;
+    const inviato = rendicontoInviato(ctx.arch, Number(m.data.slice(0, 4)));
+    const ancheUNIO = inviato ? `\n\nAttenzione: il Rendiconto ${m.data.slice(0, 4)} risulta già inviato da UNIO il ${dataIt(inviato)}; l'eliminazione va fatta anche in UNIO.` : "";
     if (f) {
       // movimento nato da una fattura pagata: la fattura torna "da pagare", nella stessa operazione
-      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà "da pagare" nello scadenzario.`)) return;
+      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà "da pagare" nello scadenzario.${ancheUNIO}`)) return;
       await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, m.fattura.rata).fattura], movimentiDaEliminare: [m.id] });
       toast("Movimento eliminato; la fattura è di nuovo da pagare");
     } else {
-      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?`)) return;
+      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?${ancheUNIO}`)) return;
       await ctx.arch.eliminaMovimento(m.id);
       toast("Movimento eliminato");
     }

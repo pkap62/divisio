@@ -13,6 +13,9 @@ export const norm = (s) => String(s ?? "").toLowerCase().normalize("NFD").replac
 const due = (n) => String(n).padStart(2, "0");
 export function oggiISO() { const d = new Date(); return `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}`; }
 
+/** Data in cui il Rendiconto di quell'anno è stato segnato come inviato da UNIO (pagina Rendiconto); "" se non lo è. */
+export const rendicontoInviato = (arch, anno) => arch.impostazione(`invio-rendiconto-${anno}`, {})?.inviato || "";
+
 /** Data proposta per un nuovo movimento dell'anno scelto: oggi, se l'anno è quello in corso. */
 export function dataPerAnno(anno) {
   const oggi = oggiISO(), corrente = Number(oggi.slice(0, 4));

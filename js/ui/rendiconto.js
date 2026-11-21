@@ -1,11 +1,11 @@
 // Pagina "Rendiconto": le stesse sezioni del Rendiconto UNIO, calcolate dai movimenti.
 
-import { calcolaRendiconto, totaliPrevisione } from "../dominio/rendiconto.js";
+import { calcolaRendiconto, totaliPrevisione, previsioneDaConsuntivo, statoInvio, PROMEMORIA_INVIO } from "../dominio/rendiconto.js";
 import { saldiCSV, leggiSaldiUNIO, confronta } from "../dominio/unio.js";
 import { movimentiAnno } from "../dominio/saldi.js";
 import { GRUPPI, VOCI, voceDi } from "../dominio/piano.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { esc, eur, cellaEuro, scarica, toast } from "./util.js";
+import { esc, eur, cellaEuro, scarica, toast, dataIt, oggiISO } from "./util.js";
 
 let unio = null;   // CSV di UNIO caricato: { anno, nomeFile, voci }. Il confronto si ricalcola a ogni visualizzazione.
 
@@ -38,6 +38,8 @@ export function vista(ctx) {
   const par = ctx.arch.impostazione("parrocchia", {});
   const prev = ctx.arch.impostazione(`previsione-${ctx.anno}`, {});
   const tp = totaliPrevisione(prev);
+  const invio = statoInvio(ctx.arch.impostazione(`invio-rendiconto-${ctx.anno}`, {}));
+  const prevPrecedente = ctx.arch.impostazione(`previsione-${ctx.anno - 1}`, {});
   const confronto = unio && unio.anno === ctx.anno ? confronta(R, unio) : null;
   const nomeConto = (c) => esc(ctx.arch.nomeConto(c));
 
@@ -47,6 +49,7 @@ export function vista(ctx) {
     <button class="btn sec piccolo" data-azione="csv">Scarica CSV come UNIO</button></div></div>
   <p class="lead">${esc(par.nome || "Parrocchia")}${par.icsc ? ` · cod. ICSC ${esc(par.icsc)}` : ""}${par.parroco ? ` · Parroco ${esc(par.parroco)}` : ""}.
     Calcolato da ${R.numeroMovimenti} movimenti, con le stesse voci del Rendiconto di UNIO.</p>
+  ${invio.inviato ? `<div class="nota solo-schermo">Questo Rendiconto risulta <b>già inviato da UNIO il ${dataIt(invio.inviato)}</b>. Se si correggono i movimenti del ${ctx.anno}, la stessa correzione va fatta anche in UNIO.</div>` : ""}
   ${!par.nome || !par.icsc ? `<div class="avviso solo-schermo">Mancano alcuni dati della parrocchia (nome, codice ICSC): li inserisca in <a href="#" data-azione="vai" data-pagina="impostazioni">Impostazioni</a>.</div>` : ""}
 
   <div class="griglia g4 riepilogo">
@@ -104,6 +107,10 @@ export function vista(ctx) {
 
   <div class="card"><h3>Bilancio di previsione</h3>
     <p class="hint solo-schermo">Una cifra per ogni gruppo, come nella sezione "Bilancio di previsione" del Rendiconto UNIO. Si salva da sola.</p>
+    ${P || Object.values(prevPrecedente).some(Boolean) ? `<div class="riga-bottoni stretta solo-schermo">
+      ${Object.values(prevPrecedente).some(Boolean) ? `<button class="btn sec piccolo" data-azione="copiaPrevisione">Copia la previsione del ${ctx.anno - 1}</button>` : ""}
+      ${P ? `<button class="btn sec piccolo" data-azione="previsioneDaConsuntivo">Parti dalle cifre vere del ${ctx.anno - 1}</button>` : ""}</div>
+      <p class="hint solo-schermo">Le cifre ricopiate si possono poi correggere una per una.</p>` : ""}
     <table class="rendiconto">
       ${GRUPPI.filter((g) => g.tipo === "E" || g.tipo === "U").map((g) => `<tr><td>${g.codice.slice(1)} ${esc(g.nome)}</td>
         <td class="n"><input type="text" inputmode="decimal" class="n previsione" value="${prev[g.codice] ? formatDecimale(prev[g.codice]) : ""}" placeholder="0,00"
@@ -122,7 +129,38 @@ export function vista(ctx) {
     }).join("")}</table></div>
   </details></div>
 
-  <p class="hint">Le sezioni "Scheda anagrafica" e "Altre informazioni" (situazione fiscale, assicurazioni, allegati) si compilano direttamente in UNIO.</p>`;
+  ${vistaInvio(ctx, invio)}`;
+}
+
+/** Promemoria di quello che UNIO chiede prima di approvare il Rendiconto, e segno "inviato". */
+function vistaInvio(ctx, invio) {
+  return `<div class="card solo-schermo" id="invio"><h3>Prima di inviare il Rendiconto da UNIO</h3>
+    <p class="hint">Il Rendiconto si invia solo da UNIO, e per la Diocesi di Firenze UNIO non lo approva se manca qualcosa di questo elenco.
+      Spunti le voci man mano che le completa in UNIO; se un documento non riguarda la parrocchia (per esempio non ci sono mutui), lo spunti lo stesso.
+      L'elenco è quello mostrato da UNIO a novembre 2026: se UNIO chiede altro, vale UNIO.</p>
+    ${PROMEMORIA_INVIO.map((g) => `<label class="campo">${esc(g.gruppo)}</label>
+      ${g.voci.map(([k, testo]) => `<label class="spunta-riga piccola"><input type="checkbox" data-cambia="spuntaInvio" data-k="${k}" ${invio.spunte[k] ? "checked" : ""}> ${esc(testo)}</label>`).join("")}`).join("")}
+    <p class="hint">${invio.completo ? "✓ Tutto pronto" : `Fatte ${invio.fatte} su ${invio.totale}`}.</p>
+    ${invio.inviato
+      ? `<div class="ok">✓ Rendiconto ${ctx.anno} inviato da UNIO il ${dataIt(invio.inviato)}. Se poi si registra o si corregge un movimento del ${ctx.anno}, Divisio lo ricorda.</div>
+         <div class="riga-bottoni"><button class="btn sec piccolo" data-azione="togliInviato">Togli il segno «inviato»</button></div>`
+      : `<div class="griglia g2"><div><label class="campo" for="r-inviato">Inviato da UNIO il</label><input id="r-inviato" type="date" value="${oggiISO()}"></div></div>
+         <div class="riga-bottoni"><button class="btn piccolo" data-azione="segnaInviato">Segna il Rendiconto ${ctx.anno} come inviato</button></div>`}
+  </div>`;
+}
+
+const salvaInvio = (ctx, cambi) => {
+  const chiave = `invio-rendiconto-${ctx.anno}`;
+  return ctx.arch.salvaImpostazione(chiave, { ...ctx.arch.impostazione(chiave, {}), ...cambi });
+};
+
+/** Ricopia una previsione, chiedendo conferma se ce n'è già una. */
+async function ricopiaPrevisione(ctx, nuova, origine) {
+  const attuale = ctx.arch.impostazione(`previsione-${ctx.anno}`, {});
+  if (Object.values(attuale).some(Boolean) && !confirm(`Il bilancio di previsione è già compilato.\n\nSostituire tutte le cifre con ${origine}?`)) return;
+  await ctx.arch.salvaImpostazione(`previsione-${ctx.anno}`, { ...nuova });
+  toast("Previsione compilata: controlli le cifre ✓");
+  ctx.aggiorna();
 }
 
 function esitoConfronto(ctx, righe) {
@@ -145,6 +183,11 @@ export const cambia = {
     unio = { ...u, nomeFile: file.name };
     ctx.aggiorna();
   },
+  async spuntaInvio(el, ev, ctx) {
+    const spunte = { ...statoInvio(ctx.arch.impostazione(`invio-rendiconto-${ctx.anno}`, {})).spunte, [el.dataset.k]: el.checked };
+    await salvaInvio(ctx, { spunte });
+    ctx.aggiorna();
+  },
   async previsione(el, ev, ctx) {
     const v = parseEuro(el.value);
     if (Number.isNaN(v)) { toast("Importo non valido"); return; }
@@ -156,6 +199,21 @@ export const cambia = {
 
 export const azioni = {
   stampa() { window.print(); },
+  async segnaInviato(el, ev, ctx) {
+    const data = document.getElementById("r-inviato")?.value;
+    if (!data) { toast("Scriva la data dell'invio"); return; }
+    const invio = statoInvio(ctx.arch.impostazione(`invio-rendiconto-${ctx.anno}`, {}));
+    if (!invio.completo && !confirm(`Nell'elenco mancano ancora ${invio.totale - invio.fatte} voci.\n\nSegnare lo stesso il Rendiconto ${ctx.anno} come inviato?`)) return;
+    await salvaInvio(ctx, { inviato: data });
+    toast(`Rendiconto ${ctx.anno} segnato come inviato ✓`);
+    ctx.aggiorna();
+  },
+  async togliInviato(el, ev, ctx) { await salvaInvio(ctx, { inviato: "" }); toast("Segno «inviato» tolto"); ctx.aggiorna(); },
+  copiaPrevisione: (el, ev, ctx) => ricopiaPrevisione(ctx, ctx.arch.impostazione(`previsione-${ctx.anno - 1}`, {}), `quelle della previsione del ${ctx.anno - 1}`),
+  previsioneDaConsuntivo(el, ev, ctx) {
+    const { P } = calcola(ctx);
+    if (P) return ricopiaPrevisione(ctx, previsioneDaConsuntivo(P), `le entrate e le uscite vere del ${ctx.anno - 1}`);
+  },
   togliConfronto(el, ev, ctx) { unio = null; toast("Confronto con UNIO azzerato"); ctx.aggiorna(); },
   vai: (el, ev, ctx) => ctx.vai(el.dataset.pagina),
   csv(el, ev, ctx) {
