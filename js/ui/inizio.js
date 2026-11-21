@@ -73,6 +73,9 @@ export function vista({ arch, anno }) {
     ${casse.map((c) => `<div class="card saldo"><div class="etichetta">${esc(c.nome)}</div><div class="valore ${saldo(c.codice, tot) < 0 ? "neg" : ""}">${eur(saldo(c.codice, tot))}</div></div>`).join("")}
     <div class="card saldo totale"><div class="etichetta">Totale disponibile</div><div class="valore">${eur(casse.reduce((s, c) => s + saldo(c.codice, tot), 0))}</div></div>
   </div>
+  <p class="hint">Quanti soldi ci sono oggi in contanti, in banca e su PayPal secondo Divisio: il saldo di inizio anno, più le entrate,
+    meno le uscite, tenendo conto dei soldi spostati da un posto all'altro. Se un saldo non torna, controlli che siano stati inseriti
+    il <a href="#" data-azione="vai" data-pagina="impostazioni">saldo di inizio anno</a> e tutti i movimenti.</p>
   <div class="azioni-grandi">
     <button class="grande entrata" data-azione="nuovo" data-tipo="entrata">+ Entrata<small>offerte, collette, contributi…</small></button>
     <button class="grande uscita" data-azione="nuovo" data-tipo="uscita">− Uscita<small>bollette, acquisti, rimborsi…</small></button>
