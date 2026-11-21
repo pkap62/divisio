@@ -135,7 +135,7 @@ test("UNIO: le registrazioni arrivate da Divisio si saltano solo se in Divisio c
 });
 
 test("UNIO: i pagamenti di fatture già pagate in Divisio non si caricano di nuovo", () => {
-  uguale(fatturaNelCommento("Fattura LO SPURGO S.P.A. nr. 1/497 del 30/01/2026 - Fornitura Generica"), { numero: "1/497", data: "2026-01-30" });
+  uguale(fatturaNelCommento("Fattura DITTA ESEMPIO S.P.A. nr. 1/497 del 30/01/2026 - Fornitura Generica"), { numero: "1/497", data: "2026-01-30" });
   uguale(fatturaNelCommento("Offerte parrocchiani"), null);
   const reg = (numero, descr) => ({ numero, data: "2026-02-28", descr, righe: [{ conto: "U08-02-09", dare: 100, avere: 0 }, { conto: "A02-01-02", dare: 0, avere: 100 }] });
   const regs = [reg("1", "Fattura Ditta Prova Srl nr. 1/497 del 30/01/2026 - Fornitura"), reg("2", "Fattura Altra Ditta nr. 55 del 30/01/2026 - Fornitura")];

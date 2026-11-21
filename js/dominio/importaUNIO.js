@@ -128,7 +128,7 @@ export function daDivisio(r) {
   return { trimestre: `T${m[1]}`, anno: Number(m[2]), casse: [...new Set(r.righe.filter((x) => isCassaBanca(x.conto)).map((x) => x.conto))] };
 }
 
-/** Pagamento di una fattura registrato in UNIO, es. "Fattura LO SPURGO S.P.A. nr. 1/497 del 30/01/2026 - …": {numero, data} oppure null. */
+/** Pagamento di una fattura registrato in UNIO, es. "Fattura DITTA ESEMPIO S.P.A. nr. 1/497 del 30/01/2026 - …": {numero, data} oppure null. */
 export function fatturaNelCommento(descr) {
   const m = /^fattura\b.*?\bn(?:r|um|umero)?\.?\s*([^\s]+)\s+del\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/i.exec(descr ?? "");
   return m ? { numero: m[1], data: `${m[4]}-${m[3].padStart(2, "0")}-${m[2].padStart(2, "0")}` } : null;
