@@ -1,5 +1,5 @@
 import { test, uguale, vero, contiene, casuale } from "./mini.js";
-import { scritturaSemplice, scritturaApertura, verificaMovimento, quadra, totaliRighe, analizza, CONTO_PATRIMONIO } from "../js/dominio/scritture.js";
+import { scritturaSemplice, scritturaPiuVoci, scritturaApertura, verificaMovimento, quadra, totaliRighe, analizza, CONTO_PATRIMONIO } from "../js/dominio/scritture.js";
 import { riepilogoAnno } from "../js/dominio/saldi.js";
 import { sottocontiIniziali, isCassaBanca, tipoDi } from "../js/dominio/piano.js";
 
@@ -162,4 +162,17 @@ test("vecchi 'Banca' e 'PayPal' predefiniti: tolti solo se mai toccati né usati
   conti.set("A02-01-03", { ...conti.get("A02-01-03"), eliminato: true });
   uguale([...contiVisibili(conti, []).keys()], ["A02-01-01", "A02-01-02"]);
   uguale([...contiVisibili(conti, [{ righe: [{ conto: "A02-01-03" }] }]).keys()], ["A02-01-01", "A02-01-02", "A02-01-03"]);
+});
+
+test("più voci: la cassa riceve il totale, ogni voce la sua parte con il dettaglio", () => {
+  const r = scritturaPiuVoci({ tipo: "entrata", cassa: CASSA, voci: [
+    { voce: "E01-03-05", importo: 30000, nota: "Esequie A" }, { voce: "E01-03-05", importo: 50000, nota: " " }, { voce: "E01-03-05", importo: 5000 }] });
+  uguale(r, [{ conto: CASSA, dare: 85000, avere: 0 }, { conto: "E01-03-05", dare: 0, avere: 30000, nota: "Esequie A" },
+    { conto: "E01-03-05", dare: 0, avere: 50000 }, { conto: "E01-03-05", dare: 0, avere: 5000 }]);
+  uguale(verificaMovimento(mov("entrata", r), { conti }), []);
+  uguale(analizza(mov("entrata", r)).importo, 85000);
+  const u = scritturaPiuVoci({ tipo: "uscita", cassa: BANCA, voci: [{ voce: "U08-01-01", importo: 1000 }, { voce: "U08-01-02", importo: 2000 }] });
+  uguale(u, [{ conto: "U08-01-01", dare: 1000, avere: 0 }, { conto: "U08-01-02", dare: 2000, avere: 0 }, { conto: BANCA, dare: 0, avere: 3000 }]);
+  uguale(scritturaPiuVoci({ tipo: "entrata", cassa: CASSA, voci: [{ voce: "E01-03-05", importo: 5000 }] }),
+    scritturaSemplice({ tipo: "entrata", importo: 5000, voce: "E01-03-05", cassa: CASSA }), "con una voce è come prima");
 });

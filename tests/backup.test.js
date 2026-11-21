@@ -41,9 +41,9 @@ test("copia di sicurezza: un movimento sbilanciato o duplicato blocca il riprist
 test("CSV dei movimenti: una riga per riga contabile, campi protetti", () => {
   const csv = movimentiCSV(dati().movimenti, (c) => `nome ${c}`).trim().split("\r\n");
   uguale(csv.length, 5);
-  uguale(csv[0], "Data;Descrizione;Tipo;Conto;Nome conto;Dare;Avere;Inserito da");
-  uguale(csv[1], "01/03/2026;Offerta funerale;entrata;A02-01-01;nome A02-01-01;50,00;0,00;");
-  uguale(csv[3], '02/03/2026;"Luce; bolletta ""marzo""";uscita;U08-01-01;nome U08-01-01;123,45;0,00;');
+  uguale(csv[0], "Data;Descrizione;Tipo;Conto;Nome conto;Dare;Avere;Inserito da;Dettaglio");
+  uguale(csv[1], "01/03/2026;Offerta funerale;entrata;A02-01-01;nome A02-01-01;50,00;0,00;;");
+  uguale(csv[3], '02/03/2026;"Luce; bolletta ""marzo""";uscita;U08-01-01;nome U08-01-01;123,45;0,00;;');
   const conEliminato = [...dati().movimenti, { ...dati().movimenti[0], id: "m3", eliminato: true }];
   uguale(movimentiCSV(conEliminato, (c) => c).trim().split("\r\n").length, 5, "i movimenti eliminati non si esportano");
   uguale(campoCSV("a\nb"), '"a\nb"');

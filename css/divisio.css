@@ -54,6 +54,10 @@ h3 { font-size: 19px; margin: 0 0 10px; }
 .g4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .g2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .griglia.voce { grid-template-columns: minmax(180px, 1fr) 2fr; }
+.griglia.dettaglio { grid-template-columns: 1fr minmax(140px, 220px); }
+.riga-voce { padding: 4px 0; }
+.riga-voce + .riga-voce { border-top: 1px solid var(--linea); padding-top: 12px; margin-top: 10px; }
+.riga-totale { margin: 10px 0 4px; font-size: 18px; }
 .riga { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .spazio { flex: 1; }
 .riga-bottoni { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
@@ -166,7 +170,7 @@ tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
   body { font-size: 17px; }
   .saldo .valore { font-size: 22px; }
   th, td { padding: 6px 4px; }
-  .griglia.voce { grid-template-columns: 1fr; }
+  .griglia.voce, .griglia.dettaglio { grid-template-columns: 1fr; }
   .sottoconto { grid-template-columns: 1fr auto; } .sottoconto .codice { grid-column: 1 / -1; }
   table.scadenze > tbody > tr:first-child { display: none; }
   table.scadenze > tbody > tr { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--linea); padding: 6px 0; }

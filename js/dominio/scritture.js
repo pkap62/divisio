@@ -25,6 +25,22 @@ export function scritturaSemplice({ tipo, importo, voce, cassa, da, verso }) {
 const riga = (conto, dare, avere) => ({ conto, dare, avere });
 
 /**
+ * Entrata o uscita con più righe (come in UNIO: es. tre funerali in un solo movimento).
+ * voci: [{voce, importo, nota?}] — la cassa riceve (o dà) il totale, ogni voce la sua parte.
+ * nota è il dettaglio della riga (facoltativo). Con una sola voce e senza nota è uguale a scritturaSemplice.
+ */
+export function scritturaPiuVoci({ tipo, cassa, voci }) {
+  if (tipo !== "entrata" && tipo !== "uscita") throw new Error(`Tipo di movimento non adatto a più voci: ${tipo}`);
+  const totale = voci.reduce((s, v) => s + v.importo, 0);
+  const righeVoci = voci.map((v) => {
+    const r = tipo === "entrata" ? riga(v.voce, 0, v.importo) : riga(v.voce, v.importo, 0);
+    const nota = String(v.nota ?? "").trim();
+    return nota ? { ...r, nota } : r;
+  });
+  return tipo === "entrata" ? [riga(cassa, totale, 0), ...righeVoci] : [...righeVoci, riga(cassa, 0, totale)];
+}
+
+/**
  * Saldi di apertura → righe. Ogni voce è {conto, importo} con il segno "naturale"
  * (positivo = quanto c'è in cassa, quanto è dovuto, ecc.).
  * La differenza va nel Patrimonio netto, così la scrittura è sempre in quadratura.

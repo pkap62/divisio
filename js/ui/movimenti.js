@@ -16,7 +16,7 @@ let azzera = null;   // pannello "Azzera i movimenti dell'anno" aperto: { anno, 
 function filtrati({ arch, anno }) {
   const q = norm(filtro.testo).trim();
   return movimentiAnno(arch.movimenti(), anno).filter((m) => {
-    if (q && !norm(`${m.descr} ${m.righe.map((r) => arch.nomeConto(r.conto) + " " + r.conto).join(" ")}`).includes(q)) return false;
+    if (q && !norm(`${m.descr} ${m.righe.map((r) => arch.nomeConto(r.conto) + " " + r.conto + " " + (r.nota ?? "")).join(" ")}`).includes(q)) return false;
     if (filtro.cassa && !m.righe.some((r) => r.conto === filtro.cassa)) return false;
     if (filtro.periodo) { const [da, a] = PERIODI[filtro.periodo]; const g = m.data.slice(5); if (g < da || g > a) return false; }
     if (filtro.tipo && analizza(m).tipo !== filtro.tipo) return false;

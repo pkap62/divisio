@@ -8,14 +8,16 @@ export function descrivi(m, arch) {
   const nome = (c) => esc(arch.nomeConto(c));
   if (a.tipo === "apertura") return { ...a, voce: "Saldi di apertura", cassa: "" };
   if (a.tipo === "spostamento") return { ...a, voce: "Spostamento", cassa: `${nome(a.da)} → ${nome(a.verso)}` };
-  const voce = a.voci.length === 1 ? `${nome(a.voci[0].conto)} <span class="codice">${a.voci[0].conto}</span>` : "Più voci";
+  // più righe sulla stessa voce (es. tre funerali) contano come una voce sola
+  const unica = a.voci.length > 0 && a.voci.every((r) => r.conto === a.voci[0].conto);
+  const voce = unica ? `${nome(a.voci[0].conto)} <span class="codice">${a.voci[0].conto}</span>` : "Più voci";
   return { ...a, voce, cassa: a.casse.map((r) => nome(r.conto)).join(", ") || "—" };
 }
 
 export function tabellaRighe(righe, arch) {
   const { dare, avere } = totaliRighe(righe);
   return `<table class="righe"><tr><th>Conto</th><th class="n">Dare</th><th class="n">Avere</th></tr>
-    ${righe.map((r) => `<tr><td>${esc(arch.nomeConto(r.conto))} <span class="codice">${r.conto}</span></td>
+    ${righe.map((r) => `<tr><td>${esc(arch.nomeConto(r.conto))} <span class="codice">${r.conto}</span>${r.nota ? `<br><span class="hint">${esc(r.nota)}</span>` : ""}</td>
       <td class="n">${r.dare ? eur(r.dare) : ""}</td><td class="n">${r.avere ? eur(r.avere) : ""}</td></tr>`).join("")}
     <tr class="tot"><td>Totale ${dare === avere ? "✓" : "✗"}</td><td class="n">${eur(dare)}</td><td class="n">${eur(avere)}</td></tr></table>`;
 }

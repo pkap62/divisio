@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.10.0</span></p>
+  <p class="versione">Versione <span id="versione">0.10.2</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,9 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.10.2:</b> in <b>Registra</b> un'entrata o un'uscita può avere <b>più righe</b>
+(<span class="bottone">+ Aggiungi riga</span>), ognuna con voce, dettaglio e importo, come in UNIO.</div>
 
 <div class="box nota"><b>Novità della versione 0.10.1:</b> il <b>confronto con UNIO</b> è indicato come facoltativo, e il capitolo 12 spiega i <b>due modi</b>
 per portare i dati in UNIO: ogni trimestre con i file di Divisio, oppure a fine anno a mano nel Rendiconto Parrocchiale di UNIO.</div>
@@ -250,10 +253,12 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 <table>
   <tr><th>Per…</th><th>Si fa così</th></tr>
   <tr><td>un'<b>entrata</b> (offerte, collette, sacramenti…)</td><td>Inizio → <span class="bottone">+ Entrata</span>: data, importo, che cos'è (con parole proprie), la voce, dove sono entrati i soldi (cassa, banca…). <span class="bottone">Registra</span>.</td></tr>
+  <tr><td>più cose insieme (es. le offerte di tre funerali)</td><td>Nella stessa registrazione prema <span class="bottone">+ Aggiungi riga</span>: ogni riga ha la sua voce,
+    un dettaglio facoltativo (es. "esequie di Mario Rossi") e il suo importo. Divisio mostra il totale, che entra (o esce) tutto dalla stessa cassa o banca.</td></tr>
   <tr><td>un'<b>uscita</b> (bollette, acquisti, rimborsi…)</td><td><span class="bottone">− Uscita</span>, come sopra.</td></tr>
   <tr><td>contanti versati in banca</td><td><span class="bottone">⇄ Sposta soldi</span>: da dove escono e dove arrivano.</td></tr>
   <tr><td>trovare la voce giusta</td><td>Nel campo "Cerca la voce" scriva una parola (es. "funer", "luce") e scelga dall'elenco.</td></tr>
-  <tr><td><b>collette imperate</b> (Giornata missionaria, Quaresima di carità…)</td><td>La raccolta è un'<b>entrata</b> sulla voce della colletta; il versamento alla Diocesi è un'<b>uscita</b> sulla stessa voce.
+  <tr><td><b>partite di giro</b> (Giornata missionaria, Quaresima di carità…)</td><td>La raccolta è un'<b>entrata</b> sulla voce della colletta; il versamento alla Diocesi è un'<b>uscita</b> sulla stessa voce.
     Divisio la tiene da parte: non la conta tra le entrate della parrocchia e in Inizio ricorda quanto resta da versare.</td></tr>
   <tr><td><b>correggere</b> o <b>eliminare</b></td><td>Movimenti → apra "Dettagli" sul movimento → <span class="bottone">Modifica</span> o <span class="bottone">Elimina</span> (chiede sempre conferma).</td></tr>
   <tr><td>una cosa che si ripete (colletta della domenica, candele del mese…)</td><td>Movimenti → "Dettagli" su un movimento uguale → <span class="bottone">Registra di nuovo uguale</span>:
@@ -437,7 +442,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.10) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.10.2) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

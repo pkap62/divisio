@@ -7,6 +7,12 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.10.2 – Più righe in una registrazione**
+- Registra, modalità semplice: un'entrata o un'uscita può avere **più righe** (pulsante "+ Aggiungi riga"), ognuna con voce,
+  dettaglio facoltativo e importo, come in UNIO (es. le offerte di tre funerali in un solo movimento). Il totale entra o esce dalla stessa cassa o banca.
+  Il dettaglio compare nei Dettagli del movimento, nella ricerca e nel CSV (colonna "Dettaglio").
+- Guida: "collette imperate" diventa "partite di giro".
+
 **0.10.1 – Due modi per portare i dati in UNIO**
 - Il **confronto con UNIO** (pagina Rendiconto) è segnato come **facoltativo**, anche in Inizio, Per UNIO e Guida.
 - Guida, capitolo 12: **due modi**. 1) ogni trimestre con il file di Divisio importato in Partita Doppia; 2) per chi non usa UNIO e non vi inserisce nessun movimento:
