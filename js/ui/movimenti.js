@@ -5,7 +5,7 @@ import { entrateUsciteCSV, perData } from "../dominio/csv.js";
 import { casseInOrdine } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
 import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, $ } from "./util.js";
-import { tabellaMovimenti } from "./elenco.js";
+import { tabellaMovimenti, dettagliAperti } from "./elenco.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 import { salvaCopia } from "./impostazioni.js";
 import { vistaCard as cardUNIO, riquadroAperto, azioni as azioniUNIO, cambia as cambiaUNIO } from "./importa.js";
@@ -118,6 +118,13 @@ export const azioni = {
     azzera = null;
     toast(`Movimenti del ${ctx.anno} azzerati (${movimenti.length}) ✓ Copia di sicurezza nella cartella Download`);
     ctx.aggiorna();
+  },
+  dettagli(el, ev, ctx) {
+    // apre o chiude i Dettagli del movimento, in una riga larga quanto tutta la tabella
+    const id = el.dataset.id;
+    if (dettagliAperti.has(id)) dettagliAperti.delete(id); else dettagliAperti.add(id);
+    ridisegnaElenco(ctx);
+    document.querySelector(`[data-azione="dettagli"][data-id="${CSS.escape(id)}"]`)?.focus();
   },
   modifica: (el, ev, ctx) => ctx.vai("registra", { modifica: el.dataset.id }),
   copia: (el, ev, ctx) => ctx.vai("registra", { copia: el.dataset.id }),

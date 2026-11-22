@@ -1,11 +1,11 @@
 // Pagina "Impostazioni": copia di sicurezza, saldi di apertura, dati della parrocchia, piano dei conti.
 
-import { creaBackup, leggiBackup } from "../dominio/backup.js";
+import { creaBackup, leggiBackup, datiPerRipristino } from "../dominio/backup.js";
 import { scritturaApertura, CONTO_PATRIMONIO } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
 import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
-import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
+import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisioneImpostata } from "./condivisione.js";
 import { teatro } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
@@ -249,11 +249,15 @@ export const cambia = {
     if (!r.ok) { alert("Impossibile ripristinare:\n\n" + r.errori.join("\n")); return; }
     const quando = r.salvatoIl ? new Date(r.salvatoIl).toLocaleString("it-IT") : "data sconosciuta";
     const n = r.dati.movimenti.filter((m) => !m.eliminato).length;
-    if (!confirm(`La copia del ${quando} contiene ${n} movimenti.\n\nSostituire TUTTI i dati attuali con quelli della copia?\n\nPer sicurezza Divisio scaricherà prima una copia dei dati di adesso.`)) return;
+    const condivisa = condivisioneImpostata();
+    if (!confirm(`La copia del ${quando} contiene ${n} movimenti.\n\nSostituire TUTTI i dati attuali con quelli della copia?`
+      + (condivisa ? "\n\nDivisio è condiviso con altri computer: anche loro riceveranno i dati della copia." : "")
+      + "\n\nPer sicurezza Divisio scaricherà prima una copia dei dati di adesso.")) return;
     salvaCopia(ctx, "prima-del-ripristino");
-    await ctx.arch.sostituisci(r.dati);
+    // date di modifica nuove: così la condivisione non riporta indietro i dati (vedi datiPerRipristino)
+    await ctx.arch.sostituisci(datiPerRipristino(r.dati, ctx.arch.esporta(), { autore: locale.leggi("autore", "") || "Utente" }));
     AP = null;
-    toast("Copia ripristinata ✓");
+    toast(`Copia ripristinata ✓ (${n} movimenti)`);
     ctx.aggiorna();
   },
 };

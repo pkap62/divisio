@@ -4,6 +4,7 @@
 
 import { verificaMovimento } from "./scritture.js";
 import { codiceValido } from "./piano.js";
+import { CHIAVI, nuovoIstante } from "./unione.js";
 
 export const FORMATO = 2;
 
@@ -34,6 +35,30 @@ export function verificaDati(d) {
     if (e.length) errori.push(`Movimento del ${m.data} «${m.descr}»: ${e.join(" ")}`);
   }
   return errori.slice(0, 10);
+}
+
+/**
+ * Dati da scrivere al ripristino di una copia.
+ * Con la condivisione (Google Drive) i dati degli altri file vengono riuniti a quelli di questo computer e,
+ * per ogni record, vince la modifica più recente: senza accorgimenti un ripristino verrebbe subito annullato
+ * (per esempio i movimenti cancellati con "Azzera" dopo la copia tornerebbero cancellati).
+ * Per questo ogni record della copia riceve una data di modifica nuova, più recente di tutte quelle conosciute,
+ * e ciò che c'è adesso ma non nella copia (movimenti, fatture, sottoconti) viene segnato come eliminato,
+ * così il ripristino vale anche per gli altri computer. Le impostazioni che mancano nella copia restano come sono.
+ */
+export function datiPerRipristino(copia, attuali = {}, { autore = "Utente", adesso = new Date() } = {}) {
+  const tutte = Object.keys(CHIAVI).flatMap((tab) => [...(copia[tab] ?? []), ...(attuali[tab] ?? [])]).map((r) => r.modificatoIl ?? "");
+  let t = tutte.filter(Boolean).sort().at(-1) ?? null;
+  const marca = () => ({ modificatoIl: (t = nuovoIstante(t, adesso)), autore });
+  const out = {};
+  for (const [tab, chiave] of Object.entries(CHIAVI)) {
+    const dallaCopia = (copia[tab] ?? []).map((r) => ({ ...r, ...marca() }));
+    const nellaCopia = new Set(dallaCopia.map((r) => r[chiave]));
+    const daTogliere = tab === "impostazioni" ? []
+      : (attuali[tab] ?? []).filter((r) => !nellaCopia.has(r[chiave]) && !r.eliminato).map((r) => ({ ...r, eliminato: true, ...marca() }));
+    out[tab] = [...dallaCopia, ...daTogliere];
+  }
+  return out;
 }
 
 /**

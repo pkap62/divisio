@@ -1,5 +1,6 @@
 import { test, uguale, vero, contiene } from "./mini.js";
-import { creaBackup, leggiBackup } from "../js/dominio/backup.js";
+import { creaBackup, leggiBackup, datiPerRipristino, verificaDati } from "../js/dominio/backup.js";
+import { unisciDati } from "../js/dominio/unione.js";
 import { entrateUsciteCSV, campoCSV } from "../js/dominio/csv.js";
 import { sottocontiIniziali } from "../js/dominio/piano.js";
 import { scritturaSemplice, scritturaPiuVoci } from "../js/dominio/scritture.js";
@@ -53,4 +54,23 @@ test("CSV dei movimenti: entrate e uscite (non partita doppia), una riga per voc
   const conEliminato = [...dati().movimenti, { ...dati().movimenti[0], id: "m3", eliminato: true }];
   uguale(entrateUsciteCSV(conEliminato, (c) => c).trim().split("\r\n").length, 4, "i movimenti eliminati non si esportano");
   uguale(campoCSV("a\nb"), '"a\nb"');
+});
+
+test("ripristino: vince sui dati della cartella condivisa (movimenti azzerati dopo la copia tornano)", () => {
+  const copia = dati();
+  const prima = copia.movimenti.map((m) => ({ ...m, modificatoIl: "2026-11-22T18:20:00.000Z" }));
+  copia.movimenti = prima;
+  // dopo la copia: "Azzera" cancella i movimenti e aggiunge un movimento nuovo; il file condiviso li ha così
+  const nuovo = { id: "m9", data: "2026-04-01", descr: "Dopo la copia", tipo: "entrata", modificatoIl: "2026-11-22T18:25:00.000Z",
+    righe: scritturaSemplice({ tipo: "entrata", importo: 100, voce: "E01-03-05", cassa: "A02-01-01" }) };
+  const attuali = { conti: copia.conti, impostazioni: copia.impostazioni, fatture: [],
+    movimenti: [...prima.map((m) => ({ ...m, eliminato: true, modificatoIl: "2026-11-22T18:26:00.000Z" })), nuovo] };
+  const ripristinati = datiPerRipristino(copia, attuali, { autore: "prova", adesso: new Date("2026-11-22T18:00:00Z") });
+  // la condivisione riunisce il file condiviso (= dati di prima del ripristino) con quelli ripristinati
+  const dopo = unisciDati(ripristinati, attuali).movimenti;
+  const vivi = dopo.filter((m) => !m.eliminato).map((m) => m.id).sort();
+  uguale(vivi, ["m1", "m2"], "tornano i movimenti della copia, quello nuovo viene tolto");
+  vero(dopo.find((m) => m.id === "m9").eliminato, "il movimento che non era nella copia risulta eliminato anche per gli altri computer");
+  vero(dopo.every((m) => m.modificatoIl > "2026-11-22T18:26:00.000Z"), "date più recenti di tutte, anche se l'orologio è indietro");
+  uguale(verificaDati(ripristinati), []);
 });

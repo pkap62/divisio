@@ -7,6 +7,12 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.11.2 – Ripristino con la condivisione; Dettagli a tutta larghezza**
+- Ripristino da copia di sicurezza: ogni record della copia riceve una data di modifica nuova (più recente di tutte quelle conosciute) e ciò che non è
+  nella copia viene segnato come eliminato (`datiPerRipristino` in `js/dominio/backup.js`). Prima, con la condivisione su Google Drive, i dati della
+  cartella condivisa annullavano il ripristino (es. movimenti cancellati con "Azzera" dopo la copia restavano cancellati). Il ripristino vale anche per gli altri computer.
+- Movimenti: i Dettagli si aprono in una riga larga quanto tutta la tabella (niente ritorni a capo inutili) e restano aperti mentre si cerca.
+
 **0.11.1 – Caricare da UNIO dalla pagina Movimenti**
 - Il caricamento dei movimenti già inseriti in UNIO passa da Impostazioni alla pagina **Movimenti** (pulsante "Carica da UNIO…";
   in Impostazioni resta un rimando). Le righe con lo stesso numero di registrazione formano un movimento: causale, commento → descrizione,

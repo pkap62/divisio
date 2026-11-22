@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.11.1</span></p>
+  <p class="versione">Versione <span id="versione">0.11.2</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,9 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.11.2:</b> il <b>ripristino di una copia di sicurezza</b> funziona anche quando Divisio è condiviso con Google Drive
+(prima i dati della cartella condivisa potevano annullarlo, per esempio dopo «Azzera i movimenti»). In <b>Movimenti</b> i <b>Dettagli</b> si aprono a tutta larghezza.</div>
 
 <div class="box nota"><b>Novità della versione 0.11.1:</b> i movimenti già inseriti in UNIO si caricano dalla pagina <b>Movimenti</b>
 (<span class="bottone">Carica da UNIO…</span>), con l'anteprima di ogni registrazione: causale, descrizione e dettaglio di ogni riga, come in UNIO.</div>
@@ -437,7 +440,8 @@ e i due modi non si mescolano nello stesso anno.</div>
 <ul>
   <li>Impostazioni → <span class="bottone">Salva una copia su file</span>: scarica un file <i>Divisio-copia-data.json</i> con tutti i dati. Lo conservi su una chiavetta o in Google Drive.</li>
   <li>Divisio ricorda in Inizio se l'ultima copia è più vecchia di una settimana.</li>
-  <li>Per tornare indietro: <span class="bottone">Ripristina da file…</span>. Prima di sostituire i dati, Divisio scarica una copia di quelli attuali.</li>
+  <li>Per tornare indietro: <span class="bottone">Ripristina da file…</span>. Prima di sostituire i dati, Divisio scarica una copia di quelli attuali.
+    Se Divisio è condiviso (capitolo 5), anche gli altri computer ricevono i dati della copia ripristinata.</li>
   <li>Con il lavoro insieme attivo, ogni file della cartella Divisio di Google Drive è anche una copia completa.</li>
 </ul>
 
@@ -458,7 +462,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 22 novembre 2026 (versione 0.11.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 22 novembre 2026 (versione 0.11.2) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

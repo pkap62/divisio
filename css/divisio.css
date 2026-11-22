@@ -136,6 +136,12 @@ th, td { padding: 8px; border-bottom: 1px solid var(--linea); text-align: left; 
 th { color: var(--tenue); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; }
 td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 tr.tot td { font-weight: 700; background: #faf8f3; }
+/* Movimenti: Dettagli in una riga larga quanto tutta la tabella */
+button.apri-dettagli { background: none; border: 0; padding: 2px 0; font: inherit; font-size: 16px; color: var(--blu); font-weight: 600; cursor: pointer; }
+table.movimenti tr.con-dettagli td { border-bottom: 0; background: #faf8f3; }
+table.movimenti tr.riga-dettagli > td { background: #faf8f3; padding: 4px 12px 14px; border-bottom: 2px solid var(--linea); }
+table.movimenti tr.riga-dettagli table.righe { max-width: 820px; background: #fff; }
+table.movimenti tr.riga-dettagli .riga-bottoni { margin-top: 6px; }
 table.anteprima-unio { font-size: 14px; } table.anteprima-unio td div + div { margin-top: 2px; }
 /* Movimenti: totali in fondo all'elenco, ben visibili */
 tbody.totali-movimenti td { background: var(--blu-chiaro); font-size: 17px; border-bottom: 0; padding-top: 6px; padding-bottom: 6px; }

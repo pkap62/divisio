@@ -9,6 +9,8 @@ export const supportata = () => typeof window.showDirectoryPicker === "function"
 
 // stato: "non-supportata" | "spenta" | "da-riattivare" | "attiva"
 const S = { stato: "spenta", motore: null, handle: null, ctx: null, alCambio: null, togliAscolto: null };
+/** C'è una cartella condivisa scelta (anche se va ancora riattivata). */
+export const condivisioneImpostata = () => Boolean(S.handle);
 
 async function idDispositivo(arch) {
   let id = await arch.locale.leggi("dispositivo");

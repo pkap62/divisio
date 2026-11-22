@@ -22,6 +22,20 @@ export function tabellaRighe(righe, arch) {
     <tr class="tot"><td>Totale ${dare === avere ? "✓" : "✗"}</td><td class="n">${eur(dare)}</td><td class="n">${eur(avere)}</td></tr></table>`;
 }
 
+/** Movimenti con i Dettagli aperti (restano aperti anche quando l'elenco si ridisegna, es. mentre si cerca). */
+export const dettagliAperti = new Set();
+
+/** Contenuto dei Dettagli: occupa tutta la larghezza della tabella, in una riga sotto il movimento. */
+function contenutoDettagli(m, arch) {
+  return `${m.causale ? `<p class="piede">Causale: <b>${esc(m.causale)}</b></p>` : ""}${tabellaRighe(m.righe, arch)}
+    <p class="hint">Inserito da ${esc(m.autore ?? "—")} · ultima modifica ${m.modificatoIl ? new Date(m.modificatoIl).toLocaleString("it-IT") : "—"}</p>
+    ${m.tipo === "apertura"
+      ? `<p class="hint">I saldi di apertura si cambiano da Impostazioni.</p>`
+      : `<div class="riga-bottoni stretta"><button class="btn sec piccolo" data-azione="modifica" data-id="${esc(m.id)}">Modifica</button>
+         ${m.fattura ? "" : `<button class="btn sec piccolo" data-azione="copia" data-id="${esc(m.id)}">Registra di nuovo uguale</button>`}
+         <button class="btn pericolo piccolo" data-azione="elimina" data-id="${esc(m.id)}">Elimina</button></div>`}`;
+}
+
 /**
  * progressivo (facoltativo): Map id → saldo della cassa scelta dopo quel movimento, mostrato in una colonna in più.
  * totali (facoltativo): righe finali ben evidenti con il totale delle entrate e delle uscite dei movimenti mostrati.
@@ -33,17 +47,12 @@ export function tabellaMovimenti(lista, arch, { dettagli = false, progressivo = 
     ${lista.map((m) => {
       const d = descrivi(m, arch);
       const classe = d.segno > 0 ? "pos" : d.segno < 0 ? "neg" : "";
-      return `<tr><td class="nowrap">${dataIt(m.data)}</td><td>${esc(m.descr)}${m.fattura ? ` <span class="pill">da fattura</span>` : ""}
-        ${dettagli ? `<details><summary>Dettagli</summary>${m.causale ? `<p class="hint piede">Causale: <b>${esc(m.causale)}</b></p>` : ""}${tabellaRighe(m.righe, arch)}
-          <p class="hint">Inserito da ${esc(m.autore ?? "—")} · ultima modifica ${m.modificatoIl ? new Date(m.modificatoIl).toLocaleString("it-IT") : "—"}</p>
-          ${m.tipo === "apertura"
-            ? `<p class="hint">I saldi di apertura si cambiano da Impostazioni.</p>`
-            : `<div class="riga-bottoni"><button class="btn sec piccolo" data-azione="modifica" data-id="${esc(m.id)}">Modifica</button>
-               ${m.fattura ? "" : `<button class="btn sec piccolo" data-azione="copia" data-id="${esc(m.id)}">Registra di nuovo uguale</button>`}
-               <button class="btn pericolo piccolo" data-azione="elimina" data-id="${esc(m.id)}">Elimina</button></div>`}
-        </details>` : ""}</td>
+      const aperto = dettagli && dettagliAperti.has(m.id);
+      return `<tr class="${aperto ? "con-dettagli" : ""}"><td class="nowrap">${dataIt(m.data)}</td><td>${esc(m.descr)}${m.fattura ? ` <span class="pill">da fattura</span>` : ""}
+        ${dettagli ? `<br><button type="button" class="apri-dettagli" data-azione="dettagli" data-id="${esc(m.id)}" aria-expanded="${aperto}">${aperto ? "▾" : "▸"} Dettagli</button>` : ""}</td>
         <td>${d.voce}</td><td>${d.cassa}</td><td class="n ${classe}">${d.segno > 0 ? "+" : d.segno < 0 ? "−" : ""}${eur(d.importo)}</td>${progressivo
-          ? `<td class="n ${(progressivo.get(m.id) ?? 0) < 0 ? "neg" : ""}">${progressivo.has(m.id) ? eur(progressivo.get(m.id)) : ""}</td>` : ""}</tr>`;
+          ? `<td class="n ${(progressivo.get(m.id) ?? 0) < 0 ? "neg" : ""}">${progressivo.has(m.id) ? eur(progressivo.get(m.id)) : ""}</td>` : ""}</tr>
+        ${aperto ? `<tr class="riga-dettagli"><td colspan="${progressivo ? 6 : 5}">${contenutoDettagli(m, arch)}</td></tr>` : ""}`;
     }).join("")}${totali ? righeTotali(lista, Boolean(progressivo)) : ""}</table></div>`;
 }
 
