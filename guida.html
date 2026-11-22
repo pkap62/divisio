@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.11.0</span></p>
+  <p class="versione">Versione <span id="versione">0.11.1</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,9 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.11.1:</b> i movimenti già inseriti in UNIO si caricano dalla pagina <b>Movimenti</b>
+(<span class="bottone">Carica da UNIO…</span>), con l'anteprima di ogni registrazione: causale, descrizione e dettaglio di ogni riga, come in UNIO.</div>
 
 <div class="box nota"><b>Novità della versione 0.11:</b> in <b>Registra</b> le righe hanno lo sfondo alternato e i campi sono più compatti;
 si può aggiungere la <b>causale come in UNIO</b> (facoltativa, si accende in Impostazioni). In <b>Movimenti</b> i totali di entrate e uscite sono ben evidenti in fondo,
@@ -228,7 +231,10 @@ Se ancora non va, avvisare il parroco: per quel computer si può accedere a Goog
   <li>In UNIO esporti i movimenti della <b>Prima Nota</b> (file <b>AMM_PRIMA_NOTA</b>). Va bene anche l'estratto conto
     (file <b>AMM_ESTRATTOCONTO</b>) scegliendo <b>tutti i conti</b>, senza filtri.
     <br><i>Se si esporta solo qualche conto, Divisio lo riconosce e avvisa.</i></li>
-  <li>In Divisio: Impostazioni → <b>"Caricare i movimenti da UNIO"</b> → scelga il file, guardi l'anteprima e prema <span class="bottone">Carica</span>.</li>
+  <li>In Divisio: pagina <b>Movimenti</b> → <span class="bottone">Carica da UNIO…</span> → scelga il file, guardi l'anteprima e prema <span class="bottone">Carica</span>.
+    <br>Le righe di UNIO con lo stesso <b>numero di registrazione</b> diventano un solo movimento: la <b>causale</b> resta la causale,
+    il <b>commento</b> diventa la descrizione e il <b>commento di riga</b> il dettaglio di ogni riga (es. «Esequie Mario Rossi»).
+    In "Vedi le registrazioni come entreranno in Divisio" si controllano una per una. Caricando di nuovo il file, i movimenti si aggiornano senza doppioni.</li>
   <li><i>Facoltativo.</i> In UNIO, pagina Rendiconto Parrocchiale: <span class="bottone">Esporta saldi Patrimoniali e di Gestione in .csv</span>.</li>
   <li><i>Facoltativo.</i> In Divisio, pagina <b>Rendiconto</b> (anno 2026) → <span class="bottone">Carica il CSV di UNIO…</span>: accanto a ogni voce compare "= UNIO" in verde oppure la cifra di UNIO in rosso.</li>
 </ol>
@@ -452,7 +458,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 22 novembre 2026 (versione 0.11.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 22 novembre 2026 (versione 0.11.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

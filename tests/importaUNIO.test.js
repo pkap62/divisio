@@ -159,5 +159,5 @@ test("UNIO: dalla prima nota si tengono la causale e il commento di riga (dati i
   uguale(reg.causale, "Offerte per Sacramenti");
   uguale(reg.righe.map((r) => r.nota ?? ""), ["", "Esequie Mario Rossi", ""], "il commento uguale a causale o commento non si ripete");
   const [m] = aMovimenti(l.registrazioni, l.anno);
-  uguale([m.causale, m.descr, m.tipo], ["Offerte per Sacramenti", "Offerte funerali novembre", "pd"]);
+  uguale([m.causale, m.descr, m.tipo], ["Offerte per Sacramenti", "Offerte funerali novembre", "entrata"], "più righe sulla stessa cassa: entrata, non partita doppia");
 });

@@ -7,6 +7,14 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.11.1 – Caricare da UNIO dalla pagina Movimenti**
+- Il caricamento dei movimenti già inseriti in UNIO passa da Impostazioni alla pagina **Movimenti** (pulsante "Carica da UNIO…";
+  in Impostazioni resta un rimando). Le righe con lo stesso numero di registrazione formano un movimento: causale, commento → descrizione,
+  commento di riga → dettaglio.
+- Anteprima "Vedi le registrazioni come entreranno in Divisio": data, numero, causale, descrizione, righe con dettaglio, cassa e importo.
+- Se il file ha le causali, Divisio propone di mostrarle anche in Registra.
+- Le registrazioni di UNIO con più righe sulla stessa cassa sono entrate o uscite (non più "partita doppia").
+
 **0.11.0 – Registra più compatta, causale come in UNIO, CSV in entrate e uscite**
 - Registra: righe di una registrazione con **sfondo alternato**; campi un po' più bassi e compatti.
 - **Causale come in UNIO** (facoltativa, spenta all'inizio: Impostazioni → "Causale come in UNIO"). Divisio la propone dalla voce

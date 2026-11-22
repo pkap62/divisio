@@ -8,6 +8,7 @@ import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, $ } from "./
 import { tabellaMovimenti } from "./elenco.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 import { salvaCopia } from "./impostazioni.js";
+import { vistaCard as cardUNIO, riquadroAperto, azioni as azioniUNIO, cambia as cambiaUNIO } from "./importa.js";
 
 const PERIODI = { T1: ["01-01", "03-31", "1° trimestre"], T2: ["04-01", "06-30", "2° trimestre"], T3: ["07-01", "09-30", "3° trimestre"], T4: ["10-01", "12-31", "4° trimestre"] };
 const filtro = { testo: "", cassa: "", periodo: "", tipo: "" };
@@ -39,9 +40,12 @@ export function vista(ctx) {
   const opz = (valori, scelto) => valori.map(([v, n]) => `<option value="${v}" ${v === scelto ? "selected" : ""}>${esc(n)}</option>`).join("");
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>
+    <button class="btn sec piccolo" data-azione="apriUNIO">Carica da UNIO…</button>
     <button class="btn sec piccolo" data-azione="csv" title="Scarica solo i movimenti mostrati qui sotto (con la ricerca e i filtri scelti)">Scarica in CSV (Excel)</button></div>
   <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere, eliminare o registrare di nuovo lo stesso movimento.
-    Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento. «Scarica in CSV» scarica solo i movimenti mostrati, come entrate e uscite.</p>
+    Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento. «Scarica in CSV» scarica solo i movimenti mostrati, come entrate e uscite;
+    «Carica da UNIO» porta in Divisio i movimenti già inseriti in UNIO.</p>
+  ${riquadroAperto() ? cardUNIO(ctx) : ""}
   ${rendicontoInviato(ctx.arch, ctx.anno) ? `<div class="nota">Il Rendiconto ${ctx.anno} risulta già inviato da UNIO il ${dataIt(rendicontoInviato(ctx.arch, ctx.anno))}:
     le correzioni ai movimenti del ${ctx.anno} vanno fatte anche in UNIO.</div>` : ""}
   <div class="card"><div class="griglia g4">
@@ -94,6 +98,7 @@ const ridisegnaElenco = (ctx) => { $("#elenco").innerHTML = elenco(ctx); };
 
 export const input = { testo(el, ev, ctx) { filtro.testo = el.value; ridisegnaElenco(ctx); } };
 export const cambia = {
+  ...cambiaUNIO,
   cassa(el, ev, ctx) { filtro.cassa = el.value; ridisegnaElenco(ctx); },
   periodo(el, ev, ctx) { filtro.periodo = el.value; ridisegnaElenco(ctx); },
   tipo(el, ev, ctx) { filtro.tipo = el.value; ridisegnaElenco(ctx); },
@@ -101,6 +106,7 @@ export const cambia = {
 };
 
 export const azioni = {
+  ...azioniUNIO,
   apriAzzera(el, ev, ctx) { azzera = { anno: ctx.anno, capito: false }; ctx.aggiorna(); },
   chiudiAzzera(el, ev, ctx) { azzera = null; ctx.aggiorna(); },
   async confermaAzzera(el, ev, ctx) {

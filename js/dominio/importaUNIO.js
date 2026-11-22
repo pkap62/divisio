@@ -113,7 +113,12 @@ export function leggiEstrattoConto(testo) {
 export function tipoDaRighe(righe) {
   const casse = righe.filter((r) => isCassaBanca(r.conto));
   if (righe.length === 2 && casse.length === 2) return "spostamento";
-  if (righe.length === 2 && casse.length === 1) return casse[0].dare ? "entrata" : "uscita";
+  // una sola cassa o banca e tutte le voci dall'altra parte (anche più righe, es. tre funerali): entrata o uscita
+  if (casse.length === 1 && righe.length >= 2) {
+    const entra = casse[0].dare > 0;
+    const voci = righe.filter((r) => r !== casse[0]);
+    if (voci.every((r) => (entra ? r.avere > 0 && !r.dare : r.dare > 0 && !r.avere))) return entra ? "entrata" : "uscita";
+  }
   return "pd";
 }
 

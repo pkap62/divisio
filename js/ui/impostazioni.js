@@ -6,8 +6,8 @@ import { parseEuro, formatDecimale } from "../dominio/importi.js";
 import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione } from "./condivisione.js";
-import { vistaCard as cardImporta, azioni as azioniImporta, cambia as cambiaImporta } from "./importa.js";
 import { teatro } from "./fatture.js";
+import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
 
 /* ---------- cassa e banche ---------- */
@@ -153,7 +153,9 @@ export function vista(ctx) {
     <div class="riga-bottoni"><button class="btn" data-azione="apSalva">Salva i saldi di apertura</button></div>
   </div>
 
-  ${cardImporta(ctx)}
+  <div class="card"><h3>Caricare i movimenti da UNIO</h3>
+    <p class="hint">Si fa dalla pagina <b>Movimenti</b>, con il pulsante «Carica da UNIO…».</p>
+    <button class="btn sec" data-azione="vaiCaricaUNIO">Vai a Movimenti → Carica da UNIO</button></div>
 
   ${cardCausale(arch)}
   ${cardTeatro(arch)}
@@ -205,7 +207,6 @@ export const input = {
 };
 
 export const cambia = {
-  ...cambiaImporta,
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
   async causaleAttiva(el, ev, ctx) {
     await ctx.arch.salvaImpostazione("causale-unio", el.checked);
@@ -265,7 +266,7 @@ export function salvaCopia(ctx, suffisso = "") {
 
 export const azioni = {
   ...azioniCondivisione,
-  ...azioniImporta,
+  vaiCaricaUNIO(el, ev, ctx) { apriCaricaUNIO(); ctx.vai("movimenti"); },
   salvaCopia(el, ev, ctx) { salvaCopia(ctx); toast("Copia scaricata ✓ (cartella Download)"); ctx.aggiorna(); },
   apAggiungi(el, ev, ctx) { AP.altre.push({ conto: "", importo: "" }); ctx.aggiorna(); },
   apTogli(el, ev, ctx) { AP.altre.splice(Number(el.dataset.i), 1); ctx.aggiorna(); },
