@@ -111,7 +111,7 @@ test("UNIO: legge anche il file AMM_PRIMA_NOTA (Codice gruppo / conto / sottocon
   uguale(l.anno, 2026);
   uguale(l.registrazioni.length, 6);
   const fun = l.registrazioni.find((x) => x.numero === "12" && !x.anno);
-  uguale(fun.righe, [{ conto: "A02-01-01", dare: 85000, avere: 0 }, { conto: "E01-03-05", dare: 0, avere: 30000 }, { conto: "E01-03-05", dare: 0, avere: 55000 }]);
+  uguale(fun.righe, [{ conto: "A02-01-01", dare: 85000, avere: 0 }, { conto: "E01-03-05", dare: 0, avere: 30000, nota: "Esequie A" }, { conto: "E01-03-05", dare: 0, avere: 55000, nota: "Esequie B" }], "il commento di riga diventa il dettaglio");
   uguale(l.registrazioni.find((x) => x.numero === "13").descr, "Spese diverse", "senza commenti si usa la causale");
   // stesso numero in esercizi diversi: due movimenti distinti
   const ids = aMovimenti(l.registrazioni, l.anno).map((m) => m.id);
@@ -143,4 +143,21 @@ test("UNIO: i pagamenti di fatture già pagate in Divisio non si caricano di nuo
   const pagata = { id: "pag-f1", data: "2026-02-28", tipo: "uscita", fattura: { id: "f1", rata: 1 }, righe: regs[0].righe };
   const s = separaDoppioniDivisio(regs, [pagata], fatture);
   uguale(s.saltate.map((x) => x.numero), ["1"], "f2 non è pagata in Divisio: si carica");
+});
+
+test("UNIO: dalla prima nota si tengono la causale e il commento di riga (dati inventati)", () => {
+  const intest = "Icsc;Azienda;Nome Azienda;Esercizio;Data registrazione;Numero registrazione;Data documento;Numero documento;Causale;Commento;Commento riga;Codice gruppo;Codice conto;Codice sottoconto;Descrizione;Dare;Avere";
+  const riga = (comm, cr, g, c, s, nome, dare, avere) => `0000000;A1;PARROCCHIA DI PROVA;2026;30/11/2026;9;;;Offerte per Sacramenti;${comm};${cr};${g};${c};${s};${nome};${dare};${avere}`;
+  const testo = [intest,
+    riga("Offerte funerali novembre", "Offerte funerali novembre", "A02", "01", "01", "Cassa", "350", "0"),
+    riga("Offerte funerali novembre", "Esequie Mario Rossi", "E01", "03", "05", "Funerali", "0", "300"),
+    riga("Offerte funerali novembre", "Offerte per Sacramenti", "E01", "03", "05", "Funerali", "0", "50"),
+  ].join("\r\n");
+  const l = leggiEstrattoConto(testo);
+  vero(l.ok, l.errore);
+  const [reg] = l.registrazioni;
+  uguale(reg.causale, "Offerte per Sacramenti");
+  uguale(reg.righe.map((r) => r.nota ?? ""), ["", "Esequie Mario Rossi", ""], "il commento uguale a causale o commento non si ripete");
+  const [m] = aMovimenti(l.registrazioni, l.anno);
+  uguale([m.causale, m.descr, m.tipo], ["Offerte per Sacramenti", "Offerte funerali novembre", "pd"]);
 });

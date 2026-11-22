@@ -7,6 +7,17 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.11.0 – Registra più compatta, causale come in UNIO, CSV in entrate e uscite**
+- Registra: righe di una registrazione con **sfondo alternato**; campi un po' più bassi e compatti.
+- **Causale come in UNIO** (facoltativa, spenta all'inizio: Impostazioni → "Causale come in UNIO"). Divisio la propone dalla voce
+  (prima quella già usata per la stessa voce, poi quella tipica di UNIO). Compare nei Dettagli, nella ricerca e nel CSV.
+- Caricamento da UNIO (file AMM_PRIMA_NOTA): si conservano la **causale** e il **commento di riga** (diventa il dettaglio della riga).
+- Movimenti: **Modifica** apre nella modalità semplice anche i movimenti con più righe (pure quelli caricati da UNIO o scritti in partita doppia);
+  "Torna alla modalità semplice" non perde più le righe scritte.
+- Movimenti: **totali** di entrate, uscite e differenza ben evidenti in fondo all'elenco.
+- Movimenti: **Scarica in CSV** scarica solo i movimenti mostrati (ricerca e filtri), come entrate e uscite, una riga per voce e il totale in fondo
+  (non più in partita doppia).
+
 **0.10.2 – Più righe in una registrazione**
 - Registra, modalità semplice: un'entrata o un'uscita può avere **più righe** (pulsante "+ Aggiungi riga"), ognuna con voce,
   dettaglio facoltativo e importo, come in UNIO (es. le offerte di tre funerali in un solo movimento). Il totale entra o esce dalla stessa cassa o banca.

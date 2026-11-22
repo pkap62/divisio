@@ -46,6 +46,20 @@ function cardBanche(arch) {
   </div>`;
 }
 
+/* ---------- causale come in UNIO (facoltativa, spenta all'inizio) ---------- */
+function cardCausale(arch) {
+  const attiva = Boolean(arch.impostazione("causale-unio", false));
+  return `<div class="card"><h3>Causale come in UNIO</h3>
+    <p class="hint">In UNIO ogni registrazione ha tre testi: la <b>causale</b> (sullo schermo di UNIO si chiama «Tipologia operazione», es. «Offerte per Sacramenti»),
+      il <b>commento</b> («Descrizione», es. «Offerte funerali novembre») e il <b>commento di riga</b> («Descrizione dettaglio», es. «Esequie Mario Rossi»).
+      Divisio ha sempre la descrizione e il dettaglio di ogni riga; la causale è facoltativa.</p>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="causaleAttiva" ${attiva ? "checked" : ""}>
+      Nella pagina Registra mostra anche la causale</label>
+    ${attiva ? `<p class="hint">Divisio propone la causale dalla voce scelta (prima quella già usata per quella voce, anche nei movimenti caricati da UNIO); si può cambiare o lasciare vuota.
+      La causale compare nei Dettagli dei movimenti, nella ricerca e nel file CSV.</p>` : ""}
+  </div>`;
+}
+
 /* ---------- fatture del teatro o di altre gestioni (facoltativo, spento per tutti all'inizio) ---------- */
 function cardTeatro(arch) {
   const t = teatro(arch);
@@ -141,6 +155,7 @@ export function vista(ctx) {
 
   ${cardImporta(ctx)}
 
+  ${cardCausale(arch)}
   ${cardTeatro(arch)}
 
   <div class="card"><h3>Chi usa questo computer</h3>
@@ -192,6 +207,11 @@ export const input = {
 export const cambia = {
   ...cambiaImporta,
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
+  async causaleAttiva(el, ev, ctx) {
+    await ctx.arch.salvaImpostazione("causale-unio", el.checked);
+    toast(el.checked ? "Causale come in UNIO: attivata ✓ (la trova nella pagina Registra)" : "Causale come in UNIO: spenta");
+    ctx.aggiorna();
+  },
   async teatroAttivo(el, ev, ctx) {
     await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), attivo: el.checked });
     toast(el.checked ? "Fatture del teatro o di altre gestioni: scelta attivata ✓" : "Fatture del teatro o di altre gestioni: scelta spenta");

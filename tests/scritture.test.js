@@ -2,6 +2,7 @@ import { test, uguale, vero, contiene, casuale } from "./mini.js";
 import { scritturaSemplice, scritturaPiuVoci, scritturaApertura, verificaMovimento, quadra, totaliRighe, analizza, CONTO_PATRIMONIO } from "../js/dominio/scritture.js";
 import { riepilogoAnno } from "../js/dominio/saldi.js";
 import { sottocontiIniziali, isCassaBanca, tipoDi } from "../js/dominio/piano.js";
+import { causaleProposta, elencoCausali } from "../js/dominio/causali.js";
 
 const CASSA = "A02-01-01", BANCA = "A02-01-02";
 // Di partenza c'è solo la cassa: per le prove si aggiunge una banca, come farebbe la parrocchia.
@@ -175,4 +176,14 @@ test("più voci: la cassa riceve il totale, ogni voce la sua parte con il dettag
   uguale(u, [{ conto: "U08-01-01", dare: 1000, avere: 0 }, { conto: "U08-01-02", dare: 2000, avere: 0 }, { conto: BANCA, dare: 0, avere: 3000 }]);
   uguale(scritturaPiuVoci({ tipo: "entrata", cassa: CASSA, voci: [{ voce: "E01-03-05", importo: 5000 }] }),
     scritturaSemplice({ tipo: "entrata", importo: 5000, voce: "E01-03-05", cassa: CASSA }), "con una voce è come prima");
+});
+
+test("causale: proposta dalla voce, prima quella già usata, poi quella tipica di UNIO", () => {
+  uguale(causaleProposta("E01-03-05", "entrata"), "Offerte per Sacramenti");
+  uguale(causaleProposta("U01-02-02", "uscita"), "Spese per il Culto");
+  uguale(causaleProposta("", "spostamento"), "Prelievo / Versamento");
+  uguale(causaleProposta("Z99-01-01", "uscita"), "");
+  const usati = [1, 2].map((i) => ({ id: `x${i}`, causale: "Offerte ordinarie", righe: [{ conto: "E01-03-05", dare: 0, avere: 100 }, { conto: "A02-01-01", dare: 100, avere: 0 }] }));
+  uguale(causaleProposta("E01-03-05", "entrata", usati), "Offerte ordinarie", "vince quella già usata con la stessa voce");
+  vero(elencoCausali("uscita", usati).includes("Offerte ordinarie") && elencoCausali("uscita").includes("Imposte e Tasse"));
 });

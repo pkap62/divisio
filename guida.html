@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.10.2</span></p>
+  <p class="versione">Versione <span id="versione">0.11.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,11 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.11:</b> in <b>Registra</b> le righe hanno lo sfondo alternato e i campi sono più compatti;
+si può aggiungere la <b>causale come in UNIO</b> (facoltativa, si accende in Impostazioni). In <b>Movimenti</b> i totali di entrate e uscite sono ben evidenti in fondo,
+<span class="bottone">Scarica in CSV (Excel)</span> scarica solo i movimenti mostrati, come entrate e uscite, e <span class="bottone">Modifica</span>
+apre anche i movimenti con più righe (pure quelli caricati da UNIO) nella modalità semplice.</div>
 
 <div class="box nota"><b>Novità della versione 0.10.2:</b> in <b>Registra</b> un'entrata o un'uscita può avere <b>più righe</b>
 (<span class="bottone">+ Aggiungi riga</span>), ognuna con voce, dettaglio e importo, come in UNIO.</div>
@@ -255,6 +260,9 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td>un'<b>entrata</b> (offerte, collette, sacramenti…)</td><td>Inizio → <span class="bottone">+ Entrata</span>: data, importo, che cos'è (con parole proprie), la voce, dove sono entrati i soldi (cassa, banca…). <span class="bottone">Registra</span>.</td></tr>
   <tr><td>più cose insieme (es. le offerte di tre funerali)</td><td>Nella stessa registrazione prema <span class="bottone">+ Aggiungi riga</span>: ogni riga ha la sua voce,
     un dettaglio facoltativo (es. "esequie di Mario Rossi") e il suo importo. Divisio mostra il totale, che entra (o esce) tutto dalla stessa cassa o banca.</td></tr>
+  <tr><td>la <b>causale</b> come in UNIO (facoltativa)</td><td>Impostazioni → <b>Causale come in UNIO</b> → spunta "Nella pagina Registra mostra anche la causale".
+    In Registra compare il campo <b>Causale</b> (in UNIO si chiama «Tipologia operazione», es. «Offerte per Sacramenti»): Divisio la propone dalla voce scelta.
+    I tre testi di UNIO in Divisio: causale → <b>Causale</b>; commento («Descrizione») → <b>Che cos'è?</b>; commento di riga («Descrizione dettaglio») → <b>Dettaglio</b> di ogni riga.</td></tr>
   <tr><td>un'<b>uscita</b> (bollette, acquisti, rimborsi…)</td><td><span class="bottone">− Uscita</span>, come sopra.</td></tr>
   <tr><td>contanti versati in banca</td><td><span class="bottone">⇄ Sposta soldi</span>: da dove escono e dove arrivano.</td></tr>
   <tr><td>trovare la voce giusta</td><td>Nel campo "Cerca la voce" scriva una parola (es. "funer", "luce") e scelga dall'elenco.</td></tr>
@@ -263,7 +271,9 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td><b>correggere</b> o <b>eliminare</b></td><td>Movimenti → apra "Dettagli" sul movimento → <span class="bottone">Modifica</span> o <span class="bottone">Elimina</span> (chiede sempre conferma).</td></tr>
   <tr><td>una cosa che si ripete (colletta della domenica, candele del mese…)</td><td>Movimenti → "Dettagli" su un movimento uguale → <span class="bottone">Registra di nuovo uguale</span>:
     si apre Registra già compilato, con la data di oggi. Controlli data e importo e prema <span class="bottone">Registra</span>.</td></tr>
-  <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo; <span class="bottone">Scarica in CSV (Excel)</span>.</td></tr>
+  <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo. In fondo all'elenco: <b>totale entrate</b>, <b>totale uscite</b> e differenza dei movimenti mostrati.
+    <span class="bottone">Scarica in CSV (Excel)</span> scarica <b>solo i movimenti mostrati</b> (con la ricerca e i filtri scelti), divisi in Entrate e Uscite,
+    una riga per ogni dettaglio, con il totale in fondo.</td></tr>
   <tr><td>controllare la cassa o la banca</td><td>Movimenti → in "Cassa / banca" scelga una sola cassa o banca: compare la colonna <b>Saldo dopo</b>, cioè quanto c'era dopo ogni movimento.
     Si confronta con i contanti contati o con l'estratto conto.</td></tr>
 </table>
@@ -442,7 +452,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 21 novembre 2026 (versione 0.10.2) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 22 novembre 2026 (versione 0.11.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

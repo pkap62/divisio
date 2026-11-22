@@ -1,8 +1,8 @@
 import { test, uguale, vero, contiene } from "./mini.js";
 import { creaBackup, leggiBackup } from "../js/dominio/backup.js";
-import { movimentiCSV, campoCSV } from "../js/dominio/csv.js";
+import { entrateUsciteCSV, campoCSV } from "../js/dominio/csv.js";
 import { sottocontiIniziali } from "../js/dominio/piano.js";
-import { scritturaSemplice } from "../js/dominio/scritture.js";
+import { scritturaSemplice, scritturaPiuVoci } from "../js/dominio/scritture.js";
 
 const dati = () => ({
   conti: [...sottocontiIniziali(), { codice: "A02-01-02", nome: "Banca di prova", attivo: true }],
@@ -38,13 +38,19 @@ test("copia di sicurezza: un movimento sbilanciato o duplicato blocca il riprist
   contiene(leggiBackup(JSON.stringify(creaBackup(d2))).errori, "identificativo non valido");
 });
 
-test("CSV dei movimenti: una riga per riga contabile, campi protetti", () => {
-  const csv = movimentiCSV(dati().movimenti, (c) => `nome ${c}`).trim().split("\r\n");
-  uguale(csv.length, 5);
-  uguale(csv[0], "Data;Descrizione;Tipo;Conto;Nome conto;Dare;Avere;Inserito da;Dettaglio");
-  uguale(csv[1], "01/03/2026;Offerta funerale;entrata;A02-01-01;nome A02-01-01;50,00;0,00;;");
-  uguale(csv[3], '02/03/2026;"Luce; bolletta ""marzo""";uscita;U08-01-01;nome U08-01-01;123,45;0,00;;');
+test("CSV dei movimenti: entrate e uscite (non partita doppia), una riga per voce, totale in fondo", () => {
+  const funerali = { id: "m4", data: "2026-03-05", descr: "Offerte funerali marzo", causale: "Offerte per Sacramenti", tipo: "pd",
+    righe: scritturaPiuVoci({ tipo: "entrata", cassa: "A02-01-01", voci: [{ voce: "E01-03-05", importo: 30000, nota: "Esequie A" }, { voce: "E01-03-05", importo: 5000, nota: "Esequie B" }] }) };
+  const sposta = { id: "m5", data: "2026-03-06", descr: "Versamento", tipo: "spostamento", righe: scritturaSemplice({ tipo: "spostamento", importo: 20000, da: "A02-01-01", verso: "A02-01-02" }) };
+  const csv = entrateUsciteCSV([...dati().movimenti, funerali, sposta], (c) => `nome ${c}`).trim().split("\r\n");
+  uguale(csv[0], "Data;Causale;Descrizione;Dettaglio;Voce;Nome voce;Cassa / banca;Entrate;Uscite;Spostamenti e altro");
+  uguale(csv[1], "01/03/2026;;Offerta funerale;;E01-03-05;nome E01-03-05;nome A02-01-01;50,00;;");
+  uguale(csv[2], '02/03/2026;;"Luce; bolletta ""marzo""";;U08-01-01;nome U08-01-01;nome A02-01-02;;123,45;');
+  uguale(csv[3], "05/03/2026;Offerte per Sacramenti;Offerte funerali marzo;Esequie A;E01-03-05;nome E01-03-05;nome A02-01-01;300,00;;");
+  uguale(csv[4], "05/03/2026;Offerte per Sacramenti;Offerte funerali marzo;Esequie B;E01-03-05;nome E01-03-05;nome A02-01-01;50,00;;");
+  uguale(csv[5], "06/03/2026;;Versamento;;;Spostamento;nome A02-01-01 → nome A02-01-02;;;200,00");
+  uguale(csv[6], ";;Totale;;;;;400,00;123,45;200,00");
   const conEliminato = [...dati().movimenti, { ...dati().movimenti[0], id: "m3", eliminato: true }];
-  uguale(movimentiCSV(conEliminato, (c) => c).trim().split("\r\n").length, 5, "i movimenti eliminati non si esportano");
+  uguale(entrateUsciteCSV(conEliminato, (c) => c).trim().split("\r\n").length, 4, "i movimenti eliminati non si esportano");
   uguale(campoCSV("a\nb"), '"a\nb"');
 });

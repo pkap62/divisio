@@ -56,7 +56,18 @@ h3 { font-size: 19px; margin: 0 0 10px; }
 .griglia.voce { grid-template-columns: minmax(180px, 1fr) 2fr; }
 .griglia.dettaglio { grid-template-columns: 1fr minmax(140px, 220px); }
 .riga-voce { padding: 4px 0; }
-.riga-voce + .riga-voce { border-top: 1px solid var(--linea); padding-top: 12px; margin-top: 10px; }
+/* più righe: sfondo alternato, così si distingue bene dove finisce una riga e comincia l'altra */
+.righe-voci.piu { margin-top: 10px; border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; }
+.righe-voci.piu .riga-voce { padding: 8px 12px 12px; }
+.righe-voci.piu .riga-voce:nth-child(odd) { background: #f3efe6; }
+.righe-voci.piu .riga-voce + .riga-voce { border-top: 1px solid var(--linea); }
+table.pd tr:nth-child(odd):not(:first-child):not(.tot) td { background: #f3efe6; }
+/* Registra: riquadri un po' più bassi e compatti */
+.modulo input[type=text], .modulo input[type=date], .modulo input[type=search], .modulo select { font-size: 17px; padding: 6px 10px; border-radius: 8px; }
+.modulo label.campo { margin: 10px 0 4px; }
+.modulo input.importo { font-size: 20px; }
+.modulo .scelta button { padding: 8px 10px; }
+.modulo .griglia { gap: 10px; }
 .riga-totale { margin: 10px 0 4px; font-size: 18px; }
 .riga { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .spazio { flex: 1; }
@@ -125,6 +136,12 @@ th, td { padding: 8px; border-bottom: 1px solid var(--linea); text-align: left; 
 th { color: var(--tenue); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; }
 td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 tr.tot td { font-weight: 700; background: #faf8f3; }
+/* Movimenti: totali in fondo all'elenco, ben visibili */
+tbody.totali-movimenti td { background: var(--blu-chiaro); font-size: 17px; border-bottom: 0; padding-top: 6px; padding-bottom: 6px; }
+tbody.totali-movimenti tr.primo td { border-top: 3px solid var(--blu); padding-top: 10px; }
+tbody.totali-movimenti td.n { font-weight: 750; font-size: 19px; }
+tbody.totali-movimenti tr.differenza td { border-top: 1px solid #b9cbe0; padding-bottom: 10px; }
+tbody.totali-movimenti tr.nota-spostamenti td { background: #fff; font-size: 14px; padding-top: 8px; }
 .zero { color: #9c968a; } .pos { color: var(--verde); } .neg { color: var(--rosso); }
 table.righe { margin-top: 8px; font-size: 15px; }
 table.pd td { vertical-align: middle; }

@@ -5,31 +5,37 @@ import { parseEuro, formatDecimale, formatEuro } from "../dominio/importi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
 import { esc, eur, dataIt, dataPerAnno, opzioniConti, rendicontoInviato, toast, $ } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
+import { causaleProposta, elencoCausali } from "../dominio/causali.js";
 
 let F = null;   // stato del modulo in compilazione
 
 const casse = (arch) => casseInOrdine(arch.contiAttivi());
 const rigaVuota = () => ({ conto: "", dare: "", avere: "" });
 const vuotaVoce = () => ({ voce: "", cerca: "", importo: "", nota: "" });
+/** Causale come in UNIO: facoltativa, si accende in Impostazioni. */
+export const conCausale = (arch) => Boolean(arch.impostazione("causale-unio", false));
 
 function nuovo(ctx, tipo = "entrata", tieni = {}) {
   const cs = casse(ctx.arch);
-  return { modo: "semplice", tipo, data: dataPerAnno(ctx.anno), importo: "", descr: "", voci: [vuotaVoce()],
+  return { modo: "semplice", tipo, data: dataPerAnno(ctx.anno), importo: "", descr: "", causaleToccata: false, voci: [vuotaVoce()],
+    causale: tipo === "spostamento" && conCausale(ctx.arch) ? causaleProposta("", tipo, ctx.arch.movimenti()) : "",
     cassa: cs[0]?.codice ?? "", da: cs[0]?.codice ?? "", verso: (cs[1] ?? cs[0])?.codice ?? "",
     righe: [rigaVuota(), rigaVuota()], id: null, ...tieni };
 }
 
 function daMovimento(m) {
   const a = analizza(m);
-  const base = { id: m.id, data: m.data, descr: m.descr, voci: [vuotaVoce()], righe: [rigaVuota(), rigaVuota()] };
-  // Entrata/uscita semplice: una sola cassa che riceve (o dà) e tutte le voci dall'altra parte, anche più di una
-  const entra = m.tipo === "entrata";
-  if ((m.tipo === "entrata" || m.tipo === "uscita") && a.casse.length === 1 && a.voci.length >= 1
+  const causale = m.causale ?? "";
+  const base = { id: m.id, data: m.data, descr: m.descr, causale, causaleToccata: Boolean(causale), voci: [vuotaVoce()], righe: [rigaVuota(), rigaVuota()] };
+  // Entrata/uscita semplice: una sola cassa che riceve (o dà) e tutte le voci dall'altra parte, anche più di una.
+  // Il tipo si ricava dalle righe: così anche i movimenti caricati da UNIO o scritti in partita doppia tornano nella modalità semplice.
+  const entra = a.tipo === "entrata";
+  if (m.tipo !== "apertura" && (a.tipo === "entrata" || a.tipo === "uscita") && a.casse.length === 1 && a.voci.length >= 1
       && (entra ? a.casse[0].dare > 0 && a.voci.every((r) => r.avere > 0 && !r.dare) : a.casse[0].avere > 0 && a.voci.every((r) => r.dare > 0 && !r.avere))) {
-    return { ...base, modo: "semplice", tipo: m.tipo, importo: "", cassa: a.casse[0].conto, da: "", verso: "",
+    return { ...base, modo: "semplice", tipo: a.tipo, importo: "", cassa: a.casse[0].conto, da: "", verso: "",
       voci: a.voci.map((r) => ({ voce: r.conto, cerca: "", importo: formatDecimale(entra ? r.avere : r.dare), nota: r.nota ?? "" })) };
   }
-  if (m.tipo === "spostamento" && a.tipo === "spostamento") {
+  if (m.tipo !== "apertura" && a.tipo === "spostamento") {
     return { ...base, modo: "semplice", tipo: "spostamento", importo: formatDecimale(a.importo), cassa: "", da: a.da, verso: a.verso };
   }
   return { ...base, modo: "pd", tipo: "pd", importo: "", cassa: "", da: "", verso: "", righe: m.righe.map(rigaPD) };
@@ -52,6 +58,13 @@ const rigaPD = (r) => ({ conto: r.conto, dare: r.dare ? formatDecimale(r.dare) :
 
 /* ---------- movimento costruito dal modulo ---------- */
 function candidato(ctx) {
+  const r = candidatoSenzaCausale(ctx);
+  // la causale si salva solo se è accesa in Impostazioni (se è spenta, quella che c'era resta com'è)
+  if (conCausale(ctx.arch)) r.mov.causale = F.causale.trim();
+  return r;
+}
+
+function candidatoSenzaCausale(ctx) {
   if (F.modo === "pd") {
     const righe = F.righe.filter((r) => r.conto || r.dare || r.avere)
       .map((r) => ({ conto: r.conto, dare: parseEuro(r.dare), avere: parseEuro(r.avere), ...(r.nota ? { nota: r.nota } : {}) }));
@@ -84,6 +97,25 @@ export function vista(ctx) {
   return F.modo === "pd" ? vistaPD(ctx) : vistaSemplice(ctx);
 }
 
+// Campo "Causale" (come la "Tipologia operazione" di UNIO), con l'elenco delle causali da scegliere mentre si scrive
+function campoCausale(ctx, id) {
+  if (!conCausale(ctx.arch)) return "";
+  const tipo = F.modo === "pd" ? "pd" : F.tipo;
+  return `<label class="campo" for="${id}">Causale <span class="hint">(come la «Tipologia operazione» di UNIO; facoltativa)</span></label>
+    <input id="${id}" type="text" value="${esc(F.causale)}" data-input="causale" list="${id}-elenco" autocomplete="off"
+      placeholder="${tipo === "entrata" ? "es. Offerte per Sacramenti" : tipo === "uscita" ? "es. Spese per il Culto" : "es. Prelievo / Versamento"}">
+    <datalist id="${id}-elenco">${elencoCausali(tipo, ctx.arch.movimenti()).map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist>`;
+}
+
+/** Propone la causale (se non è stata scritta a mano) in base alla prima voce scelta. */
+function proponiCausale(ctx) {
+  if (!conCausale(ctx.arch) || F.causaleToccata || F.modo === "pd") return;
+  const voce = F.voci.find((v) => v.voce)?.voce ?? "";
+  F.causale = causaleProposta(voce, F.tipo, ctx.arch.movimenti());
+  const el = $("#f-causale");
+  if (el) el.value = F.causale;
+}
+
 const notaCopia = () => (F.copiaDa && !F.id
   ? `<div class="nota">Copiato da «${esc(F.copiaDa.descr)}» del ${dataIt(F.copiaDa.data)}: controlli data e importo, poi prema Registra.</div>` : "");
 
@@ -98,7 +130,7 @@ function intestazione(titolo, testoBottone, azioneBottone) {
 // Una riga per voce (come in UNIO): voce, dettaglio facoltativo, importo. Se le righe sono più di una compare il totale.
 function righeVoci(ctx) {
   const piu = F.voci.length > 1;
-  return `${F.voci.map((v, i) => `<div class="riga-voce">
+  return `<div class="righe-voci${piu ? " piu" : ""}">${F.voci.map((v, i) => `<div class="riga-voce">
       ${piu ? `<div class="riga"><b class="spazio">Riga ${i + 1}</b><button class="btn pericolo piccolo" data-azione="togliVoce" data-i="${i}" aria-label="Togli la riga ${i + 1}">✕ Togli</button></div>` : ""}
       <label class="campo" for="f-voce-${i}">Voce</label>
       <div class="griglia voce"><input type="search" placeholder="Cerca la voce, es. funerali" value="${esc(v.cerca)}" data-input="cerca" data-i="${i}" aria-label="Cerca la voce della riga ${i + 1}">
@@ -107,7 +139,7 @@ function righeVoci(ctx) {
         <div><label class="campo" for="f-nota-${i}">Dettaglio (facoltativo)</label><input id="f-nota-${i}" type="text" value="${esc(v.nota)}" data-input="nota" data-i="${i}"
           placeholder="${F.tipo === "entrata" ? "es. esequie di Mario Rossi" : "es. fattura n. 12"}"></div>
         <div><label class="campo" for="f-importo-${i}">Importo (€)</label><input id="f-importo-${i}" type="text" class="importo" inputmode="decimal" placeholder="0,00" value="${esc(v.importo)}" data-input="importoVoce" data-i="${i}"></div>
-      </div></div>`).join("")}
+      </div></div>`).join("")}</div>
     <div class="riga riga-totale"><button class="btn sec piccolo" data-azione="aggiungiVoce">+ Aggiungi riga</button>
       <span class="spazio"></span>${piu ? `<span>Totale <b id="f-totale"></b></span>` : ""}</div>`;
 }
@@ -118,7 +150,7 @@ function vistaSemplice(ctx) {
   ${intestazione(F.id ? "Correggi il movimento" : "Registra un movimento", "Sono pratico: usa la partita doppia", "modoPD")}
   <p class="lead">Compili i campi: Divisio scrive da solo la registrazione in partita doppia.</p>
   ${notaFattura(ctx)}${notaCopia()}
-  <div class="card">
+  <div class="card modulo">
     <div class="scelta">
       <button class="${F.tipo === "entrata" ? "on entrata" : ""}" data-azione="tipo" data-v="entrata">+ Entrata</button>
       <button class="${F.tipo === "uscita" ? "on uscita" : ""}" data-azione="tipo" data-v="uscita">− Uscita</button>
@@ -128,6 +160,7 @@ function vistaSemplice(ctx) {
       <div><label class="campo" for="f-data">Data</label><input id="f-data" type="date" value="${F.data}" data-input="data"></div>
       ${sp ? `<div><label class="campo" for="f-importo">Importo (€)</label><input id="f-importo" type="text" class="importo" inputmode="decimal" placeholder="0,00" value="${esc(F.importo)}" data-input="importo"></div>` : ""}
     </div>
+    ${campoCausale(ctx, "f-causale")}
     <label class="campo" for="f-descr">${sp ? "Descrizione" : "Che cos'è? Lo scriva con parole sue"}</label>
     <input id="f-descr" type="text" value="${esc(F.descr)}" data-input="descr"
       placeholder="${F.tipo === "entrata" ? "es. offerte funerali di novembre" : F.tipo === "uscita" ? "es. bolletta luce di marzo" : "es. versamento contanti in banca"}">
@@ -148,7 +181,8 @@ function vistaPD(ctx) {
   ${intestazione(F.id ? "Correggi il movimento" : "Registra in partita doppia", "Torna alla modalità semplice", "modoSemplice")}
   <p class="lead">Per chi conosce la partita doppia: il movimento si salva solo se Dare = Avere.</p>
   ${notaFattura(ctx)}${notaCopia()}
-  <div class="card">
+  <div class="card modulo">
+    ${campoCausale(ctx, "p-causale")}
     <div class="griglia g2">
       <div><label class="campo" for="p-data">Data</label><input id="p-data" type="date" value="${F.data}" data-input="data"></div>
       <div><label class="campo" for="p-descr">Descrizione</label><input id="p-descr" type="text" value="${esc(F.descr)}" data-input="descr" placeholder="es. giroconto di fine anno"></div>
@@ -213,13 +247,14 @@ export const input = {
   importoVoce(el, ev, ctx) { F.voci[el.dataset.i].importo = el.value; aggiornaAnteprima(ctx); },
   nota(el, ev, ctx) { F.voci[el.dataset.i].nota = el.value; aggiornaAnteprima(ctx); },
   descr(el, ev, ctx) { F.descr = el.value; aggiornaAnteprima(ctx); },
+  causale(el, ev, ctx) { F.causale = el.value; F.causaleToccata = el.value.trim() !== ""; },
   cerca(el, ev, ctx) { const i = Number(el.dataset.i); F.voci[i].cerca = el.value; $(`#f-voce-${i}`).innerHTML = opzioniVoce(ctx, i); },
   pdDare(el, ev, ctx) { F.righe[el.dataset.i].dare = el.value; aggiornaAnteprima(ctx); },
   pdAvere(el, ev, ctx) { F.righe[el.dataset.i].avere = el.value; aggiornaAnteprima(ctx); },
 };
 
 export const cambia = {
-  voce(el, ev, ctx) { F.voci[el.dataset.i].voce = el.value; aggiornaAnteprima(ctx); },
+  voce(el, ev, ctx) { F.voci[el.dataset.i].voce = el.value; proponiCausale(ctx); aggiornaAnteprima(ctx); },
   pdConto(el, ev, ctx) { F.righe[el.dataset.i].conto = el.value; aggiornaAnteprima(ctx); },
 };
 
@@ -232,6 +267,7 @@ export const azioni = {
       if (F.tipo === "spostamento" && F.voci.length === 1 && !F.voci[0].importo) F.voci[0].importo = F.importo;
       F.tipo = t;
       F.voci = F.voci.map((v) => ({ ...v, voce: "", cerca: "" }));
+      if (!F.causaleToccata) F.causale = t === "spostamento" && conCausale(ctx.arch) ? causaleProposta("", t, ctx.arch.movimenti()) : "";
     }
     ctx.aggiorna();
   },
@@ -253,7 +289,14 @@ export const azioni = {
     if (mov.righe.length) F.righe = mov.righe.map(rigaPD);
     ctx.aggiorna();
   },
-  modoSemplice(el, ev, ctx) { F = nuovo(ctx, "entrata", { data: F.data, descr: F.descr, id: F.id }); ctx.aggiorna(); },
+  modoSemplice(el, ev, ctx) {
+    // se le righe scritte sono un'entrata, un'uscita o uno spostamento, passano nella modalità semplice; altrimenti si riparte da capo
+    const righe = F.righe.filter((r) => r.conto && (r.dare || r.avere))
+      .map((r) => ({ conto: r.conto, dare: parseEuro(r.dare) || 0, avere: parseEuro(r.avere) || 0, ...(r.nota ? { nota: r.nota } : {}) }));
+    const conv = righe.length >= 2 ? daMovimento({ id: F.id, data: F.data, descr: F.descr, causale: F.causale, tipo: "pd", righe }) : null;
+    F = conv && conv.modo === "semplice" ? conv : nuovo(ctx, "entrata", { data: F.data, descr: F.descr, id: F.id, causale: F.causale, causaleToccata: Boolean(F.causale) });
+    ctx.aggiorna();
+  },
   pdAggiungi(el, ev, ctx) { F.righe.push(rigaVuota()); ctx.aggiorna(); },
   pdTogli(el, ev, ctx) { F.righe.splice(Number(el.dataset.i), 1); ctx.aggiorna(); },
   svuota(el, ev, ctx) { F = nuovo(ctx, F.tipo); ctx.aggiorna(); },

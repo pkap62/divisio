@@ -70,9 +70,13 @@ export function leggiEstrattoConto(testo) {
     const g = gruppi.get(chiave) ?? { numero, anno: esercizio, data, descr: v("Commento") || v("Commento riga"), causale: v("Causale"), righe: [], scarta: null };
     if (!g.descr) g.descr = v("Commento riga");
     if (!(dare === 0 && avere === 0)) {
+      // "Commento riga" (es. "Esequie Mario Rossi") diventa il dettaglio della riga, se dice qualcosa in più
+      const cr = v("Commento riga");
+      const uguali = (x) => x && x.toLowerCase() === cr.toLowerCase();
+      const nota = cr && !isCassaBanca(conto) && ![v("Commento"), v("Causale"), v("Descrizione")].some(uguali) ? { nota: cr } : {};
       // una riga con Dare e Avere insieme diventa due righe
-      if (dare) g.righe.push({ conto, dare, avere: 0 });
-      if (avere) g.righe.push({ conto, dare: 0, avere });
+      if (dare) g.righe.push({ conto, dare, avere: 0, ...nota });
+      if (avere) g.righe.push({ conto, dare: 0, avere, ...nota });
     }
     if (conto.startsWith("CH")) g.scarta = "è una scrittura di chiusura o apertura dei conti di UNIO";
     else if (!codiceValido(conto)) g.scarta = `usa il conto ${conto}, che non esiste nel piano dei conti diocesano`;
@@ -94,6 +98,7 @@ export function leggiEstrattoConto(testo) {
     else if (t.dare !== t.avere) problemi.push(`${etichetta}: esclusa perché Dare e Avere non sono uguali.`);
     else {
       const r = { numero: g.numero, data: g.data, descr: g.descr || g.causale || `Registrazione UNIO n. ${g.numero}`, righe: g.righe };
+      if (g.causale) r.causale = g.causale;
       if (g.anno !== anno) r.anno = g.anno;
       const dd = daDivisio(r);
       if (dd) r.daDivisio = dd;
@@ -114,7 +119,8 @@ export function tipoDaRighe(righe) {
 
 /** Registrazioni → movimenti di Divisio. L'identificativo fisso evita doppioni se si carica di nuovo lo stesso file. */
 export function aMovimenti(registrazioni, anno) {
-  return registrazioni.map((r) => ({ id: `unio-${r.anno ?? anno}-${r.numero}`, data: r.data, descr: r.descr, tipo: tipoDaRighe(r.righe), righe: r.righe, origine: "UNIO" }));
+  return registrazioni.map((r) => ({ id: `unio-${r.anno ?? anno}-${r.numero}`, data: r.data, descr: r.descr, ...(r.causale ? { causale: r.causale } : {}),
+    tipo: tipoDaRighe(r.righe), righe: r.righe, origine: "UNIO" }));
 }
 
 /**

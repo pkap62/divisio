@@ -1,7 +1,7 @@
 // Pagina "Movimenti": elenco con ricerca e filtri, correzione, eliminazione, esportazione CSV.
 
 import { movimentiAnno, saldiProgressivi } from "../dominio/saldi.js";
-import { movimentiCSV, perData } from "../dominio/csv.js";
+import { entrateUsciteCSV, perData } from "../dominio/csv.js";
 import { casseInOrdine } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
 import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, $ } from "./util.js";
@@ -16,7 +16,7 @@ let azzera = null;   // pannello "Azzera i movimenti dell'anno" aperto: { anno, 
 function filtrati({ arch, anno }) {
   const q = norm(filtro.testo).trim();
   return movimentiAnno(arch.movimenti(), anno).filter((m) => {
-    if (q && !norm(`${m.descr} ${m.righe.map((r) => arch.nomeConto(r.conto) + " " + r.conto + " " + (r.nota ?? "")).join(" ")}`).includes(q)) return false;
+    if (q && !norm(`${m.descr} ${m.causale ?? ""} ${m.righe.map((r) => arch.nomeConto(r.conto) + " " + r.conto + " " + (r.nota ?? "")).join(" ")}`).includes(q)) return false;
     if (filtro.cassa && !m.righe.some((r) => r.conto === filtro.cassa)) return false;
     if (filtro.periodo) { const [da, a] = PERIODI[filtro.periodo]; const g = m.data.slice(5); if (g < da || g > a) return false; }
     if (filtro.tipo && analizza(m).tipo !== filtro.tipo) return false;
@@ -26,12 +26,10 @@ function filtrati({ arch, anno }) {
 
 function elenco(ctx) {
   const lista = filtrati(ctx);
-  const somma = (s) => lista.reduce((t, m) => { const a = analizza(m); return t + (a.segno === s ? a.importo : 0); }, 0);
   // scelta una sola cassa o banca: saldo dopo ogni movimento, calcolato su tutto l'anno (anche se si cerca o si sceglie un periodo)
   const progressivo = filtro.cassa ? saldiProgressivi(movimentiAnno(ctx.arch.movimenti(), ctx.anno), filtro.cassa) : null;
   const finale = progressivo?.size ? [...progressivo.values()].at(-1) : null;
-  return `${tabellaMovimenti(lista, ctx.arch, { dettagli: true, progressivo })}
-    <p class="hint">${lista.length} movimenti · entrate di cassa ${eur(somma(1))} · uscite ${eur(somma(-1))}</p>
+  return `${tabellaMovimenti(lista, ctx.arch, { dettagli: true, progressivo, totali: true })}
     ${progressivo ? `<p class="hint">«Saldo dopo»: quanto c'era in ${esc(ctx.arch.nomeConto(filtro.cassa))} dopo ogni movimento, partendo dal saldo di inizio anno.
       Saldo dopo l'ultimo movimento del ${ctx.anno}: <b>${eur(finale ?? 0)}</b>. Serve per confrontarlo con i contanti contati o con l'estratto conto della banca.</p>` : ""}`;
 }
@@ -41,9 +39,9 @@ export function vista(ctx) {
   const opz = (valori, scelto) => valori.map(([v, n]) => `<option value="${v}" ${v === scelto ? "selected" : ""}>${esc(n)}</option>`).join("");
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>
-    <button class="btn sec piccolo" data-azione="csv">Scarica in CSV (Excel)</button></div>
+    <button class="btn sec piccolo" data-azione="csv" title="Scarica solo i movimenti mostrati qui sotto (con la ricerca e i filtri scelti)">Scarica in CSV (Excel)</button></div>
   <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere, eliminare o registrare di nuovo lo stesso movimento.
-    Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento.</p>
+    Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento. «Scarica in CSV» scarica solo i movimenti mostrati, come entrate e uscite.</p>
   ${rendicontoInviato(ctx.arch, ctx.anno) ? `<div class="nota">Il Rendiconto ${ctx.anno} risulta già inviato da UNIO il ${dataIt(rendicontoInviato(ctx.arch, ctx.anno))}:
     le correzioni ai movimenti del ${ctx.anno} vanno fatte anche in UNIO.</div>` : ""}
   <div class="card"><div class="griglia g4">
@@ -136,7 +134,12 @@ export const azioni = {
     ridisegnaElenco(ctx);
   },
   csv(el, ev, ctx) {
-    const testo = movimentiCSV(movimentiAnno(ctx.arch.movimenti(), ctx.anno), (c) => ctx.arch.nomeConto(c));
-    scarica(`Divisio_movimenti_${ctx.anno}.csv`, "﻿" + testo, "text/csv;charset=utf-8");   // ﻿: Excel riconosce le lettere accentate
+    // solo i movimenti mostrati (ricerca e filtri), come entrate e uscite (non in partita doppia)
+    const lista = filtrati(ctx);
+    if (!lista.length) { toast("Nessun movimento da scaricare: cambi la ricerca o i filtri."); return; }
+    const testo = entrateUsciteCSV(lista, (c) => ctx.arch.nomeConto(c));
+    const filtrato = filtro.testo.trim() || filtro.cassa || filtro.periodo || filtro.tipo;
+    scarica(`Divisio_movimenti_${ctx.anno}${filtrato ? "_ricerca" : ""}.csv`, "﻿" + testo, "text/csv;charset=utf-8");
+    toast(lista.length === 1 ? "Scaricato 1 movimento" : `Scaricati ${lista.length} movimenti${filtrato ? " (quelli della ricerca)" : ""}`);   // ﻿: Excel riconosce le lettere accentate
   },
 };
