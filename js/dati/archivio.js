@@ -97,6 +97,16 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
       avvisa();
     },
 
+    /** Toglie del tutto un sottoconto non usato. Resta un segnaposto "eliminato", perché lo tolgano anche gli altri computer della parrocchia. */
+    async eliminaConto(codice) {
+      const prec = stato.conti.get(codice);
+      if (!prec || prec.eliminato) return;
+      const record = { ...prec, eliminato: true, attivo: false, ...marca(prec) };
+      await db.scrivi(conn, "conti", record);
+      stato.conti.set(codice, record);
+      avvisa();
+    },
+
     async salvaImpostazione(chiave, valore) {
       const record = { chiave, valore, ...marca(stato.impostazioni.get(chiave)) };
       await db.scrivi(conn, "impostazioni", record);

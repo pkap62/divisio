@@ -128,7 +128,7 @@ export const REGOLE_BANCA = [
   ["uscita", "U09-01-06", "imposta di bollo", /imposta\s*(di\s*)?bollo|\bbollo\b/],
   ["uscita", "U09-02-01", "interessi passivi", /interessi\s*(passivi|debitori)/],
   ["uscita", "U08-02-07", "spese bancarie", /\bcompetenze\b|commission|spese\s*(di\s*)?(tenuta|gestione|bonifico|conto|invio|incasso)|canone\s*(mensile|conto|trimestrale|annuo)|\bint\.?\s*e\s*comp|costo\s*(bonifico|operazione)|interessi\s*negativi/],
-  ["uscita", "U02-03-05", "rimborso COLF", /\bcolf\b/],
+  ["uscita", "U02-03-03", "rimborso COLF", /\bcolf\b/],   // "Rimborsi spese diverse": il sottoconto della COLF, se c'è, lo ricorda la parrocchia
   ["uscita", "U03-01-01", "professionista", /studio\s+\w+(\s+\w+)?\s+associat|commercialist|\bnotai|avvocat|geometra|architett|professionist/],
   ["uscita", "U08-02-04", "spese postali", /francoboll|raccomandat|spese\s*postali/],
   ["uscita", "U09-01-01", "IMU", /\bimu\b/],

@@ -1,3 +1,4 @@
+import { sottocontiIniziali, contiVisibili } from "../js/dominio/piano.js";
 import { test, uguale, vero, casuale } from "./mini.js";
 import { unisciDati, nuovoIstante, nuovoId } from "../js/dominio/unione.js";
 
@@ -45,4 +46,17 @@ test("istanti di modifica sempre crescenti e identificativi unici", () => {
   uguale(nuovoIstante(t2, new Date("2026-03-01T09:00:00.000Z")) > t2, true, "orologio indietro");
   const ids = new Set(Array.from({ length: 1000 }, nuovoId));
   uguale(ids.size, 1000);
+});
+
+test("piano dei conti: un sottoconto eliminato dal parroco sparisce anche dai collaboratori", () => {
+  const iniziali = sottocontiIniziali();
+  vero(!iniziali.some((c) => ["U02-03-05", "U02-03-06", "U02-03-07"].includes(c.codice)), "le parrocchie nuove non ricevono sottoconti di una parrocchia");
+  const vecchio = "2000-01-01T00:00:00.000Z";
+  const collaboratore = { conti: [{ codice: "U02-03-05", nome: "Rimborso COLF", attivo: true, modificatoIl: vecchio }, { codice: "U02-03-09", nome: "Aggiunto", attivo: true, modificatoIl: "2026-11-01T10:00:00.000Z" }] };
+  const parroco = { conti: [{ codice: "U02-03-05", nome: "Rimborso COLF", attivo: false, eliminato: true, modificatoIl: "2026-11-23T10:00:00.000Z" }] };
+  const uniti = unisciDati(collaboratore, parroco);
+  const conti = new Map(uniti.conti.map((c) => [c.codice, c]));
+  uguale([...contiVisibili(conti, []).keys()], ["U02-03-09"], "eliminato: non si vede più; quello aggiunto resta");
+  const usato = [{ righe: [{ conto: "U02-03-05", dare: 100, avere: 0 }] }];
+  vero(contiVisibili(conti, usato).has("U02-03-05"), "se un movimento lo usa resta visibile");
 });

@@ -67,7 +67,7 @@ const PIANO = `
 #U|U02|Stipendi, remunerazioni, rimborsi
 01|Stipendi|01 Stipendi;02 Contributi previdenziali dipendenti;03 Assicurazioni dipendenti;04 Quota annuale TFR
 02|Remunerazioni|01 Remunerazione parroco;02 Remunerazione vicari parrocchiali
-03|Rimborsi|01 Rimborso vitto sacerdoti;02 Rimborso viaggi;03 Rimborsi spese diverse;04 Rimborsi a sacerdoti occasionali;05 Rimborso COLF;06 Rimborso sacerdote collaboratore
+03|Rimborsi|01 Rimborso vitto sacerdoti;02 Rimborso viaggi;03 Rimborsi spese diverse;04 Rimborsi a sacerdoti occasionali
 #U|U03|Onorari e compensi professionali
 01|Onorari e compensi prof.li|01 Onorari e compensi;02 Ritenute d'acconto
 #U|U04|Mobili e attrezzature

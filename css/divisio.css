@@ -186,8 +186,11 @@ tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
 
 /* piano dei conti */
 .voce-piano { border-top: 1px solid var(--linea); padding: 10px 0; }
-.sottoconto { display: grid; grid-template-columns: 90px 1fr auto; gap: 10px; align-items: center; margin: 6px 0 0 8px; }
+.sottoconto { display: grid; grid-template-columns: 90px 1fr auto 6.5em; gap: 10px; align-items: center; margin: 6px 0 0 8px; }
 .sottoconto input[type=text] { font-size: 16px; padding: 6px 10px; }
+.sottoconto .hint { font-size: 13px; line-height: 1.2; }
+.cestino { background: none; border: 0; padding: 6px; border-radius: 8px; color: var(--rosso); cursor: pointer; display: inline-flex; }
+.cestino:hover, .cestino:focus-visible { background: var(--rosso-chiaro); }
 .sottoconto.spento input[type=text] { color: #9c968a; text-decoration: line-through; }
 
 @media (max-width: 600px) {
@@ -195,7 +198,7 @@ tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
   .saldo .valore { font-size: 22px; }
   th, td { padding: 6px 4px; }
   .griglia.voce, .griglia.dettaglio { grid-template-columns: 1fr; }
-  .sottoconto { grid-template-columns: 1fr auto; } .sottoconto .codice { grid-column: 1 / -1; }
+  .sottoconto { grid-template-columns: 1fr auto 6.5em; } .sottoconto .codice { grid-column: 1 / -1; }
   table.scadenze > tbody > tr:first-child { display: none; }
   table.scadenze > tbody > tr { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--linea); padding: 6px 0; }
   table.scadenze > tbody > tr > td { border: 0; padding: 2px 4px; }

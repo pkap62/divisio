@@ -3,13 +3,17 @@
 import { creaBackup, leggiBackup, datiPerRipristino } from "../dominio/backup.js";
 import { scritturaApertura, CONTO_PATRIMONIO } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto, voce, gruppo } from "../dominio/piano.js";
+import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto, voce, gruppo, contiUsati } from "../dominio/piano.js";
 import { causaliPer, libera } from "../dominio/causali.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisioneImpostata } from "./condivisione.js";
 import { teatro } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
+
+// Cestino rosso per eliminare un sottoconto (disegnato qui, senza file in più)
+const ICONA_CESTINO = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
 /* ---------- cassa e banche ---------- */
 // La cassa è sempre presente; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
@@ -146,6 +150,7 @@ export function vista(ctx) {
   const casse = casseInOrdine(arch.contiAttivi());
   const ultimaCopia = locale.leggi("ultimaCopia", null);
   const altriConti = arch.contiAttivi();
+  const usati = contiUsati(arch.movimenti());   // sottoconti usati da movimenti (di tutti gli anni): non si possono eliminare
 
   return `
   <h2>Impostazioni</h2>
@@ -196,14 +201,19 @@ export function vista(ctx) {
 
   <div class="card"><h3>Piano dei conti</h3>
     <p class="hint">Gruppi e voci sono quelli della Diocesi e non si cambiano. I sottoconti si possono rinominare (es. "Offerte diverse" → "Offerte per il presepe"),
-      aggiungere o mettere "fuori uso" (non compaiono più negli elenchi, ma i movimenti già registrati restano).</p>
+      aggiungere, mettere "fuori uso" (non compaiono più negli elenchi, ma i movimenti già registrati restano) oppure <b>eliminare</b>, se nessun movimento li usa.
+      I sottoconti aggiunti valgono solo per questa parrocchia; con la cartella condivisa i collaboratori vedono lo stesso piano dei conti.
+      Cassa e banche si cambiano più sopra, in «Cassa e banche».</p>
     ${GRUPPI.map((g) => `<details data-chiave="gruppo-${g.codice}"><summary>${g.codice} · ${esc(g.nome)}</summary>
       ${g.voci.map((v) => `<div class="voce-piano"><div class="riga"><b class="spazio">${v.codice} ${esc(v.nome)}</b>
           <button class="btn sec piccolo" data-azione="aggiungiSottoconto" data-voce="${v.codice}">+ Sottoconto</button></div>
         ${[...arch.conti.values()].filter((c) => c.codice.startsWith(v.codice + "-")).sort((a, b) => a.codice.localeCompare(b.codice)).map((c) => `
           <div class="sottoconto ${c.attivo === false ? "spento" : ""}"><span class="codice">${c.codice}</span>
             <input type="text" value="${esc(c.nome)}" data-cambia="rinomina" data-codice="${c.codice}" aria-label="Nome del sottoconto ${c.codice}">
-            <label class="spunta"><input type="checkbox" ${c.attivo === false ? "" : "checked"} ${c.codice === CASSA ? "disabled" : ""} data-cambia="attivo" data-codice="${c.codice}"> in uso</label></div>`).join("")}
+            <label class="spunta"><input type="checkbox" ${c.attivo === false ? "" : "checked"} ${c.codice === CASSA ? "disabled" : ""} data-cambia="attivo" data-codice="${c.codice}"> in uso</label>
+            ${isCassaBanca(c.codice) ? "" : usati.has(c.codice)
+              ? `<span class="hint" title="Un sottoconto usato da movimenti si può solo mettere fuori uso">usato nei movimenti</span>`
+              : `<button class="cestino" data-azione="eliminaSottoconto" data-codice="${c.codice}" title="Elimina il sottoconto" aria-label="Elimina il sottoconto ${c.codice}">${ICONA_CESTINO}</button>`}</div>`).join("")}
       </div>`).join("")}</details>`).join("")}
   </div>
 
@@ -338,6 +348,14 @@ export const azioni = {
   async bancaRimetti(el, ev, ctx) {
     await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
     toast(`${ctx.arch.nomeConto(el.dataset.codice)} di nuovo in uso ✓`);
+    ctx.aggiorna();
+  },
+  async eliminaSottoconto(el, ev, ctx) {
+    const codice = el.dataset.codice, nome = ctx.arch.nomeConto(codice);
+    if (contiUsati(ctx.arch.movimenti()).has(codice)) { toast(`«${nome}» è usato da movimenti: si può solo mettere fuori uso`); return; }
+    if (!confirm(`Eliminare il sottoconto «${nome}» (${codice})?\n\nNessun movimento lo usa. Sparirà dal piano dei conti di questa parrocchia (anche sugli altri computer collegati).\nSe servirà di nuovo, lo potrà aggiungere con «+ Sottoconto».`)) return;
+    await ctx.arch.eliminaConto(codice);
+    toast(`«${nome}» eliminato ✓`);
     ctx.aggiorna();
   },
   async aggiungiSottoconto(el, ev, ctx) {

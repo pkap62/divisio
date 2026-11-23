@@ -52,7 +52,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.12.0</span></p>
+  <p class="versione">Versione <span id="versione">0.12.1</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -92,6 +92,10 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
+
+<div class="box nota"><b>Novità della versione 0.12.1:</b> in Impostazioni → <b>Piano dei conti</b> i sottoconti che nessun movimento usa
+si possono anche <b>eliminare</b> con il cestino rosso (anche sugli altri computer collegati). Il piano dei conti di partenza per una parrocchia nuova non ha più «Rimborso COLF»
+e «Rimborso sacerdote collaboratore»: chi li usa li aggiunge con <span class="bottone">+ Sottoconto</span>.</div>
 
 <div class="box nota"><b>Novità della versione 0.12:</b> la <b>causale come in UNIO</b> (facoltativa) ora si sceglie dall'elenco delle causali della Diocesi
 e, come in UNIO, <b>decide quali voci si possono scegliere</b> (es. con «EOO · Offerte ordinarie» compaiono solo le voci delle offerte). L'elenco con le voci di ogni causale
@@ -161,11 +165,13 @@ i dati di quel computer spariscono. Per questo servono le <a href="#copie">copie
     Il numero del conto (A02-01-02, A02-01-03…) lo dà Divisio, nell'ordine in cui le banche si aggiungono.
     Per una banca chiusa basta <span class="bottone">Togli</span>: i movimenti già registrati restano.</li>
   <li><b>Piano dei conti</b>: è già quello della Diocesi. Può <b>rinominare</b> i sottoconti come in UNIO,
-    aggiungerne o metterli "fuori uso". Gruppi e voci del Rendiconto non si cambiano.<br>
+    aggiungerne, metterli "fuori uso" oppure <b>eliminarli</b> con il <b style="color:#b3261e">cestino rosso</b> accanto al nome (solo se nessun movimento li usa:
+    altrimenti si possono solo mettere fuori uso). Gruppi e voci del Rendiconto non si cambiano.
+    I sottoconti aggiunti valgono solo per la sua parrocchia; se Divisio è condiviso (capitolo 5), i collaboratori vedono il piano dei conti così come lo ha sistemato il parroco.<br>
     <i>Scorciatoia:</i> caricando i movimenti da UNIO (capitolo 7) Divisio propone da solo i nomi dei sottoconti di UNIO.</li>
   <li><b>Saldi di apertura</b>: quanto c'era davvero in cassa e in ogni banca il 1° gennaio, più eventuali collette ancora da versare, crediti o debiti.
     Divisio calcola da solo il patrimonio netto. Si possono inserire anche più tardi.</li>
-  <li><b>Copia di sicurezza</b>: ne faccia subito una (capitolo 13).</li>
+  <li><b>Copia di sicurezza</b>: ne faccia subito una (capitolo 14).</li>
   <li>Se lavorano anche i collaboratori: <b>Lavorare insieme</b> (capitolo 5).</li>
 </ol>
 
@@ -471,7 +477,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 23 novembre 2026 (versione 0.12.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 23 novembre 2026 (versione 0.12.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

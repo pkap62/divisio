@@ -7,6 +7,14 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.12.1 – Eliminare i sottoconti**
+- Impostazioni → Piano dei conti: **cestino rosso** per eliminare i sottoconti che nessun movimento usa (di qualunque anno); quelli usati si possono solo
+  mettere fuori uso. Resta un segnaposto "eliminato" (`eliminaConto` in `js/dati/archivio.js`), così il sottoconto sparisce anche dai computer
+  dei collaboratori collegati con la cartella condivisa. Cassa e banche si tolgono da «Cassa e banche».
+- Piano dei conti di partenza (solo per le parrocchie nuove): tolti U02-03-05 «Rimborso COLF» e U02-03-06 «Rimborso sacerdote collaboratore».
+  Chi li ha già li tiene; chi li vuole li aggiunge con «+ Sottoconto». La parola «colf» negli estratti conto ora propone U02-03-03 «Rimborsi spese diverse»
+  (poi Divisio ricorda la scelta della parrocchia).
+
 **0.12.0 – Le causali decidono le voci, come in UNIO**
 - La **causale come in UNIO** (facoltativa) si sceglie da un elenco: le 41 causali della Diocesi di Firenze lette da UNIO (Gestione Piano dei conti →
   Gestione causali), raggruppate come in UNIO (Entrate ordinarie, Uscite ordinarie, Movimento finanziario…), in `js/dominio/causali.js`.

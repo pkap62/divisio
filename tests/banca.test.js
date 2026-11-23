@@ -117,7 +117,7 @@ test("banca: proposte dalle parole (bollo, colf, messe, contanti, professionista
   const per = (i) => [p[i].stato, p[i].tipo, p[i].voce || p[i].altra];
   uguale(per(0), ["pronto", "uscita", "U03-01-01"]);
   uguale(per(1), ["pronto", "uscita", "U08-02-07"]);
-  uguale(per(2), ["pronto", "uscita", "U02-03-05"]);
+  uguale(per(2), ["pronto", "uscita", "U02-03-03"]);
   uguale(per(4), ["pronto", "entrata", "E01-04-05"]);
   uguale(per(5), ["pronto", "entrata", "E01-01-02"]);
   uguale(per(6), ["pronto", "uscita", "U08-01-04"]);
@@ -161,13 +161,13 @@ test("banca: il pagamento di una fattura dello scadenzario viene riconosciuto", 
 test("banca: la scelta ricordata vale per lo stesso nome e la stessa causale", () => {
   const righe = leggi(BPM).righe;
   const p0 = preparaRighe(righe, base);
-  // l'utente sceglie "Rimborso sacerdote collaboratore" per Mario Bianchi, causale "rimborso colf"
-  const scelta = { ...p0[2], voce: "U02-03-06" };
+  // l'utente sceglie "Rimborsi a sacerdoti occasionali" per Mario Bianchi, causale "rimborso colf"
+  const scelta = { ...p0[2], voce: "U02-03-04" };
   const valore = ricorda(undefined, scelta, "2026-04-01");
   uguale(valore.nome, "Mario Bianchi");
-  uguale(valore.scelte[0], { tipo: "uscita", voce: "U02-03-06", altra: "", firma: "rimborso colf", quotaTeatro: 0, volte: 1, ultima: "2026-04-01" });
+  uguale(valore.scelte[0], { tipo: "uscita", voce: "U02-03-04", altra: "", firma: "rimborso colf", quotaTeatro: 0, volte: 1, ultima: "2026-04-01" });
   const p = preparaRighe(righe, { ...base, memorie: new Map([[p0[2].chiave, valore]]) });
-  uguale([p[2].voce, p[2].livello], ["U02-03-06", "ricordato"]);
+  uguale([p[2].voce, p[2].livello], ["U02-03-04", "ricordato"]);
   // ricordare di nuovo la stessa scelta la conta due volte, senza doppioni
   const ancora = ricorda(valore, scelta, "2026-07-01");
   uguale([ancora.scelte.length, ancora.scelte[0].volte], [1, 2]);
