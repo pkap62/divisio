@@ -7,6 +7,17 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.12.0 – Le causali decidono le voci, come in UNIO**
+- La **causale come in UNIO** (facoltativa) si sceglie da un elenco: le 41 causali della Diocesi di Firenze lette da UNIO (Gestione Piano dei conti →
+  Gestione causali), raggruppate come in UNIO (Entrate ordinarie, Uscite ordinarie, Movimento finanziario…), in `js/dominio/causali.js`.
+- Scelta la causale, l'elenco delle voci mostra **solo le voci di quella causale** (tutti i sottoconti delle voci, anche quelli aggiunti dalla parrocchia;
+  cassa e banche sempre). «Nessuna causale» = tutte le voci. In partita doppia vale lo stesso per i conti.
+- Scelta prima la voce, Divisio propone la causale (prima quella già usata con quella voce, poi quella di UNIO che ha la voce; le spese bancarie in più non contano).
+  Sposta soldi: PRE (banca → cassa) o VER (cassa → banca).
+- Se voce e causale non vanno d'accordo (es. movimenti vecchi) Divisio avvisa, senza bloccare.
+- Impostazioni: «Vedi le causali e le loro voci» (solo da vedere: le causali le decide la Diocesi). Le causali del teatro (ETE, UTE) compaiono solo con la funzione
+  del teatro accesa e in Divisio hanno anche cassa e banche (in UNIO mancano). Nei Dettagli la causale si vede con il codice («EOO · Offerte ordinarie»).
+
 **0.11.2 – Ripristino con la condivisione; Dettagli a tutta larghezza**
 - Ripristino da copia di sicurezza: ogni record della copia riceve una data di modifica nuova (più recente di tutte quelle conosciute) e ciò che non è
   nella copia viene segnato come eliminato (`datiPerRipristino` in `js/dominio/backup.js`). Prima, con la condivisione su Google Drive, i dati della

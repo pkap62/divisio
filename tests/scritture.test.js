@@ -2,7 +2,7 @@ import { test, uguale, vero, contiene, casuale } from "./mini.js";
 import { scritturaSemplice, scritturaPiuVoci, scritturaApertura, verificaMovimento, quadra, totaliRighe, analizza, CONTO_PATRIMONIO } from "../js/dominio/scritture.js";
 import { riepilogoAnno } from "../js/dominio/saldi.js";
 import { sottocontiIniziali, isCassaBanca, tipoDi } from "../js/dominio/piano.js";
-import { causaleProposta, elencoCausali } from "../js/dominio/causali.js";
+import { causaleProposta, causaleDa, causaliPer, contoAmmesso, causalePerSpostamento, etichettaCausale, libera, CAUSALI } from "../js/dominio/causali.js";
 
 const CASSA = "A02-01-01", BANCA = "A02-01-02";
 // Di partenza c'è solo la cassa: per le prove si aggiunge una banca, come farebbe la parrocchia.
@@ -178,12 +178,52 @@ test("più voci: la cassa riceve il totale, ogni voce la sua parte con il dettag
     scritturaSemplice({ tipo: "entrata", importo: 5000, voce: "E01-03-05", cassa: CASSA }), "con una voce è come prima");
 });
 
-test("causale: proposta dalla voce, prima quella già usata, poi quella tipica di UNIO", () => {
+test("causale: proposta dalla voce, prima quella già usata, poi quella di UNIO che ha la voce", () => {
   uguale(causaleProposta("E01-03-05", "entrata"), "Offerte per Sacramenti");
   uguale(causaleProposta("U01-02-02", "uscita"), "Spese per il Culto");
-  uguale(causaleProposta("", "spostamento"), "Prelievo / Versamento");
+  uguale(causaleProposta("U08-02-07", "uscita"), "Spese diverse", "le spese bancarie in più di tante causali non decidono la proposta");
+  uguale(causaleProposta("U09-02-02", "uscita"), "Pagamento rata mutuo", "vince la voce più precisa");
   uguale(causaleProposta("Z99-01-01", "uscita"), "");
-  const usati = [1, 2].map((i) => ({ id: `x${i}`, causale: "Offerte ordinarie", righe: [{ conto: "E01-03-05", dare: 0, avere: 100 }, { conto: "A02-01-01", dare: 100, avere: 0 }] }));
-  uguale(causaleProposta("E01-03-05", "entrata", usati), "Offerte ordinarie", "vince quella già usata con la stessa voce");
-  vero(elencoCausali("uscita", usati).includes("Offerte ordinarie") && elencoCausali("uscita").includes("Imposte e Tasse"));
+  uguale(causaleProposta("P02-05-04", "entrata"), "", "teatro spento: nessuna causale del teatro");
+  uguale(causaleProposta("P02-05-04", "entrata", [], { teatro: true }), "Entrate Teatro");
+  const usati = [1, 2].map((i) => ({ id: `x${i}`, causale: "Offerte ordinarie", righe: [{ conto: "E01-04-05", dare: 0, avere: 100 }, { conto: "A02-01-01", dare: 100, avere: 0 }] }));
+  uguale(causaleProposta("E01-04-05", "entrata", usati), "Offerte ordinarie", "vince quella già usata con la stessa voce");
+  const strani = [1, 2].map((i) => ({ id: `y${i}`, causale: "Offerte ordinarie", righe: [{ conto: "E01-03-05", dare: 0, avere: 100 }, { conto: "A02-01-01", dare: 100, avere: 0 }] }));
+  uguale(causaleProposta("E01-03-05", "entrata", strani), "Offerte per Sacramenti", "una causale usata che non ammette la voce non si propone");
+});
+
+test("causali: elenco della Diocesi, voci ammesse come in UNIO", () => {
+  uguale(CAUSALI.length, 41);
+  const eoo = causaleDa("Offerte ordinarie");
+  uguale(eoo.codice, "EOO");
+  uguale(causaleDa("  offerte ORDINARIE "), eoo, "senza badare a maiuscole e spazi");
+  uguale(causaleDa("EOO"), eoo);
+  uguale(causaleDa("scritta a mano"), null);
+  uguale(etichettaCausale("Offerte ordinarie"), "EOO · Offerte ordinarie");
+  uguale(etichettaCausale("scritta a mano"), "scritta a mano");
+  vero(contoAmmesso(eoo, "E01-04-02") && contoAmmesso(eoo, "E01-04-99"), "tutti i sottoconti della voce, anche quelli aggiunti dalla parrocchia");
+  vero(contoAmmesso(eoo, "A02-01-01") && contoAmmesso(eoo, "A02-01-05"), "tutte le casse e banche");
+  vero(!contoAmmesso(eoo, "E01-03-05") && !contoAmmesso(eoo, "U08-01-01"));
+  vero(contoAmmesso(null, "U08-01-01"), "senza causale tutte le voci");
+  const ucu = causaleDa("Spese per il Culto");
+  vero(contoAmmesso(ucu, "U01-02-03") && contoAmmesso(ucu, "U08-02-07") && !contoAmmesso(ucu, "U08-02-01"), "spese bancarie in più, le altre spese diverse no");
+  const ete = causaleDa("Entrate Teatro"), ute = causaleDa("Uscite Teatro");
+  vero(contoAmmesso(ete, "P02-05-04") && contoAmmesso(ete, "A02-01-01") && contoAmmesso(ute, "A02-01-02"), "teatro con cassa e banca (in UNIO mancano)");
+  vero(!contoAmmesso(causaleDa("Versamento in banca"), "E01-04-02"), "spostamento: solo casse e banche");
+  const pf = causaleDa("Pagamento fattura");
+  vero(contoAmmesso(pf, "P02-01-02") && contoAmmesso(pf, "A02-01-01") && !contoAmmesso(pf, "U05-01-01"));
+  const atfr = causaleDa("ACCANTONAMENTO TFR");
+  vero(!contoAmmesso(atfr, "A02-01-01"), "partita doppia: la cassa solo se la causale la prevede");
+  vero(libera(causaleDa("MOVIMENTO DI PRIMA NOTA")) && contoAmmesso(causaleDa("MOVIMENTO DI PRIMA NOTA"), "E01-04-02"));
+});
+
+test("causali: quali si scelgono per ogni tipo di movimento", () => {
+  const codici = (t, o) => causaliPer(t, o).map((c) => c.codice);
+  vero(codici("entrata").includes("EOO") && !codici("entrata").includes("UCU") && !codici("entrata").includes("ETE"));
+  vero(codici("entrata", { teatro: true }).includes("ETE") && codici("uscita", { teatro: true }).includes("UTE"));
+  uguale(codici("spostamento"), ["PRE", "VER"]);
+  uguale(causaliPer("pd", { teatro: true }).length, 41, "in partita doppia tutte");
+  uguale(causalePerSpostamento("A02-01-02", "A02-01-01"), "Prelevamento in banca");
+  uguale(causalePerSpostamento("A02-01-01", "A02-01-02"), "Versamento in banca");
+  uguale(causalePerSpostamento("A02-01-02", "A02-01-03"), "", "fra due banche nessuna");
 });

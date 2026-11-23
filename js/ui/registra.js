@@ -5,7 +5,7 @@ import { parseEuro, formatDecimale, formatEuro } from "../dominio/importi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
 import { esc, eur, dataIt, dataPerAnno, opzioniConti, rendicontoInviato, toast, $ } from "./util.js";
 import { tabellaRighe } from "./elenco.js";
-import { causaleProposta, elencoCausali } from "../dominio/causali.js";
+import { causaleProposta, causaleDa, causaliPer, contoAmmesso, causalePerSpostamento, etichettaCausale } from "../dominio/causali.js";
 
 let F = null;   // stato del modulo in compilazione
 
@@ -14,13 +14,19 @@ const rigaVuota = () => ({ conto: "", dare: "", avere: "" });
 const vuotaVoce = () => ({ voce: "", cerca: "", importo: "", nota: "" });
 /** Causale come in UNIO: facoltativa, si accende in Impostazioni. */
 export const conCausale = (arch) => Boolean(arch.impostazione("causale-unio", false));
+/** Le causali del teatro (ETE, UTE) compaiono solo se la parrocchia ha acceso la funzione del teatro. */
+const opzCausali = (arch) => ({ teatro: Boolean(arch.impostazione("teatro", {})?.attivo) });
+/** La causale scelta, se è accesa ed è tra quelle di UNIO (decide quali voci si possono scegliere). */
+const causaleScelta = (ctx) => (conCausale(ctx.arch) ? causaleDa(F.causale) : null);
+const tipoCausali = () => (F.modo === "pd" ? "pd" : F.tipo);
 
 function nuovo(ctx, tipo = "entrata", tieni = {}) {
   const cs = casse(ctx.arch);
-  return { modo: "semplice", tipo, data: dataPerAnno(ctx.anno), importo: "", descr: "", causaleToccata: false, voci: [vuotaVoce()],
-    causale: tipo === "spostamento" && conCausale(ctx.arch) ? causaleProposta("", tipo, ctx.arch.movimenti()) : "",
+  const f = { modo: "semplice", tipo, data: dataPerAnno(ctx.anno), importo: "", descr: "", causaleToccata: false, voci: [vuotaVoce()], causale: "",
     cassa: cs[0]?.codice ?? "", da: cs[0]?.codice ?? "", verso: (cs[1] ?? cs[0])?.codice ?? "",
     righe: [rigaVuota(), rigaVuota()], id: null, ...tieni };
+  if (tipo === "spostamento" && conCausale(ctx.arch) && !f.causaleToccata) f.causale = causalePerSpostamento(f.da, f.verso);
+  return f;
 }
 
 function daMovimento(m) {
@@ -91,29 +97,56 @@ const bottoniCasse = (ctx, scelto, azione) => `<div class="scelta">${casse(ctx.a
 
 const tipiPerVoce = () => (F.tipo === "entrata" ? ["E", "PG", "A", "P"] : ["U", "PG", "A", "P"]);
 const escludiVoce = (codice) => isCassaBanca(codice) || tipoDi(codice) === "PAT" || (F.tipo === "entrata" ? tipoDi(codice) === "U" : tipoDi(codice) === "E");
-const opzioniVoce = (ctx, i) => opzioniConti(ctx.arch.contiAttivi(), { tipi: tipiPerVoce(), escludi: escludiVoce, cerca: F.voci[i].cerca, selezionato: F.voci[i].voce });
+// con una causale scelta, l'elenco mostra solo le voci di quella causale (come in UNIO)
+const opzioniVoce = (ctx, i) => {
+  const c = causaleScelta(ctx);
+  return opzioniConti(ctx.arch.contiAttivi(), { tipi: tipiPerVoce(), escludi: (k) => escludiVoce(k) || !contoAmmesso(c, k), cerca: F.voci[i].cerca, selezionato: F.voci[i].voce,
+    vuota: c ? `— scegli la voce di «${c.descr}» —` : undefined });
+};
 
 export function vista(ctx) {
   return F.modo === "pd" ? vistaPD(ctx) : vistaSemplice(ctx);
 }
 
-// Campo "Causale" (come la "Tipologia operazione" di UNIO), con l'elenco delle causali da scegliere mentre si scrive
+// Campo "Causale" (come la "Tipologia operazione" di UNIO): elenco delle causali della Diocesi, raggruppate come in UNIO.
+// Scelta la causale, l'elenco delle voci mostra solo quelle della causale.
 function campoCausale(ctx, id) {
   if (!conCausale(ctx.arch)) return "";
-  const tipo = F.modo === "pd" ? "pd" : F.tipo;
+  const elenco = causaliPer(tipoCausali(), opzCausali(ctx.arch));
+  const gruppi = [...new Set(elenco.map((c) => c.tipologia))];
+  const scelta = causaleDa(F.causale);
+  // una causale che non è nell'elenco (scritta a mano in passato, o di un altro tipo) resta visibile e scelta
+  const altra = F.causale.trim() && !(scelta && elenco.includes(scelta))
+    ? `<option value="${esc(F.causale)}" selected>${esc(etichettaCausale(F.causale))} (non è tra le causali ${F.modo === "pd" ? "di UNIO" : F.tipo === "entrata" ? "di entrata" : F.tipo === "uscita" ? "di uscita" : "per spostare soldi"})</option>` : "";
   return `<label class="campo" for="${id}">Causale <span class="hint">(come la «Tipologia operazione» di UNIO; facoltativa)</span></label>
-    <input id="${id}" type="text" value="${esc(F.causale)}" data-input="causale" list="${id}-elenco" autocomplete="off"
-      placeholder="${tipo === "entrata" ? "es. Offerte per Sacramenti" : tipo === "uscita" ? "es. Spese per il Culto" : "es. Prelievo / Versamento"}">
-    <datalist id="${id}-elenco">${elencoCausali(tipo, ctx.arch.movimenti()).map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist>`;
+    <select id="${id}" data-cambia="causale">
+      <option value="" ${F.causale.trim() ? "" : "selected"}>${F.modo === "semplice" && F.tipo === "spostamento" ? "— nessuna causale —" : `— nessuna causale: tutti ${F.modo === "pd" ? "i conti" : "le voci"} —`}</option>${altra}
+      ${gruppi.map((g) => `<optgroup label="${esc(g)}">${elenco.filter((c) => c.tipologia === g).map((c) =>
+        `<option value="${esc(c.descr)}" ${c === scelta && !altra ? "selected" : ""}>${esc(c.codice)} · ${esc(c.descr)}</option>`).join("")}</optgroup>`).join("")}
+    </select>
+    ${scelta && !altra && F.modo !== "pd" && F.tipo !== "spostamento" ? `<p class="hint">Nell'elenco delle voci ci sono solo quelle della causale. Per averle tutte scelga «nessuna causale».</p>` : ""}`;
 }
 
-/** Propone la causale (se non è stata scritta a mano) in base alla prima voce scelta. */
+/** Propone la causale (se non è stata scelta a mano) in base alla prima voce scelta. */
 function proponiCausale(ctx) {
-  if (!conCausale(ctx.arch) || F.causaleToccata || F.modo === "pd") return;
+  if (!conCausale(ctx.arch) || F.causaleToccata || F.modo === "pd" || F.tipo === "spostamento") return false;
   const voce = F.voci.find((v) => v.voce)?.voce ?? "";
-  F.causale = causaleProposta(voce, F.tipo, ctx.arch.movimenti());
-  const el = $("#f-causale");
-  if (el) el.value = F.causale;
+  const prima = F.causale;
+  F.causale = causaleProposta(voce, F.tipo, ctx.arch.movimenti(), opzCausali(ctx.arch));
+  return F.causale !== prima;
+}
+
+/** Sposta soldi: Prelevamento (dalla banca alla cassa) o Versamento (dalla cassa alla banca), se non è stata scelta a mano. */
+function proponiCausaleSpostamento(ctx) {
+  if (conCausale(ctx.arch) && !F.causaleToccata) F.causale = causalePerSpostamento(F.da, F.verso);
+}
+
+/** Voci (o conti, in partita doppia) che non sono tra quelli della causale scelta. */
+function fuoriCausale(ctx) {
+  const c = causaleScelta(ctx);
+  if (!c) return [];
+  const codici = F.modo === "pd" ? F.righe.map((r) => r.conto) : F.tipo === "spostamento" ? [F.da, F.verso] : F.voci.map((v) => v.voce);
+  return [...new Set(codici.filter((k) => k && !contoAmmesso(c, k)))];
 }
 
 const notaCopia = () => (F.copiaDa && !F.id
@@ -189,7 +222,8 @@ function vistaPD(ctx) {
     </div>
     <div class="scorri"><table class="pd"><tr><th>Conto</th><th class="n">Dare</th><th class="n">Avere</th><th></th></tr>
       ${F.righe.map((r, i) => `<tr>
-        <td><select data-cambia="pdConto" data-i="${i}" aria-label="Conto della riga ${i + 1}">${opzioniConti(tutti, { tipi: ["A", "P", "PAT", "PG", "E", "U"], selezionato: r.conto, vuota: "— scegli il conto —" })}</select></td>
+        <td><select data-cambia="pdConto" data-i="${i}" aria-label="Conto della riga ${i + 1}">${opzioniConti(tutti, { tipi: ["A", "P", "PAT", "PG", "E", "U"], selezionato: r.conto, vuota: "— scegli il conto —",
+          escludi: (k) => !contoAmmesso(causaleScelta(ctx), k) })}</select></td>
         <td><input type="text" inputmode="decimal" class="n" value="${esc(r.dare)}" data-input="pdDare" data-i="${i}" aria-label="Dare riga ${i + 1}"></td>
         <td><input type="text" inputmode="decimal" class="n" value="${esc(r.avere)}" data-input="pdAvere" data-i="${i}" aria-label="Avere riga ${i + 1}"></td>
         <td>${F.righe.length > 2 ? `<button class="btn pericolo piccolo" data-azione="pdTogli" data-i="${i}" aria-label="Togli riga">✕</button>` : ""}</td></tr>`).join("")}
@@ -226,6 +260,11 @@ function aggiornaAnteprima(ctx) {
       ? "Questa è una <b>colletta da versare alla Diocesi</b>: Divisio la tiene da parte e non la conta tra le entrate della parrocchia."
       : "Questo è il <b>versamento alla Diocesi</b> di una colletta raccolta."}</div>`);
   }
+  const fuori = fuoriCausale(ctx);
+  if (fuori.length) {
+    msg.push(`<div class="avviso">${fuori.length > 1 ? "Queste voci non sono" : "Questa voce non è"} tra quelle della causale «${esc(causaleScelta(ctx).descr)}»:
+      ${fuori.map((k) => `<b>${esc(ctx.arch.nomeConto(k))}</b> (${k})`).join(", ")}. In UNIO non si potrebbe registrare così: cambi la voce o la causale.</div>`);
+  }
   if (F.modo === "pd") {
     const d = mov.righe.reduce((s, r) => s + (r.dare || 0), 0), a = mov.righe.reduce((s, r) => s + (r.avere || 0), 0);
     $("#pd-dare").textContent = formatEuro(d);
@@ -247,14 +286,30 @@ export const input = {
   importoVoce(el, ev, ctx) { F.voci[el.dataset.i].importo = el.value; aggiornaAnteprima(ctx); },
   nota(el, ev, ctx) { F.voci[el.dataset.i].nota = el.value; aggiornaAnteprima(ctx); },
   descr(el, ev, ctx) { F.descr = el.value; aggiornaAnteprima(ctx); },
-  causale(el, ev, ctx) { F.causale = el.value; F.causaleToccata = el.value.trim() !== ""; },
   cerca(el, ev, ctx) { const i = Number(el.dataset.i); F.voci[i].cerca = el.value; $(`#f-voce-${i}`).innerHTML = opzioniVoce(ctx, i); },
   pdDare(el, ev, ctx) { F.righe[el.dataset.i].dare = el.value; aggiornaAnteprima(ctx); },
   pdAvere(el, ev, ctx) { F.righe[el.dataset.i].avere = el.value; aggiornaAnteprima(ctx); },
 };
 
 export const cambia = {
-  voce(el, ev, ctx) { F.voci[el.dataset.i].voce = el.value; proponiCausale(ctx); aggiornaAnteprima(ctx); },
+  voce(el, ev, ctx) {
+    F.voci[el.dataset.i].voce = el.value;
+    // causale proposta dalla voce: si ridisegna, così l'elenco delle voci mostra quelle della causale
+    if (proponiCausale(ctx)) ctx.aggiorna(); else aggiornaAnteprima(ctx);
+  },
+  causale(el, ev, ctx) {
+    // scelta a mano (anche «nessuna causale»): Divisio non la cambia più da solo
+    F.causale = el.value;
+    F.causaleToccata = true;
+    if (F.modo === "semplice" && F.tipo === "spostamento") {
+      // Prelevamento: dalla banca alla cassa; Versamento: dalla cassa alla banca
+      const cs = casse(ctx.arch).map((c) => c.codice), cassa = "A02-01-01", banca = cs.find((k) => k !== cassa);
+      const c = causaleDa(F.causale);
+      if (c?.codice === "PRE" && cs.includes(cassa) && banca) { F.verso = cassa; if (F.da === cassa) F.da = banca; }
+      if (c?.codice === "VER" && cs.includes(cassa) && banca) { F.da = cassa; if (F.verso === cassa) F.verso = banca; }
+    }
+    ctx.aggiorna();
+  },
   pdConto(el, ev, ctx) { F.righe[el.dataset.i].conto = el.value; aggiornaAnteprima(ctx); },
 };
 
@@ -267,7 +322,10 @@ export const azioni = {
       if (F.tipo === "spostamento" && F.voci.length === 1 && !F.voci[0].importo) F.voci[0].importo = F.importo;
       F.tipo = t;
       F.voci = F.voci.map((v) => ({ ...v, voce: "", cerca: "" }));
-      if (!F.causaleToccata) F.causale = t === "spostamento" && conCausale(ctx.arch) ? causaleProposta("", t, ctx.arch.movimenti()) : "";
+      // la causale di un altro tipo (es. di entrata, passando a uscita) non vale più
+      const c = causaleDa(F.causale);
+      if (!F.causaleToccata || (c && c.modo !== t)) { F.causale = ""; F.causaleToccata = false; }
+      if (t === "spostamento") proponiCausaleSpostamento(ctx);
     }
     ctx.aggiorna();
   },
@@ -280,8 +338,8 @@ export const azioni = {
   },
   togliVoce(el, ev, ctx) { F.voci.splice(Number(el.dataset.i), 1); if (!F.voci.length) F.voci.push(vuotaVoce()); ctx.aggiorna(); },
   cassa(el, ev, ctx) { F.cassa = el.dataset.v; ctx.aggiorna(); },
-  da(el, ev, ctx) { F.da = el.dataset.v; if (F.verso === F.da) F.verso = casse(ctx.arch).find((c) => c.codice !== F.da)?.codice ?? ""; ctx.aggiorna(); },
-  verso(el, ev, ctx) { F.verso = el.dataset.v; if (F.verso === F.da) F.da = casse(ctx.arch).find((c) => c.codice !== F.verso)?.codice ?? ""; ctx.aggiorna(); },
+  da(el, ev, ctx) { F.da = el.dataset.v; if (F.verso === F.da) F.verso = casse(ctx.arch).find((c) => c.codice !== F.da)?.codice ?? ""; proponiCausaleSpostamento(ctx); ctx.aggiorna(); },
+  verso(el, ev, ctx) { F.verso = el.dataset.v; if (F.verso === F.da) F.da = casse(ctx.arch).find((c) => c.codice !== F.verso)?.codice ?? ""; proponiCausaleSpostamento(ctx); ctx.aggiorna(); },
   modoPD(el, ev, ctx) {
     // porta nella partita doppia quello che era già stato scritto
     const { mov } = candidato(ctx);
@@ -312,8 +370,9 @@ export const azioni = {
       await ctx.arch.salvaMovimento(F.id ? { ...ctx.arch.movimento(F.id), ...mov, id: F.id } : mov);
       toast(eraModifica ? "Correzione salvata ✓" : "Registrato ✓");
       if (eraModifica) { F = nuovo(ctx, "entrata"); ctx.vai("movimenti"); return; }
-      // pronto per il prossimo: tiene tipo, data e cassa
-      F = F.modo === "pd" ? { ...nuovo(ctx, "pd"), modo: "pd", data: F.data } : nuovo(ctx, F.tipo, { data: F.data, cassa: F.cassa, da: F.da, verso: F.verso });
+      // pronto per il prossimo: tiene tipo, data e cassa (e la causale, se è stata scelta a mano)
+      const causale = F.causaleToccata ? { causale: F.causale, causaleToccata: true } : {};
+      F = F.modo === "pd" ? { ...nuovo(ctx, "pd"), modo: "pd", data: F.data, ...causale } : nuovo(ctx, F.tipo, { data: F.data, cassa: F.cassa, da: F.da, verso: F.verso, ...causale });
       ctx.aggiorna();
       document.getElementById(F.modo === "pd" ? "p-descr" : F.tipo === "spostamento" ? "f-importo" : "f-importo-0")?.focus();
     } catch (e) {

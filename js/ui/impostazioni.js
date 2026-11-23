@@ -3,7 +3,8 @@
 import { creaBackup, leggiBackup, datiPerRipristino } from "../dominio/backup.js";
 import { scritturaApertura, CONTO_PATRIMONIO } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto } from "../dominio/piano.js";
+import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto, voce, gruppo } from "../dominio/piano.js";
+import { causaliPer, libera } from "../dominio/causali.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisioneImpostata } from "./condivisione.js";
 import { teatro } from "./fatture.js";
@@ -55,9 +56,31 @@ function cardCausale(arch) {
       Divisio ha sempre la descrizione e il dettaglio di ogni riga; la causale è facoltativa.</p>
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="causaleAttiva" ${attiva ? "checked" : ""}>
       Nella pagina Registra mostra anche la causale</label>
-    ${attiva ? `<p class="hint">Divisio propone la causale dalla voce scelta (prima quella già usata per quella voce, anche nei movimenti caricati da UNIO); si può cambiare o lasciare vuota.
-      La causale compare nei Dettagli dei movimenti, nella ricerca e nel file CSV.</p>` : ""}
+    ${attiva ? `<p class="hint">In Registra si sceglie la causale dall'elenco della Diocesi, come in UNIO: poi l'elenco delle voci mostra <b>solo le voci di quella causale</b>
+      (es. «EOO · Offerte ordinarie» → benedizioni, lumi votivi, offerte diverse…). Con «nessuna causale» si vedono tutte le voci.
+      Se si sceglie prima la voce, Divisio propone la causale (prima quella già usata per quella voce, anche nei movimenti caricati da UNIO).
+      La causale compare nei Dettagli dei movimenti, nella ricerca e nel file CSV.</p>
+      ${elencoCausali(arch)}` : ""}
   </div>`;
+}
+
+// Elenco delle causali con le loro voci, solo da vedere: le causali le decide la Diocesi (in UNIO la parrocchia non le può cambiare).
+function elencoCausali(arch) {
+  const nome = (k) => (k.length === 3 ? gruppo(k)?.nome : k.length === 6 ? voce(k)?.nome : arch.nomeConto(k)) ?? k;
+  const voci = (c) => {
+    if (c.modo === "spostamento") return "cassa e banche";
+    if (libera(c)) return "tutti i conti";
+    const v = [...c.voci, ...c.extra].map((k) => `${esc(nome(k))} <span class="codice">${k}</span>`).join(", ");
+    return c.modo === "pd" ? v : `${v} + cassa o banca`;
+  };
+  const tutte = causaliPer("pd", { teatro: teatro(arch).attivo });
+  return `<details data-chiave="elenco-causali"><summary>Vedi le causali e le loro voci (${tutte.length})</summary>
+    <p class="hint">Sono le causali della Diocesi di Firenze, come in UNIO. ${teatro(arch).attivo
+      ? "Le causali del teatro (ETE, UTE) in Divisio hanno anche la cassa e le banche." : "Le causali del teatro (ETE, UTE) compaiono se è accesa la funzione «Fatture del teatro o di altre gestioni»."}
+      Quelle segnate «solo partita doppia» si usano con «Sono pratico: usa la partita doppia».</p>
+    <div class="scorri"><table class="righe"><tr><th>Causale</th><th>Tipo</th><th>Voci</th></tr>
+      ${tutte.map((c) => `<tr><td><b>${esc(c.codice)}</b> · ${esc(c.descr)}</td><td>${esc(c.tipologia)}${c.modo === "pd" ? " <span class=\"hint\">(solo partita doppia)</span>" : ""}</td><td>${voci(c)}</td></tr>`).join("")}
+    </table></div></details>`;
 }
 
 /* ---------- fatture del teatro o di altre gestioni (facoltativo, spento per tutti all'inizio) ---------- */

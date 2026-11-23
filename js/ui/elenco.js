@@ -2,6 +2,7 @@
 
 import { analizza, totaliRighe } from "../dominio/scritture.js";
 import { esc, eur, dataIt } from "./util.js";
+import { etichettaCausale } from "../dominio/causali.js";
 
 export function descrivi(m, arch) {
   const a = analizza(m);
@@ -27,7 +28,7 @@ export const dettagliAperti = new Set();
 
 /** Contenuto dei Dettagli: occupa tutta la larghezza della tabella, in una riga sotto il movimento. */
 function contenutoDettagli(m, arch) {
-  return `${m.causale ? `<p class="piede">Causale: <b>${esc(m.causale)}</b></p>` : ""}${tabellaRighe(m.righe, arch)}
+  return `${m.causale ? `<p class="piede">Causale: <b>${esc(etichettaCausale(m.causale))}</b></p>` : ""}${tabellaRighe(m.righe, arch)}
     <p class="hint">Inserito da ${esc(m.autore ?? "—")} · ultima modifica ${m.modificatoIl ? new Date(m.modificatoIl).toLocaleString("it-IT") : "—"}</p>
     ${m.tipo === "apertura"
       ? `<p class="hint">I saldi di apertura si cambiano da Impostazioni.</p>`
