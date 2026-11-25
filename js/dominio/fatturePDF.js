@@ -11,6 +11,7 @@
 //    dall'IBAN, dall'e-mail o dal sito: dalla volta dopo li legge da lì, anche se il nome è solo nel logo.
 
 import { parseEuro } from "./importi.js";
+import { servizioDaTesto } from "./servizi.js";
 
 const MESI = { gennaio: 1, febbraio: 2, marzo: 3, aprile: 4, maggio: 5, giugno: 6, luglio: 7, agosto: 8, settembre: 9, ottobre: 10, novembre: 11, dicembre: 12,
   gen: 1, feb: 2, mar: 3, apr: 4, mag: 5, giu: 6, lug: 7, ago: 8, set: 9, ott: 10, nov: 11, dic: 12 };
@@ -400,6 +401,7 @@ export function leggiFatturaDaTesto(testo, { righe = null, escludiPiva = [], nom
     imponibile: ce(imponibile), iva: ce(iva), totale: ce(totale),
     descrizione: R.slice(0, 60).map((r) => r.t).join(" ").slice(0, 600),
     rate: [{ n: 1, scadenza: scadenza.valore, importo: ce(totale), modalita: modalita.valore, iban: ibanFornitore }],
+    servizio: servizioDaTesto(tutto),
     incerti, avvisi, scansione: false, impronte, pagata, modello: modello ? modello.chiave : null,
   };
 }

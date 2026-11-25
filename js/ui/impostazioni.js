@@ -242,24 +242,24 @@ export const input = {
 export const cambia = {
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
   async causaleAttiva(el, ev, ctx) {
-    await ctx.arch.salvaImpostazione("causale-unio", el.checked);
+    await ctx.arch.salvaImpostazione("causale-unio", el.checked, { etichetta: el.checked ? "Causale come in UNIO accesa" : "Causale come in UNIO spenta" });
     toast(el.checked ? "Causale come in UNIO: attivata ✓ (la trova nella pagina Registra)" : "Causale come in UNIO: spenta");
     ctx.aggiorna();
   },
   async teatroAttivo(el, ev, ctx) {
-    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), attivo: el.checked });
+    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), attivo: el.checked }, { etichetta: el.checked ? "Fatture del teatro o di altre gestioni accese" : "Fatture del teatro o di altre gestioni spente" });
     toast(el.checked ? "Fatture del teatro o di altre gestioni: scelta attivata ✓" : "Fatture del teatro o di altre gestioni: scelta spenta");
     ctx.aggiorna();
   },
   async teatroParole(el, ev, ctx) {
     const parole = el.value.split(",").map((p) => p.trim()).filter(Boolean);
-    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), parole });
+    await ctx.arch.salvaImpostazione("teatro", { ...teatro(ctx.arch), parole }, { etichetta: "Parole che indicano il teatro" });
     toast("Salvato ✓");
   },
   autore(el, ev, ctx) { const n = el.value.trim(); locale.scrivi("autore", n); ctx.arch.impostaAutore(n); toast("Nome salvato ✓"); },
   async parrocchia(el, ev, ctx) {
     const par = { ...ctx.arch.impostazione("parrocchia", {}), [el.dataset.campo]: el.value.trim() };
-    await ctx.arch.salvaImpostazione("parrocchia", par);
+    await ctx.arch.salvaImpostazione("parrocchia", par, { etichetta: "Dati della parrocchia" });
     toast("Salvato ✓");
     ctx.aggiornaIntestazione();
   },

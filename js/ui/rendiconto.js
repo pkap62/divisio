@@ -152,14 +152,14 @@ function vistaInvio(ctx, invio) {
 
 const salvaInvio = (ctx, cambi) => {
   const chiave = `invio-rendiconto-${ctx.anno}`;
-  return ctx.arch.salvaImpostazione(chiave, { ...ctx.arch.impostazione(chiave, {}), ...cambi });
+  return ctx.arch.salvaImpostazione(chiave, { ...ctx.arch.impostazione(chiave, {}), ...cambi }, { etichetta: `Invio del Rendiconto ${ctx.anno}` });
 };
 
 /** Ricopia una previsione, chiedendo conferma se ce n'è già una. */
 async function ricopiaPrevisione(ctx, nuova, origine) {
   const attuale = ctx.arch.impostazione(`previsione-${ctx.anno}`, {});
   if (Object.values(attuale).some(Boolean) && !confirm(`Il bilancio di previsione è già compilato.\n\nSostituire tutte le cifre con ${origine}?`)) return;
-  await ctx.arch.salvaImpostazione(`previsione-${ctx.anno}`, { ...nuova });
+  await ctx.arch.salvaImpostazione(`previsione-${ctx.anno}`, { ...nuova }, { etichetta: `Bilancio di previsione ${ctx.anno} ricopiato` });
   toast("Previsione compilata: controlli le cifre ✓");
   ctx.aggiorna();
 }
@@ -193,7 +193,7 @@ export const cambia = {
     const v = parseEuro(el.value);
     if (Number.isNaN(v)) { toast("Importo non valido"); return; }
     const prev = { ...ctx.arch.impostazione(`previsione-${ctx.anno}`, {}), [el.dataset.gruppo]: v };
-    await ctx.arch.salvaImpostazione(`previsione-${ctx.anno}`, prev);
+    await ctx.arch.salvaImpostazione(`previsione-${ctx.anno}`, prev, { etichetta: `Modifica del bilancio di previsione ${ctx.anno}` });
     ctx.aggiorna();
   },
 };

@@ -36,6 +36,15 @@ ol.passi li { margin: 6px 0; }
 .menu .contenitore { display: flex; gap: 4px; overflow-x: auto; }
 .menu button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 12px; font: inherit; font-size: 17px; color: var(--tenue); cursor: pointer; white-space: nowrap; }
 .menu button.on { color: var(--blu); border-bottom-color: var(--blu); font-weight: 600; }
+/* "Annulla l'ultima operazione": a destra nel menu, sempre visibile anche quando il menu scorre */
+.menu .posto-annulla { margin-left: auto; position: sticky; right: 0; background: #fff; display: flex; align-items: center; padding-left: 8px; }
+.menu button.annulla { border: 1px solid var(--blu); border-radius: 999px; padding: 4px 14px; margin: 6px 0; color: var(--blu); font-weight: 600; font-size: 16px; }
+.menu button.annulla:hover { background: var(--blu-chiaro); }
+/* intestazioni della tabella dei movimenti che servono per ordinare */
+th .ordina { background: none; border: 0; padding: 0; font: inherit; font-weight: inherit; color: inherit; cursor: pointer; text-align: inherit; }
+th .ordina:hover { color: var(--blu); text-decoration: underline; }
+th .ordina .freccia { color: var(--blu); font-size: 14px; }
+.elenco-forse { list-style: none; padding: 0; margin: 8px 0; }
 main { padding-top: 20px; padding-bottom: 80px; outline: none; }
 
 /* testi */

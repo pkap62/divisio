@@ -42,7 +42,7 @@ export const REGOLE = [
  */
 export function proponiVoce(f, { ricordo, pagate = [], contiAttivi }) {
   const usabile = (c) => c && (!contiAttivi || contiAttivi.has(c));
-  if (usabile(ricordo?.voce)) return { voce: ricordo.voce, motivo: punto(`È la voce scelta l'ultima volta per ${nome(f)}`), livello: "ricordato" };
+  if (usabile(ricordo?.voce)) return { voce: ricordo.voce, motivo: ricordo.perServizio ? `È la voce scelta l'ultima volta per ${nome(f)} (${ricordo.perServizio}).` : punto(`È la voce scelta l'ultima volta per ${nome(f)}`), livello: "ricordato" };
 
   const conteggio = new Map();
   for (const x of pagate) for (const r of x.rate) if (r.voce && usabile(r.voce)) conteggio.set(r.voce, (conteggio.get(r.voce) ?? 0) + 1);
@@ -70,7 +70,7 @@ const NOMI_GESTIONE = { 0: "della parrocchia", 50: "al 50%", 100: "del teatro o 
  */
 export function propostaTeatro(f, { ricordo, parole = [] }) {
   const q = ricordo?.quotaTeatro;
-  if (q === 0 || q === 50 || q === 100) return { quota: q, motivo: `Per ${nome(f)} l'ultima volta ha scelto: ${NOMI_GESTIONE[q]}.`, chiedi: false };
+  if (q === 0 || q === 50 || q === 100) return { quota: q, motivo: `Per ${nome(f)}${ricordo.perServizio ? ` (${ricordo.perServizio})` : ""} l'ultima volta ha scelto: ${NOMI_GESTIONE[q]}.`, chiedi: false };
   const testo = norm(`${f.intestatario} ${f.descrizione} ${(f.righe ?? []).join(" ")}`);
   const trovata = parole.map((p) => String(p).trim()).filter(Boolean).find((p) => testo.includes(norm(p)));
   if (trovata) return { quota: 100, motivo: `La fattura contiene «${trovata}»: sembra del teatro o di un'altra gestione. Lo confermi.`, chiedi: true };

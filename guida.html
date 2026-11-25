@@ -256,6 +256,9 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 <ul>
   <li><b>Niente doppioni:</b> nel file di UNIO ci possono essere righe arrivate da Divisio (quelle che cominciano con il codice tra parentesi quadre, es. <b>[E01-02-01]</b>)
     o pagamenti di fatture già segnate pagate in Divisio. Se in Divisio ci sono già, Divisio non le carica di nuovo e nell'anteprima dice quali sono.</li>
+  <li><b>Possibili doppioni:</b> se una registrazione di UNIO ha lo <b>stesso importo e la stessa data</b> di un movimento scritto a mano in Divisio
+    (oppure lo stesso importo e la stessa descrizione, a pochi giorni di distanza), l'anteprima la mostra in arancione e non la carica.
+    Se è davvero un movimento diverso, la spunti prima di <span class="bottone">Carica</span>.</li>
   <li><b>Ricominciare da capo:</b> Movimenti → in fondo <b>"Azzera i movimenti del …"</b> cancella tutti i movimenti dell'anno scelto in alto
     (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.</li>
   <li>Nel Rendiconto, <span class="bottone">Azzera il confronto</span> toglie il CSV di UNIO caricato (le scritte "= UNIO").</li>
@@ -293,8 +296,14 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td><b>partite di giro</b> (Giornata missionaria, Quaresima di carità…)</td><td>La raccolta è un'<b>entrata</b> sulla voce della colletta; il versamento alla Diocesi è un'<b>uscita</b> sulla stessa voce.
     Divisio la tiene da parte: non la conta tra le entrate della parrocchia e in Inizio ricorda quanto resta da versare.</td></tr>
   <tr><td><b>correggere</b> o <b>eliminare</b></td><td>Movimenti → apra "Dettagli" sul movimento → <span class="bottone">Modifica</span> o <span class="bottone">Elimina</span> (chiede sempre conferma).</td></tr>
+  <tr><td><b>annullare</b> l'ultima operazione</td><td>In alto a destra, nella riga del menu, <span class="bottone">↶ Annulla</span> (oppure Ctrl+Z, sul Mac Cmd+Z, fuori dai campi di testo).
+    Divisio dice quale operazione annulla e chiede conferma; i dati tornano com'erano prima. Si possono annullare una dopo l'altra le ultime operazioni
+    (registrazioni, modifiche, eliminazioni, fatture aggiunte o pagate, estratti conto, caricamenti da UNIO, impostazioni) finché Divisio resta aperto:
+    chiudendo o ricaricando la pagina l'elenco si azzera. Se nel frattempo un collaboratore ha cambiato quegli stessi dati, Divisio non annulla, per non cancellare il suo lavoro.</td></tr>
   <tr><td>una cosa che si ripete (colletta della domenica, candele del mese…)</td><td>Movimenti → "Dettagli" su un movimento uguale → <span class="bottone">Registra di nuovo uguale</span>:
     si apre Registra già compilato, con la data di oggi. Controlli data e importo e prema <span class="bottone">Registra</span>.</td></tr>
+  <tr><td><b>ordinare</b> i movimenti</td><td>Movimenti → clicchi sul titolo di una colonna: <b>Data</b>, <b>Descrizione</b>, <b>Voce</b>, <b>Cassa / banca</b> o <b>Importo</b>.
+    Un secondo clic inverte l'ordine (▲ / ▼). «Torna all'ordine di data» rimette i più recenti in alto. Divisio ricorda l'ordine scelto su questo computer.</td></tr>
   <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo. In fondo all'elenco: <b>totale entrate</b>, <b>totale uscite</b> e differenza dei movimenti mostrati.
     <span class="bottone">Scarica in CSV (Excel)</span> scarica <b>solo i movimenti mostrati</b> (con la ricerca e i filtri scelti), divisi in Entrate e Uscite,
     una riga per ogni dettaglio, con il totale in fondo.</td></tr>
@@ -327,6 +336,14 @@ i campi vanno scritti a mano guardando il PDF.</div>
 <ul>
   <li><b>Doppioni:</b> se una fattura (stesso fornitore, numero e data) è già nello scadenzario, o compare due volte tra i file scelti (es. XML e PDF della stessa fattura),
     Divisio lo dice e non la carica di nuovo.</li>
+  <li><b>Possibili doppioni:</b> se una fattura ha lo <b>stesso importo e la stessa data</b> di un'altra (oppure lo stesso importo e un numero quasi uguale,
+    o la stessa descrizione a pochi giorni di distanza), Divisio la segna <span class="pill-guida">forse doppione</span> e non la aggiunge.
+    Se è davvero un'altra fattura, prema <span class="bottone">È una fattura diversa: aggiungila</span>.</li>
+  <li><b>Luce e gas dello stesso fornitore:</b> alcune società mandano fatture con la stessa intestazione per servizi diversi.
+    Divisio lo capisce dal <b>codice del contatore</b> scritto in ogni bolletta: il <b>POD</b> per la luce (es. IT001E12345678) e il <b>PDR</b> per il gas (14 cifre);
+    se manca, dalle unità di misura (kWh = luce, Smc = gas). Accanto al fornitore compare «luce» o «gas». Due bollette di servizi o contatori diversi
+    non sono mai considerate doppioni, e Divisio ricorda la voce (e, se accesa, la scelta parrocchia / 50% / altra gestione) <b>per ogni contatore</b>:
+    per esempio la luce al 50% e il gas tutto della parrocchia.</li>
   <li>I file restano sul computer e Divisio non li conserva: tenga gli originali nella solita cartella.</li>
   <li>Le fatture <b>a rate</b> hanno una riga per ogni rata, con la sua scadenza. Le <b>note di credito</b> si segnano come "rimborsate" e riducono la spesa.</li>
   <li>Se c'è una <b>ritenuta d'acconto</b>, nello scadenzario c'è l'importo da pagare al fornitore; la ritenuta si versa con l'F24 e si registra a mano.</li>
@@ -386,6 +403,8 @@ La scelta viene ricordata per i file successivi della stessa banca.</p>
   <li>I <b>versamenti di contanti</b> sono proposti come spostamento dalla Cassa alla banca: non sono entrate nuove.</li>
   <li>Se un'uscita corrisponde a una <b>fattura da pagare</b> dello scadenzario (stesso importo e stesso fornitore o numero), Divisio propone di segnarla pagata: la fattura e la sua uscita si sistemano insieme.</li>
   <li>I movimenti <b>già presenti in Divisio</b> (caricati da un estratto conto precedente, oppure scritti a mano o da una fattura pagata, con lo stesso importo e date vicine) non vengono registrati di nuovo: sono in "Non registrati". Se è davvero un movimento diverso, lo spunti.</li>
+  <li>Anche i <b>possibili doppioni</b> (stesso importo e stessa data di un movimento già in Divisio in un'altra cassa, oppure stesso importo e stessa descrizione a pochi giorni di distanza)
+    vanno in "Non registrati", con un avviso arancione. Le spese di ogni mese con lo stesso importo (stipendi, canoni) non sono considerate doppioni.</li>
   <li>La descrizione si può correggere; per non registrare un movimento basta togliere la spunta.</li>
   <li>Nel <b>Riepilogo</b> Divisio mostra il saldo che avrà la banca dopo la registrazione: lo confronti con quello dell'estratto conto.</li>
 </ul>
@@ -474,10 +493,14 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>L'estratto conto non viene letto</td><td>Nella banca online lo scarichi in formato CSV o Excel (.xlsx). Se Divisio non riconosce le colonne, le indichi in <b>Colonne del file</b>. Un vecchio Excel .xls va salvato come .xlsx o CSV.</td></tr>
   <tr><td>Dopo l'estratto conto il saldo della banca non coincide</td><td>Controlli i saldi di apertura (Impostazioni), i movimenti in "Non registrati" e quelli della banca scritti a mano con un importo diverso.</td></tr>
   <tr><td>In Fatture compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura "da pagare").</td></tr>
+  <tr><td>Ho fatto un'operazione per sbaglio</td><td><span class="bottone">↶ Annulla</span> in alto a destra (o Ctrl+Z / Cmd+Z). Funziona finché non si chiude o ricarica Divisio;
+    dopo, si corregge a mano o si torna a una copia di sicurezza.</td></tr>
+  <tr><td>Una fattura o un movimento vero è segnato come «forse doppione»</td><td>Se è davvero diverso: nelle Fatture <span class="bottone">È una fattura diversa: aggiungila</span>;
+    nella Banca e nel caricamento da UNIO basta spuntarlo.</td></tr>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 23 novembre 2026 (versione 0.12.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 25 novembre 2026 (versione 0.13.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

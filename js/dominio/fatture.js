@@ -4,7 +4,9 @@
 //
 // Una fattura letta è:
 // { fornitore, piva, cf, intestatario, numero, data, tipoDoc, notaCredito, imponibile, iva, totale,
-//   descrizione, righe:[testo], ritenuta, rate:[{n, scadenza, importo, modalita}], incerti:[campo], avvisi:[testo] }
+//   descrizione, righe:[testo], ritenuta, rate:[{n, scadenza, importo, modalita}], servizio:{tipo, codice}|null, incerti:[campo], avvisi:[testo] }
+
+import { servizioDaTesto } from "./servizi.js";
 
 /* ---------- modalità di pagamento (codici dell'Agenzia delle Entrate) ---------- */
 export const MODALITA = {
@@ -60,6 +62,8 @@ const figli = (n, nome) => n?.figli.filter((f) => f.nome === nome) ?? [];
 /** Percorso "A/B/C" a partire da un nodo. */
 const vai = (n, percorso) => percorso.split("/").reduce((x, p) => figlio(x, p), n);
 const testo = (n, percorso) => (percorso ? vai(n, percorso) : n)?.testo.trim() ?? "";
+/** Tutto il testo di un nodo (senza gli allegati, che sono file codificati). */
+const testoTutto = (n) => (n.nome === "Allegati" ? "" : [n.testo, ...n.figli.map(testoTutto)].join(" "));
 function cerca(n, nome) {
   if (!n) return undefined;
   if (n.nome === nome) return n;
@@ -260,7 +264,7 @@ export function leggiFatturaPA(xml) {
       imponibile, iva, totale, ritenuta,
       descrizione: [causale, ...righe].filter(Boolean).join(" · ").slice(0, 600),
       righe: righe.slice(0, 30).map((r) => r.slice(0, 200)),
-      rate, incerti, avvisi,
+      rate, servizio: servizioDaTesto(testoTutto(corpo)), incerti, avvisi,
     };
   });
   return { ok: true, fatture };

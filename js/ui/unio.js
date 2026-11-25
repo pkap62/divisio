@@ -122,7 +122,7 @@ export const azioni = {
   async azzeraInvii(el, ev, ctx) {
     const n = inviiAnno(ctx.arch, ctx.anno).length;
     if (!n || !confirm(`Dimenticare le ${n} importazioni in UNIO segnate nel ${ctx.anno}?\n\nDivisio preparerà di nuovo i file completi di ogni trimestre. In UNIO non cambia nulla.`)) return;
-    await ctx.arch.salvaImpostazione("unio-invii", invii(ctx.arch).filter((x) => x.anno !== ctx.anno));
+    await ctx.arch.salvaImpostazione("unio-invii", invii(ctx.arch).filter((x) => x.anno !== ctx.anno), { etichetta: `Azzeramento delle importazioni segnate del ${ctx.anno}` });
     toast("Importazioni segnate azzerate ✓");
     ctx.aggiorna();
   },
@@ -141,7 +141,7 @@ export const azioni = {
     if (!confirm(`Confermi di aver importato in UNIO le ${righe.length} righe di ${ctx.arch.nomeConto(sel.cassa)} (${p.nome})?\n\nDa ora Divisio preparerà solo le novità.`)) return;
     const voce = { anno: p.anno, trimestre: sel.trimestre, cassa: sel.cassa, quando: new Date().toISOString(), autore: locale.leggi("autore", ""),
       fotografia: inv.fotografia, righeInviate: righe.map(({ codice, dir, importo }) => ({ codice, dir, importo })) };
-    await ctx.arch.salvaImpostazione("unio-invii", [...invii(ctx.arch), voce]);
+    await ctx.arch.salvaImpostazione("unio-invii", [...invii(ctx.arch), voce], { etichetta: "Importazione in UNIO segnata" });
     toast("Segnato come importato in UNIO ✓");
     ctx.aggiorna();
   },
@@ -149,7 +149,7 @@ export const azioni = {
     const { inv } = dati(ctx);
     const ultimo = inv.precedenti.at(-1);
     if (!ultimo || !confirm(`Annullare l'importazione segnata il ${quando(ultimo)}?\n\nLo faccia solo se quelle righe NON sono state davvero importate in UNIO.`)) return;
-    await ctx.arch.salvaImpostazione("unio-invii", invii(ctx.arch).filter((x) => x !== ultimo && x.quando !== ultimo.quando));
+    await ctx.arch.salvaImpostazione("unio-invii", invii(ctx.arch).filter((x) => x !== ultimo && x.quando !== ultimo.quando), { etichetta: "Tolta l'ultima importazione in UNIO segnata" });
     toast("Annullato");
     ctx.aggiorna();
   },

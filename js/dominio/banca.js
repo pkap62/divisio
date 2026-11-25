@@ -12,6 +12,8 @@ import { scritturaSemplice } from "./scritture.js";
 import { righePagamento, dividi, PAGATA } from "./scadenzario.js";
 import { REGOLE } from "./suggerimenti.js";
 import { chiaveFornitore } from "./fatture.js";
+import { ricordoPer } from "./servizi.js";
+import { trovaMovimentoSimile } from "./doppioni.js";
 
 export const CASSA_CONTANTI = "A02-01-01";
 
@@ -260,7 +262,7 @@ export function impronteRighe(righe) {
  *          fornitori: [{chiave, nome, voce, quotaTeatro}] (ricordati dalla pagina Fatture), contiAttivi: Set di codici, casse: [codici delle casse e banche] }
  * Ogni proposta: { ...riga, id, impronta, controparte, chiave, firma, descr, tipo, voce, altra, stato, livello, motivo, includi,
  *                  fattura?:{id, n, motivo}, giaRegistrato?:{id, descr, data}, quotaTeatro }
- * stato: "gia-importato" | "gia-registrato" | "fattura" | "pronto" | "da-completare"
+ * stato: "gia-importato" | "gia-registrato" | "forse-doppione" | "fattura" | "pronto" | "da-completare"
  */
 export function preparaRighe(righe, dati) {
   const { cassa, movimenti = [], fatture = [], memorie = new Map(), fornitori = [], contiAttivi, casse = [] } = dati;
@@ -290,13 +292,23 @@ export function preparaRighe(righe, dati) {
     const gia = trovaGiaRegistrato(p, cassa, movimenti, usatiMov);
     if (gia) { usatiMov.add(gia.id); return { ...p, stato: "gia-registrato", includi: false, giaRegistrato: { id: gia.id, descr: gia.descr, data: gia.data }, motivo: `In Divisio c'è già «${gia.descr}» del ${gia.data.split("-").reverse().join("/")} con lo stesso importo.` }; }
 
+    // 1c. forse già registrato in un'altra cassa o banca: stesso importo e stessa data, o stessa descrizione a pochi giorni
+    const simile = trovaMovimentoSimile({ data: p.data, importo: p.importo, descrizioni: [p.descrizione, p.descr] }, movimenti, { esclusi: usatiMov });
+    if (simile) {
+      usatiMov.add(simile.movimento.id);
+      const m = simile.movimento;
+      return { ...p, stato: "forse-doppione", includi: false, giaRegistrato: { id: m.id, descr: m.descr, data: m.data }, motivo: simile.testo };
+    }
+
     // 2. paga una fattura dello scadenzario
     const fa = trovaFattura(p, fatture, usateRate);
     const mem = p.chiave ? memorie.get(p.chiave) : null;
     const forn = p.controparte.nome ? trovaFornitore(p.controparte.nome, fornitori) : fa ? trovaFornitore(fa.fattura.fornitore, fornitori) : null;
     if (fa) {
       usateRate.add(`${fa.fattura.id}-${fa.rata.n}`);
-      const ricordo = fornitori.find((x) => x.chiave === chiaveFornitore(fa.fattura)) ?? forn;
+      // per lo stesso fornitore la voce può cambiare con il servizio della fattura (luce, gas…)
+      const r0 = fornitori.find((x) => x.chiave === chiaveFornitore(fa.fattura)) ?? forn;
+      const ricordo = r0?.valore ? { ...r0, voce: ricordoPer(r0.valore, fa.fattura)?.voce } : r0;
       const voce = usabile(ricordo?.voce) ? ricordo.voce : usabile(fa.rata.voce) ? fa.rata.voce : "";
       return { ...p, stato: "fattura", fattura: { id: fa.fattura.id, n: fa.rata.n, motivo: fa.motivo }, usaFattura: true, voce, quotaTeatro: Number(fa.fattura.quotaTeatro ?? ricordo?.quotaTeatro) || 0,
         livello: voce ? "fornitore" : "nessuno", motivo: `Paga la fattura ${fa.fattura.fornitore} n. ${fa.fattura.numero} (${fa.motivo}).` };
@@ -344,7 +356,7 @@ export function completa(p) {
   return Boolean(p.voce);
 }
 const pronto = (p) => ({ ...p, stato: completa(p) ? "pronto" : "da-completare" });
-export const aggiornaStato = (p) => (["gia-importato", "gia-registrato", "fattura"].includes(p.stato) ? p : pronto(p));
+export const aggiornaStato = (p) => (["gia-importato", "gia-registrato", "forse-doppione", "fattura"].includes(p.stato) ? p : pronto(p));
 
 /* ---------- registrazioni ---------- */
 

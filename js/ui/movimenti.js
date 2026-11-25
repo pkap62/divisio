@@ -1,17 +1,19 @@
 // Pagina "Movimenti": elenco con ricerca e filtri, correzione, eliminazione, esportazione CSV.
 
 import { movimentiAnno, saldiProgressivi } from "../dominio/saldi.js";
-import { entrateUsciteCSV, perData } from "../dominio/csv.js";
+import { entrateUsciteCSV } from "../dominio/csv.js";
 import { casseInOrdine } from "../dominio/piano.js";
 import { analizza } from "../dominio/scritture.js";
-import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, $ } from "./util.js";
-import { tabellaMovimenti, dettagliAperti } from "./elenco.js";
+import { esc, eur, dataIt, norm, rendicontoInviato, scarica, toast, locale, $ } from "./util.js";
+import { tabellaMovimenti, dettagliAperti, ordinaMovimenti, COLONNE } from "./elenco.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 import { salvaCopia } from "./impostazioni.js";
 import { vistaCard as cardUNIO, riquadroAperto, azioni as azioniUNIO, cambia as cambiaUNIO } from "./importa.js";
 
 const PERIODI = { T1: ["01-01", "03-31", "1° trimestre"], T2: ["04-01", "06-30", "2° trimestre"], T3: ["07-01", "09-30", "3° trimestre"], T4: ["10-01", "12-31", "4° trimestre"] };
 const filtro = { testo: "", cassa: "", periodo: "", tipo: "" };
+/** Ordine dell'elenco, scelto cliccando sui titoli delle colonne (ricordato su questo computer). */
+let ordine = locale.leggi("movimenti-ordine", { campo: "data", verso: "giu" });
 let azzera = null;   // pannello "Azzera i movimenti dell'anno" aperto: { anno, capito }
 
 function filtrati({ arch, anno }) {
@@ -22,15 +24,19 @@ function filtrati({ arch, anno }) {
     if (filtro.periodo) { const [da, a] = PERIODI[filtro.periodo]; const g = m.data.slice(5); if (g < da || g > a) return false; }
     if (filtro.tipo && analizza(m).tipo !== filtro.tipo) return false;
     return true;
-  }).sort(perData).reverse();
+  });
 }
 
 function elenco(ctx) {
-  const lista = filtrati(ctx);
+  const lista = ordinaMovimenti(filtrati(ctx), ctx.arch, ordine);
+  const nomeOrdine = COLONNE.find(([c]) => c === ordine.campo)?.[1] ?? "Data";
+  const diverso = ordine.campo !== "data" || ordine.verso !== "giu";
   // scelta una sola cassa o banca: saldo dopo ogni movimento, calcolato su tutto l'anno (anche se si cerca o si sceglie un periodo)
   const progressivo = filtro.cassa ? saldiProgressivi(movimentiAnno(ctx.arch.movimenti(), ctx.anno), filtro.cassa) : null;
   const finale = progressivo?.size ? [...progressivo.values()].at(-1) : null;
-  return `${tabellaMovimenti(lista, ctx.arch, { dettagli: true, progressivo, totali: true })}
+  return `${diverso ? `<p class="hint">In ordine di <b>${esc(nomeOrdine.toLowerCase())}</b> (${ordine.verso === "su" ? "▲" : "▼"}).
+      <a href="#" data-azione="ordina" data-campo="data" data-verso="giu">Torna all'ordine di data</a></p>` : ""}
+    ${tabellaMovimenti(lista, ctx.arch, { dettagli: true, progressivo, totali: true, ordine })}
     ${progressivo ? `<p class="hint">«Saldo dopo»: quanto c'era in ${esc(ctx.arch.nomeConto(filtro.cassa))} dopo ogni movimento, partendo dal saldo di inizio anno.
       Saldo dopo l'ultimo movimento del ${ctx.anno}: <b>${eur(finale ?? 0)}</b>. Serve per confrontarlo con i contanti contati o con l'estratto conto della banca.</p>` : ""}`;
 }
@@ -43,6 +49,7 @@ export function vista(ctx) {
     <button class="btn sec piccolo" data-azione="apriUNIO">Carica da UNIO…</button>
     <button class="btn sec piccolo" data-azione="csv" title="Scarica solo i movimenti mostrati qui sotto (con la ricerca e i filtri scelti)">Scarica in CSV (Excel)</button></div>
   <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere, eliminare o registrare di nuovo lo stesso movimento.
+    Per ordinare l'elenco clicchi sul titolo di una colonna (Data, Descrizione, Voce, Cassa / banca, Importo); un secondo clic inverte l'ordine.
     Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento. «Scarica in CSV» scarica solo i movimenti mostrati, come entrate e uscite;
     «Carica da UNIO» porta in Divisio i movimenti già inseriti in UNIO.</p>
   ${riquadroAperto() ? cardUNIO(ctx) : ""}
@@ -107,6 +114,12 @@ export const cambia = {
 
 export const azioni = {
   ...azioniUNIO,
+  ordina(el, ev, ctx) {
+    ordine = { campo: el.dataset.campo, verso: el.dataset.verso === "su" ? "su" : "giu" };
+    locale.scrivi("movimenti-ordine", ordine);
+    ridisegnaElenco(ctx);
+    document.querySelector(`#elenco [data-azione="ordina"][data-campo="${CSS.escape(ordine.campo)}"]`)?.focus();
+  },
   apriAzzera(el, ev, ctx) { azzera = { anno: ctx.anno, capito: false }; ctx.aggiorna(); },
   chiudiAzzera(el, ev, ctx) { azzera = null; ctx.aggiorna(); },
   async confermaAzzera(el, ev, ctx) {
@@ -114,7 +127,7 @@ export const azioni = {
     const { movimenti, fatture } = daAzzerare(ctx);
     el.disabled = true;
     salvaCopia(ctx, `prima-di-azzerare-${ctx.anno}`);
-    await ctx.arch.salvaInsieme({ fatture, movimentiDaEliminare: movimenti.map((m) => m.id) });
+    await ctx.arch.salvaInsieme({ fatture, movimentiDaEliminare: movimenti.map((m) => m.id), etichetta: `Azzeramento dei movimenti del ${ctx.anno}` });
     azzera = null;
     toast(`Movimenti del ${ctx.anno} azzerati (${movimenti.length}) ✓ Copia di sicurezza nella cartella Download`);
     ctx.aggiorna();
@@ -137,7 +150,7 @@ export const azioni = {
     if (f) {
       // movimento nato da una fattura pagata: la fattura torna "da pagare", nella stessa operazione
       if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà "da pagare" nello scadenzario.${ancheUNIO}`)) return;
-      await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, m.fattura.rata).fattura], movimentiDaEliminare: [m.id] });
+      await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, m.fattura.rata).fattura], movimentiDaEliminare: [m.id], etichetta: `Eliminazione del movimento «${m.descr}»` });
       toast("Movimento eliminato; la fattura è di nuovo da pagare");
     } else {
       if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?${ancheUNIO}`)) return;

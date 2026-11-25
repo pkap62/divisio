@@ -6,6 +6,7 @@ import { tabellaDaTesto, testoDelFile, leggiEstratto, impronta, CAMPI, saldoFina
 import { preparaRighe, completa, aggiornaStato, movimentoProposta, importoRegistrato, fuoriContabilita, datiBanca, modalitaDaTesto, ricorda, importazioni, maiuscole, CASSA_CONTANTI } from "../dominio/banca.js";
 import { segnaPagata, tornaDaPagare, GESTIONI, nomeGestione } from "../dominio/scadenzario.js";
 import { chiaveFornitore } from "../dominio/fatture.js";
+import { ricordoAggiornato } from "../dominio/servizi.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { movimentiAnno, totaliPerConto, saldo } from "../dominio/saldi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
@@ -69,7 +70,7 @@ function prepara(ctx) {
   if (!imp?.lettura?.ok || !imp.cassa) { if (imp) imp.righe = []; return; }
   const t = teatro(arch);
   const memorie = new Map(arch.impostazioniCon("banca:").map((i) => [i.chiave, i.valore]));
-  const fornitori = new Map(arch.impostazioniCon("fornitore:").map((i) => [i.chiave, { chiave: i.chiave, nome: i.valore.nome, voce: i.valore.voce, quotaTeatro: t.attivo ? i.valore.quotaTeatro : 0 }]));
+  const fornitori = new Map(arch.impostazioniCon("fornitore:").map((i) => [i.chiave, { chiave: i.chiave, nome: i.valore.nome, voce: i.valore.voce, quotaTeatro: t.attivo ? i.valore.quotaTeatro : 0, valore: i.valore }]));
   for (const f of arch.fatture()) {   // fornitori di fatture già pagate, anche se non "ricordati"
     const k = chiaveFornitore(f);
     const voce = f.rate.find((r) => r.voce)?.voce;
@@ -181,7 +182,7 @@ function rigaHTML(p, ctx) {
   const nome = p.controparte?.nome ? maiuscole(p.controparte.nome) : "";
   let come = "";
   if (!p.includi) {
-    come = p.giaRegistrato ? `<div class="nota piccola">${esc(p.motivo)}</div><p class="hint">Non verrà registrato di nuovo. Se è un movimento diverso, lo spunti.</p>`
+    come = p.giaRegistrato ? `<div class="${p.stato === "forse-doppione" ? "avviso" : "nota"} piccola">${esc(p.motivo)}</div><p class="hint">Non verrà registrato di nuovo. Se è un movimento diverso, lo spunti.</p>`
       : `<p class="hint">Non verrà registrato.</p>`;
   } else if (p.stato === "fattura" && p.usaFattura) {
     const f = arch.fattura(p.fattura.id);
@@ -422,7 +423,8 @@ export const azioni = {
         catch (e) { toast(`${dataIt(p.data)}: ${e.message}`); return; }
         fatture.set(f.id, t.attivo ? { ...esito.fattura, quotaTeatro: p.quotaTeatro } : esito.fattura);
         m = esito.movimento ? { ...esito.movimento, banca: datiBanca(p, imp.cassa, importazione) } : null;   // null: del teatro o di altra gestione
-        if (imp.ricorda) fornitori.set(chiaveFornitore(f), { nome: f.fornitore, voce: p.voce || arch.impostazione(chiaveFornitore(f))?.voce || "", ...(t.attivo ? { quotaTeatro: p.quotaTeatro } : {}) });
+        if (imp.ricorda) fornitori.set(chiaveFornitore(f), ricordoAggiornato(fornitori.get(chiaveFornitore(f)) ?? arch.impostazione(chiaveFornitore(f)), f,
+          { voce: p.voce || undefined, ...(t.attivo ? { quotaTeatro: p.quotaTeatro } : {}) }));
       } else m = t.attivo && fuoriContabilita(p) ? null : movimentoProposta(p, imp.cassa, importazione);
       if (m) {
         const err = verificaMovimento(m, { conti: arch.conti });
@@ -435,7 +437,7 @@ export const azioni = {
     const titoli = imp.riga >= 0 ? imp.tabella[imp.riga] : null;
     if (titoli) impostazioni.push({ chiave: CHIAVE_FORMATO + impronta(titoli), valore: { colonne: imp.lettura.colonne, cassa: imp.cassa } });
     el.disabled = true;
-    await arch.salvaInsieme({ movimenti, fatture: [...fatture.values()], impostazioni });
+    await arch.salvaInsieme({ movimenti, fatture: [...fatture.values()], impostazioni, etichetta: `Registrazione dell'estratto conto ${imp.nomeFile}` });
     const anni = [...new Set(movimenti.map((m) => m.data.slice(0, 4)))];
     imp = null;
     toast(`Registrati ${n_(movimenti.length, "movimento", "movimenti")} ✓${movimenti.length && (anni.length > 1 || anni[0] !== String(ctx.anno)) ? ` (anno ${anni.join(", ")})` : ""}`);

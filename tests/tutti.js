@@ -13,4 +13,5 @@ import "./importaUNIO.test.js";
 import "./fatture.test.js";
 import "./scadenzario.test.js";
 import "./banca.test.js";
+import "./doppioni.test.js";
 export { esegui } from "./mini.js";

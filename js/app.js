@@ -54,8 +54,29 @@ function disegnaIntestazione() {
   $("#versione-app").textContent = `versione ${VERSIONE}`;
   $("#anno").innerHTML = anniDisponibili().map((a) => `<option value="${a}" ${a === ctx.anno ? "selected" : ""}>Anno ${a}</option>`).join("");
   $("#menu").innerHTML = Object.entries(PAGINE).map(([k, p]) =>
-    `<button data-pagina="${k}" ${k === ctx.pagina ? 'class="on" aria-current="page"' : ""}>${p.nome}</button>`).join("");
+    `<button data-pagina="${k}" ${k === ctx.pagina ? 'class="on" aria-current="page"' : ""}>${p.nome}</button>`).join("")
+    + `<span class="posto-annulla" id="posto-annulla">${bottoneAnnulla()}</span>`;
   $("#stato-condivisione").innerHTML = condivisione.indicatore();
+}
+
+/* ---------- annullare l'ultima operazione ---------- */
+const ora = (iso) => new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+function bottoneAnnulla() {
+  const u = ctx.arch.ultimaAnnullabile;
+  return u ? `<button type="button" class="annulla" data-annulla title="Annulla l'ultima operazione: ${esc(u.etichetta)} (alle ${ora(u.quando)})">↶ Annulla</button>` : "";
+}
+const aggiornaAnnulla = () => { const p = $("#posto-annulla"); if (p) p.innerHTML = bottoneAnnulla(); };
+
+async function annulla() {
+  const u = ctx.arch.ultimaAnnullabile;
+  if (!u) { toast("Non c'è nessuna operazione da annullare"); return; }
+  if (!confirm(`Annullare l'ultima operazione?\n\n${u.etichetta} (alle ${ora(u.quando)})\n\nI dati torneranno com'erano prima.`)) return;
+  const r = await ctx.arch.annullaUltima();
+  if (!r.ok) { toast(r.motivo); aggiornaAnnulla(); return; }
+  PAGINE[ctx.pagina].modulo.prepara?.(ctx, {});
+  disegna(true);
+  const prossima = ctx.arch.ultimaAnnullabile;
+  toast(`Annullato: ${r.etichetta} ✓${prossima ? " (si può annullare anche l'operazione prima)" : ""}`);
 }
 
 /** Quando arrivano dati dagli altri computer: ridisegna, ma non mentre si sta scrivendo in un campo. */
@@ -102,7 +123,18 @@ function collega() {
     if (b.dataset.condivisione === "riattiva") { await condivisione.riattiva(); disegna(true); }
     else ctx.vai("impostazioni");
   });
-  $("#menu").addEventListener("click", (ev) => { const b = ev.target.closest("[data-pagina]"); if (b) ctx.vai(b.dataset.pagina); });
+  $("#menu").addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-annulla]")) { annulla().catch((e) => { console.error(e); toast("Non è stato possibile annullare: " + e.message); }); return; }
+    const b = ev.target.closest("[data-pagina]");
+    if (b) ctx.vai(b.dataset.pagina);
+  });
+  // Ctrl+Z (Cmd+Z sul Mac) fuori dai campi di testo: annulla l'ultima operazione (nei campi resta l'annulla del testo scritto)
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key.toLowerCase() !== "z" || !(ev.ctrlKey || ev.metaKey) || ev.shiftKey || ev.altKey) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName ?? "") || document.activeElement?.isContentEditable) return;
+    ev.preventDefault();
+    annulla().catch((e) => { console.error(e); toast("Non è stato possibile annullare: " + e.message); });
+  });
   $("#anno").addEventListener("change", (ev) => {
     ctx.anno = Number(ev.target.value);
     locale.scrivi("anno", ctx.anno);
@@ -121,6 +153,7 @@ async function avvia() {
     return;
   }
   collega();
+  ctx.arch.ascolta(aggiornaAnnulla);
   ctx.vai("inizio");
   condivisione.inizializza(ctx, dopoCondivisione).catch((e) => { console.error(e); toast("Condivisione non disponibile: " + e.message); });
   // chiede al browser di non cancellare mai i dati da solo

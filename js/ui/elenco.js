@@ -37,14 +37,52 @@ function contenutoDettagli(m, arch) {
          <button class="btn pericolo piccolo" data-azione="elimina" data-id="${esc(m.id)}">Elimina</button></div>`}`;
 }
 
+/* ---------- ordinare i movimenti per colonna (pagina Movimenti) ---------- */
+export const COLONNE = [["data", "Data"], ["descr", "Descrizione"], ["voce", "Voce"], ["cassa", "Cassa / banca"], ["importo", "Importo"]];
+const testoSemplice = (html) => String(html).replace(/<[^>]*>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Ordina i movimenti per una colonna. ordine = {campo, verso: "su" (dalla A alla Z, dal più piccolo) | "giu"}.
+ * A parità, i movimenti restano in ordine di data (i più recenti prima).
+ */
+export function ordinaMovimenti(lista, arch, { campo = "data", verso = "giu" } = {}) {
+  const chiave = new Map(lista.map((m) => {
+    if (campo === "data") return [m, null];
+    if (campo === "importo") return [m, descrivi(m, arch).importo];
+    if (campo === "descr") return [m, String(m.descr ?? "").toLowerCase()];
+    const d = descrivi(m, arch);
+    return [m, testoSemplice(campo === "voce" ? d.voce : d.cassa)];
+  }));
+  const perData = (a, b) => a.data.localeCompare(b.data) || String(a.creatoIl ?? "").localeCompare(String(b.creatoIl ?? "")) || String(a.id).localeCompare(String(b.id));
+  const confronta = (a, b) => {
+    if (campo === "data") return perData(a, b);
+    const x = chiave.get(a), y = chiave.get(b);
+    return typeof x === "number" ? x - y : x.localeCompare(y, "it", { numeric: true });
+  };
+  const s = verso === "su" ? 1 : -1;
+  return [...lista].sort((a, b) => s * confronta(a, b) || -perData(a, b));
+}
+
+/** Titolo di colonna che, cliccato, ordina per quella colonna (o inverte l'ordine). */
+function titoloOrdina(campo, nome, ordine, classe = "") {
+  if (!ordine) return `<th class="${classe}">${nome}</th>`;
+  const attivo = ordine.campo === campo;
+  const freccia = attivo ? (ordine.verso === "su" ? "▲" : "▼") : "";
+  const prossimo = attivo && ordine.verso === "giu" ? "su" : attivo ? "giu" : campo === "data" || campo === "importo" ? "giu" : "su";
+  const spiega = { data: prossimo === "su" ? "dal più vecchio" : "dal più recente", importo: prossimo === "su" ? "dal più piccolo" : "dal più grande" }[campo] ?? (prossimo === "su" ? "dalla A alla Z" : "dalla Z alla A");
+  return `<th class="${classe}" aria-sort="${attivo ? (ordine.verso === "su" ? "ascending" : "descending") : "none"}">
+    <button type="button" class="ordina" data-azione="ordina" data-campo="${campo}" data-verso="${prossimo}" title="Ordina per ${nome.toLowerCase()}, ${spiega}">${nome} <span class="freccia" aria-hidden="true">${freccia}</span></button></th>`;
+}
+
 /**
  * progressivo (facoltativo): Map id → saldo della cassa scelta dopo quel movimento, mostrato in una colonna in più.
  * totali (facoltativo): righe finali ben evidenti con il totale delle entrate e delle uscite dei movimenti mostrati.
+ * ordine (facoltativo): {campo, verso}: i titoli delle colonne diventano pulsanti per ordinare.
  */
-export function tabellaMovimenti(lista, arch, { dettagli = false, progressivo = null, totali = false } = {}) {
+export function tabellaMovimenti(lista, arch, { dettagli = false, progressivo = null, totali = false, ordine = null } = {}) {
   if (!lista.length) return `<p class="hint">Nessun movimento.</p>`;
   return `<div class="scorri"><table class="movimenti">
-    <tr><th>Data</th><th>Descrizione</th><th>Voce</th><th>Cassa / banca</th><th class="n">Importo</th>${progressivo ? `<th class="n">Saldo dopo</th>` : ""}</tr>
+    <tr>${COLONNE.map(([c, n]) => titoloOrdina(c, n, ordine, c === "importo" ? "n" : "")).join("")}${progressivo ? `<th class="n">Saldo dopo</th>` : ""}</tr>
     ${lista.map((m) => {
       const d = descrivi(m, arch);
       const classe = d.segno > 0 ? "pos" : d.segno < 0 ? "neg" : "";

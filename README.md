@@ -7,6 +7,18 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.13.0 – Annulla, ordinare i movimenti, possibili doppioni, luce e gas dello stesso fornitore**
+- **↶ Annulla** a destra nel menu (anche Ctrl+Z / Cmd+Z fuori dai campi): annulla l'ultima operazione, poi quella prima, fino a 30, finché Divisio resta aperto.
+  L'archivio (`js/dati/archivio.js`) ricorda per ogni operazione com'erano i record prima (`annullaUltima`, `insieme` per raggruppare più scritture);
+  l'annullamento riscrive i record con una data nuova, così arriva anche ai computer collegati. Se un record è stato cambiato dopo (anche da un altro computer) non annulla.
+- **Movimenti**: clic sul titolo di una colonna (Data, Descrizione, Voce, Cassa / banca, Importo) per ordinare; secondo clic per invertire; ordine ricordato sul computer.
+- **Possibili doppioni** (`js/dominio/doppioni.js`): stesso importo e stessa data, oppure stesso importo e stessa descrizione entro 10 giorni (così le spese mensili uguali non sono doppioni).
+  Fatture: anche numero quasi uguale; segnate «forse doppione», non aggiunte se l'utente non dice che sono diverse. Banca: confronto anche con le altre casse
+  («Non registrati», avviso arancione). Caricamento da UNIO: elenco dei possibili doppioni con i movimenti scritti a mano, da spuntare per caricarli.
+- **Servizi dello stesso fornitore** (`js/dominio/servizi.js`): dalla fattura si legge il contatore (POD = luce, PDR = gas) o, in mancanza, le unità (kWh, Smc).
+  Fatture di servizi o contatori diversi non sono doppioni; voce e scelta parrocchia / 50% / altra gestione si ricordano per contatore (`servizi` nell'impostazione `fornitore:…`).
+- Verificato: «Fatture del teatro o di altre gestioni» resta **spenta** in una parrocchia nuova (si accende solo in Impostazioni).
+
 **0.12.1 – Eliminare i sottoconti**
 - Impostazioni → Piano dei conti: **cestino rosso** per eliminare i sottoconti che nessun movimento usa (di qualunque anno); quelli usati si possono solo
   mettere fuori uso. Resta un segnaposto "eliminato" (`eliminaConto` in `js/dati/archivio.js`), così il sottoconto sparisce anche dai computer

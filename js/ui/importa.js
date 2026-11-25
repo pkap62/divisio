@@ -7,6 +7,7 @@ import { movimentiAnno } from "../dominio/saldi.js";
 import { nuovoIstante } from "../dominio/unione.js";
 import { esc, eur, dataIt, locale, toast } from "./util.js";
 import { isCassaBanca } from "../dominio/piano.js";
+import { trovaMovimentoSimile, importoConSegno } from "../dominio/doppioni.js";
 
 let anteprima = null;   // { nomeFile, errore } oppure { nomeFile, anno, movimenti, problemi, nomiDiversi, nuovi, giaPresenti, altriDellAnno, usaNomi, ... }
 let aperto = false;      // riquadro aperto nella pagina Movimenti
@@ -17,6 +18,23 @@ export function apriRiquadro() { aperto = true; }
 const daUNIO = (arch) => arch.movimenti().filter((m) => m.origine === "UNIO");
 const TIPI = { entrata: ["entrata", "entrate"], uscita: ["uscita", "uscite"], spostamento: ["spostamento", "spostamenti"], pd: ["in partita doppia", "in partita doppia"] };
 const n_ = (n, uno, molti) => `${n} ${n === 1 ? uno : molti}`;
+/** Movimenti che verranno caricati: non i possibili doppioni, a meno che l'utente li abbia spuntati. */
+const daCaricare = (a) => a.movimenti.filter((m) => !a.forse.has(m.id) || a.caricaForse.has(m.id));
+
+/**
+ * Possibili doppioni tra il file di UNIO e i movimenti inseriti in Divisio (stesso importo e stessa data, o stessa descrizione):
+ * Map id del movimento di UNIO → testo. Non si confrontano quelli già caricati prima da UNIO (erano già stati accettati).
+ */
+function possibiliDoppioni(movimenti, arch) {
+  const propri = arch.movimenti().filter((m) => m.origine !== "UNIO");
+  const usati = new Set(), forse = new Map();
+  for (const m of movimenti) {
+    if (arch.movimento(m.id)) continue;
+    const s = trovaMovimentoSimile({ data: m.data, importo: importoConSegno(m), descrizioni: [m.descr] }, propri, { esclusi: usati });
+    if (s) { usati.add(s.movimento.id); forse.set(m.id, s.testo); }
+  }
+  return forse;
+}
 
 export function vistaCard(ctx) {
   const caricati = daUNIO(ctx.arch);
@@ -60,10 +78,15 @@ function vistaAnteprima(ctx) {
     ${a.nomiDiversi.length ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="usaNomi" ${a.usaNomi ? "checked" : ""}>
         Usa in Divisio i nomi dei sottoconti di UNIO (${a.nomiDiversi.length}):
         ${a.nomiDiversi.map((x) => `«${esc(x.attuale)}» → «${esc(x.unio)}»`).join(", ")}</label>` : ""}
+    ${a.forse.size ? `<div class="avviso">${a.forse.size === 1 ? "1 registrazione di UNIO potrebbe essere un doppione" : `${a.forse.size} registrazioni di UNIO potrebbero essere doppioni`}
+        di movimenti inseriti a mano in Divisio (stesso importo e stessa data, oppure stessa descrizione).
+        Senza spunta non verranno caricate; spunti quelle che sono davvero movimenti diversi.</div>
+      <ul class="elenco-forse">${a.movimenti.filter((m) => a.forse.has(m.id)).map((m) => `<li><label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="caricaForse" data-id="${esc(m.id)}" ${a.caricaForse.has(m.id) ? "checked" : ""}>
+        <span><b>${dataIt(m.data)} – ${esc(m.descr)}</b><br><span class="hint">${esc(a.forse.get(m.id))}</span></span></label></li>`).join("")}</ul>` : ""}
     <details><summary>Vedi le registrazioni come entreranno in Divisio</summary>${tabellaAnteprima(a)}</details>
     ${a.conCausali && !ctx.arch.impostazione("causale-unio", false) ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="accendiCausale" ${a.accendiCausale ? "checked" : ""}>
         Il file ha le causali: mostrale anche nella pagina Registra (si può cambiare in Impostazioni)</label>` : ""}
-    <div class="riga-bottoni"><button class="btn" data-azione="caricaUNIO">Carica ${n_(a.movimenti.length, "movimento", "movimenti")}</button>
+    <div class="riga-bottoni"><button class="btn" data-azione="caricaUNIO" ${daCaricare(a).length ? "" : "disabled"}>Carica ${n_(daCaricare(a).length, "movimento", "movimenti")}</button>
       <button class="btn sec" data-azione="annullaAnteprima">Annulla</button></div>`;
 }
 
@@ -99,11 +122,13 @@ export const cambia = {
       nomiDiversi: [...l.nomi].filter(([c, n]) => conti.has(c) && conti.get(c).nome !== n).map(([codice, unio]) => ({ codice, attuale: conti.get(codice).nome, unio })),
       nuovi: [...l.nomi].filter(([c]) => !conti.has(c)).map(([codice, nome]) => ({ codice, nome })),
       giaPresenti: movimenti.filter((m) => ctx.arch.movimento(m.id)).length,
+      forse: possibiliDoppioni(movimenti, ctx.arch), caricaForse: new Set(),
       altriDellAnno: movimentiAnno(ctx.arch.movimenti(), l.anno).filter((m) => m.origine !== "UNIO" && m.tipo !== "apertura").length,
     };
     ctx.aggiorna();
   },
   usaNomi(el) { anteprima.usaNomi = el.checked; },
+  caricaForse(el, ev, ctx) { if (el.checked) anteprima.caricaForse.add(el.dataset.id); else anteprima.caricaForse.delete(el.dataset.id); ctx.aggiorna(); },
   accendiCausale(el) { anteprima.accendiCausale = el.checked; },
 };
 
@@ -123,12 +148,16 @@ export const azioni = {
       ...a.nuovi.map((x) => ({ codice: x.codice, nome: x.nome, attivo: true, modificatoIl: marca(), autore })),
       ...(a.usaNomi ? a.nomiDiversi.map((x) => ({ ...ctx.arch.conti.get(x.codice), nome: x.unio, modificatoIl: marca(), autore })) : []),
     ];
-    const movimenti = a.movimenti.map((m) => ({ ...m, creatoIl: ora, modificatoIl: marca(), autore }));
-    const n = await ctx.arch.unisci({ conti, movimenti, impostazioni: [] });
-    if (a.conCausali && a.accendiCausale && !ctx.arch.impostazione("causale-unio", false)) await ctx.arch.salvaImpostazione("causale-unio", true);
+    const movimenti = daCaricare(a).map((m) => ({ ...m, creatoIl: ora, modificatoIl: marca(), autore }));
+    const saltati = a.movimenti.length - movimenti.length;
+    const n = await ctx.arch.insieme(`Caricamento di ${n_(movimenti.length, "movimento", "movimenti")} da UNIO`, async () => {
+      const cambiati = await ctx.arch.unisci({ conti, movimenti, impostazioni: [] }, { etichetta: "da UNIO" });
+      if (a.conCausali && a.accendiCausale && !ctx.arch.impostazione("causale-unio", false)) await ctx.arch.salvaImpostazione("causale-unio", true);
+      return cambiati;
+    });
     anteprima = null;
     aperto = false;
-    toast(`Caricati ${movimenti.length} movimenti da UNIO ✓`);
+    toast(`${movimenti.length === 1 ? "Caricato 1 movimento" : `Caricati ${movimenti.length} movimenti`} da UNIO ✓${saltati ? ` (${n_(saltati, "possibile doppione saltato", "possibili doppioni saltati")})` : ""}`);
     if (!n) toast("Nessun cambiamento: i movimenti erano già tutti caricati");
     ctx.aggiorna();
   },
@@ -137,7 +166,8 @@ export const azioni = {
     if (!confirm(`Togliere da Divisio i ${caricati.length} movimenti caricati da UNIO?\n\nIn UNIO non cambia nulla. I movimenti inseriti a mano in Divisio restano.`)) return;
     const autore = locale.leggi("autore", "") || "Utente";
     let t = null;
-    await ctx.arch.unisci({ conti: [], impostazioni: [], movimenti: caricati.map((m) => ({ ...m, eliminato: true, modificatoIl: (t = nuovoIstante(t ?? m.modificatoIl)), autore })) });
+    await ctx.arch.unisci({ conti: [], impostazioni: [], movimenti: caricati.map((m) => ({ ...m, eliminato: true, modificatoIl: (t = nuovoIstante(t ?? m.modificatoIl)), autore })) },
+      { etichetta: `Tolti ${n_(caricati.length, "movimento caricato", "movimenti caricati")} da UNIO` });
     toast("Movimenti di UNIO tolti");
     ctx.aggiorna();
   },

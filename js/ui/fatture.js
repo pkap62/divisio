@@ -5,6 +5,8 @@ import { leggiFatturaPA, xmlDaP7m, testoDaByte, trovaDoppione, stessaFattura, ch
 import { leggiFatturaDaTesto, imparaModello } from "../dominio/fatturePDF.js";
 import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, GESTIONI, gestioneValida, nomeGestione } from "../dominio/scadenzario.js";
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
+import { ricordoPer, ricordoAggiornato, diversoServizio, etichettaServizio } from "../dominio/servizi.js";
+import { trovaForseDoppione } from "../dominio/doppioni.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
@@ -20,7 +22,14 @@ let filtro = locale.leggi("fatture-filtro", "dapagare");
 // Divisione delle fatture parrocchia / 50% / teatro o altra gestione: SPENTA per tutti finché non la si accende nelle Impostazioni.
 export const teatro = (arch) => ({ attivo: false, parole: [], ...arch.impostazione("teatro", {}) });
 const casse = (arch) => casseInOrdine(arch.contiAttivi());
-const ricordo = (arch, f) => arch.impostazione(chiaveFornitore(f));
+/** Scelte ricordate per il fornitore, così come sono salvate (per tutti i suoi servizi). */
+const ricordoSalvato = (arch, f) => arch.impostazione(chiaveFornitore(f));
+/** Scelte ricordate che valgono per questa fattura (per il suo servizio: luce, gas…, o il suo contatore). */
+const ricordo = (arch, f) => ricordoPer(ricordoSalvato(arch, f), f);
+/** Impostazione da salvare per ricordare le scelte {voce, quotaTeatro} fatte per la fattura f. */
+const daRicordare = (arch, f, scelte) => ({ chiave: chiaveFornitore(f), valore: ricordoAggiornato(ricordoSalvato(arch, f), f, scelte) });
+/** Etichetta piccola con il servizio della fattura (luce, gas…), se Divisio l'ha riconosciuto. */
+const pillaServizio = (f) => (f?.servizio?.tipo ? ` <span class="pill" title="${esc(etichettaServizio(f.servizio))}">${esc(f.servizio.tipo)}</span>` : "");
 const parrocchia = (arch) => arch.impostazione("parrocchia", {});
 /** Dove Divisio ricorda come è fatto il PDF di un fornitore (vedi imparaModello). */
 const chiaveModello = (f) => chiaveFornitore(f).replace(/^fornitore:/, "modello-pdf:");
@@ -85,17 +94,30 @@ function proponiGestione(v, arch) {
   return { ...v, quota: pt.quota, quotaScelta: !pt.chiedi, quotaMotivo: pt.motivo, quotaRicordata: !pt.chiedi };
 }
 
-/** Ricontrolla i doppioni (con lo scadenzario e tra i file appena scelti). */
+/**
+ * Ricontrolla i doppioni (con lo scadenzario e tra i file appena scelti).
+ * doppione: è sicuramente la stessa fattura (stesso fornitore, numero e data) → non si carica.
+ * forse: potrebbe esserlo (stesso importo e stessa data, numero quasi uguale o stessa descrizione) → non si carica,
+ * a meno che l'utente dica che è diversa (v.diversa).
+ */
 function segnaDoppioni(arch) {
   const gia = arch.fatture();
   carico.voci.forEach((v, i) => {
     v.doppione = null;
-    if (!v.dati || v.errore) return;
+    v.forse = null;
+    if (!v.dati || v.errore || v.tolta) return;
+    const prima = carico.voci.slice(0, i).filter((x) => x.dati && !x.errore && !x.tolta && !x.doppione);
     const d = trovaDoppione(v.dati, gia);
-    if (d) v.doppione = `È già nello scadenzario (caricata il ${new Date(d.creatoIl).toLocaleDateString("it-IT")}${d.nomeFile ? ", file " + d.nomeFile : ""}): non verrà caricata di nuovo.`;
-    else if (carico.voci.slice(0, i).some((x) => x.dati && !x.errore && !x.tolta && stessaFattura(x.dati, v.dati))) v.doppione = "È la stessa fattura di un altro file scelto (per esempio l'XML e il PDF): verrà caricata una volta sola.";
+    if (d) { v.doppione = `È già nello scadenzario (caricata il ${new Date(d.creatoIl).toLocaleDateString("it-IT")}${d.nomeFile ? ", file " + d.nomeFile : ""}): non verrà caricata di nuovo.`; return; }
+    if (prima.some((x) => stessaFattura(x.dati, v.dati))) { v.doppione = "È la stessa fattura di un altro file scelto (per esempio l'XML e il PDF): verrà caricata una volta sola."; return; }
+    const forse = trovaForseDoppione(v.dati, gia);
+    if (forse) { v.forse = `${forse.testo} È già nello scadenzario.`; return; }
+    const tra = trovaForseDoppione(v.dati, prima.map((x) => x.dati));
+    if (tra) v.forse = `${tra.testo} È tra i file appena scelti.`;
   });
 }
+/** Fatture lette che verranno aggiunte. */
+const daAggiungere = () => carico.voci.filter((v) => v.dati && !v.errore && !v.doppione && !v.tolta && (!v.forse || v.diversa));
 
 async function carica(files, ctx) {
   const lista = [...files];
@@ -177,7 +199,8 @@ const CAMPI = [["fornitore", "Fornitore", "text"], ["piva", "Partita IVA", "text
   ["imponibile", "Imponibile", "euro"], ["iva", "IVA", "euro"], ["totale", "Totale", "euro"]];
 
 function vistaCarico(ctx) {
-  const valide = carico.voci.filter((v) => v.dati && !v.errore && !v.doppione && !v.tolta);
+  const valide = daAggiungere();
+  const forse = carico.voci.filter((v) => v.forse && !v.diversa && !v.tolta).length;
   const daControllare = valide.filter((v) => v.dati.incerti?.length && !v.controllato);
   const divisione = teatro(ctx.arch).attivo;
   const senzaScelta = divisione ? valide.filter((v) => !v.quotaScelta) : [];
@@ -194,6 +217,7 @@ function vistaCarico(ctx) {
     <div class="riga-bottoni">
       <button class="btn" data-azione="aggiungi" ${!valide.length || daControllare.length || senzaScelta.length || carico.inLettura ? "disabled" : ""}>${divisione ? "Confermo le scelte: aggiungi" : "Aggiungi"} ${fatture(valide.length)} allo scadenzario</button>
       <button class="btn sec" data-azione="annullaCarico">Annulla</button></div>
+    ${forse ? `<p class="hint">${forse === 1 ? "1 fattura sembra un doppione e non verrà aggiunta" : `${forse} fatture sembrano doppioni e non verranno aggiunte`}, a meno che lei dica che è diversa.</p>` : ""}
     ${daControllare.length ? `<p class="hint">Prima di aggiungere, controlli i campi in arancione e spunti "Ho controllato" (${fatture(daControllare.length)}).</p>` : ""}
     ${senzaScelta.length ? `<p class="hint">Prima di aggiungere, scelga di chi è ogni fattura: della parrocchia, del teatro / altra gestione o al 50% (${senzaScelta.length === 1 ? "manca per 1 fattura" : `mancano ${senzaScelta.length} fatture`}).</p>` : ""}
   </div>`;
@@ -201,11 +225,13 @@ function vistaCarico(ctx) {
 
 function vistaVoce(v, divisione) {
   const titolo = `<div class="riga"><b class="spazio">${esc(v.nomeFile)}</b>
-    ${v.errore ? `<span class="pill ko-pill">non letta</span>` : v.doppione ? `<span class="pill presto-pill">doppione</span>` : v.tipo === "pdf" ? `<span class="pill">PDF</span>` : `<span class="pill ok-pill">XML</span>`}
+    ${v.errore ? `<span class="pill ko-pill">non letta</span>` : v.doppione ? `<span class="pill presto-pill">doppione</span>` : v.forse && !v.diversa ? `<span class="pill presto-pill">forse doppione</span>` : v.tipo === "pdf" ? `<span class="pill">PDF</span>` : `<span class="pill ok-pill">XML</span>`}
     <button class="btn sec piccolo" data-azione="togliVoce" data-v="${v.id}">Non caricare</button></div>`;
   if (v.errore) return `<div class="voce-carico">${titolo}<div class="errore">${esc(v.errore)}</div></div>`;
   if (v.doppione) return `<div class="voce-carico">${titolo}<div class="avviso">${esc(v.dati.fornitore)} n. ${esc(v.dati.numero)} del ${dataIt(v.dati.data)}: ${esc(v.doppione)}</div></div>`;
   const d = v.dati;
+  if (v.forse && !v.diversa) return `<div class="voce-carico">${titolo}<div class="avviso"><b>${esc(d.fornitore || "Fornitore?")} n. ${esc(d.numero)} del ${dataIt(d.data)}, ${eur(d.totale)}${pillaServizio(d)}</b><br>${esc(v.forse)}
+      Non verrà aggiunta.</div><div class="riga-bottoni stretta"><button class="btn sec piccolo" data-azione="nonDoppione" data-v="${v.id}">È una fattura diversa: aggiungila</button></div></div>`;
   const inc = new Set(d.incerti ?? []);
   const campo = ([k, nome, tipo]) => {
     const valore = tipo === "euro" ? (d[k] ? formatDecimale(d[k]) : "") : d[k] ?? "";
@@ -219,7 +245,10 @@ function vistaVoce(v, divisione) {
       <select id="m-${v.id}" class="${inc.has("modalita") ? "incerto" : ""}" data-cambia="modalitaVoce" data-v="${v.id}">${opzioniModalita(d.rate[0].modalita)}</select></div>`;
   const campi = `<div class="griglia g4">${CAMPI.map(campo).join("")}${rate}${modalita}</div>`;
   const avvisi = (d.avvisi ?? []).map((a) => `<div class="avviso">${esc(a)}</div>`).join("");
-  const tipoDoc = (d.notaCredito ? `<div class="nota">È una <b>nota di credito</b>: quando la segnerà come rimborsata, la spesa diminuirà.</div>` : "")
+  const servizio = d.servizio?.tipo ? `<div class="nota piccola">Riguarda: <b>${esc(etichettaServizio(d.servizio))}</b>. Divisio ricorda la voce${divisione ? " e la scelta parrocchia / 50% / altra gestione" : ""} per ogni servizio dello stesso fornitore
+      (per esempio luce e gas della stessa società), e non scambia per doppioni due bollette di servizi o contatori diversi.</div>` : "";
+  const diversa = v.forse && v.diversa ? `<div class="nota piccola">Lei ha indicato che non è un doppione: verrà aggiunta. <a href="#" data-azione="forseDoppione" data-v="${v.id}">Ripensamento: non aggiungerla</a></div>` : "";
+  const tipoDoc = diversa + servizio + (d.notaCredito ? `<div class="nota">È una <b>nota di credito</b>: quando la segnerà come rimborsata, la spesa diminuirà.</div>` : "")
     + (d.modello ? `<div class="ok piccola">Fornitore già visto: Divisio ha cercato i dati dove li aveva trovati le altre volte.</div>` : "");
   const spunta = inc.size ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="controllato" data-v="${v.id}" ${v.controllato ? "checked" : ""}>
       Ho controllato i campi in arancione${v.tipo === "pdf" ? " guardando il PDF" : ""}</label>` : "";
@@ -247,7 +276,7 @@ function tabellaScadenze(el, ctx) {
         : urgenza === "senza-data" ? `<span class="pill presto-pill">scadenza da indicare</span>` : `<span class="pill">da pagare</span>`;
       const quota = pagata ? rata.quotaTeatro : f.quotaTeatro;
       return `<tr class="${urgenza === "scaduta" && !altra ? "riga-scaduta" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
-        <td><b>${esc(f.fornitore || "Fornitore?")}</b>${t.attivo ? pillaGestione(quota) : ""}<br>
+        <td><b>${esc(f.fornitore || "Fornitore?")}</b>${pillaServizio(f)}${t.attivo ? pillaGestione(quota) : ""}<br>
           <span class="hint">${f.notaCredito ? "Nota di credito" : TIPI_DOCUMENTO[f.tipoDoc] && f.tipoDoc !== "TD01" ? TIPI_DOCUMENTO[f.tipoDoc] : "Fattura"} n. ${esc(f.numero)} del ${dataIt(f.data)}${f.rate.length > 1 ? ` · rata ${rata.n} di ${f.rate.length}` : ""}</span>
           ${dettagli(f, rata, ctx)}</td>
         <td class="n ${f.notaCredito ? "pos" : ""}">${f.notaCredito ? "−" : ""}${eur(rata.importo)}</td>
@@ -261,7 +290,7 @@ function dettagli(f, rata, ctx) {
   return `<details data-chiave="fattura-${esc(f.id)}-${rata.n}"><summary>Dettagli</summary>
     <table class="righe"><tr><td>Imponibile</td><td class="n">${eur(f.imponibile)}</td></tr><tr><td>IVA</td><td class="n">${eur(f.iva)}</td></tr>
       <tr class="tot"><td>Totale</td><td class="n">${eur(f.totale)}</td></tr></table>
-    <p class="hint">Partita IVA ${esc(f.piva || "—")} · pagamento: ${esc(testoModalita(rata))}${rata.iban ? ` · IBAN ${esc(rata.iban)}` : ""}<br>
+    <p class="hint">Partita IVA ${esc(f.piva || "—")}${f.servizio?.tipo ? ` · servizio: ${esc(etichettaServizio(f.servizio))}` : ""} · pagamento: ${esc(testoModalita(rata))}${rata.iban ? ` · IBAN ${esc(rata.iban)}` : ""}<br>
       ${f.origine === "pdf" ? "Letta da PDF" : "Letta da XML"}${f.nomeFile ? ` (${esc(f.nomeFile)})` : ""} · caricata da ${esc(f.autore ?? "—")}</p>
     ${f.descrizione ? `<p class="hint">${esc(f.descrizione)}</p>` : ""}
     ${f.note ? `<div class="nota">${esc(f.note)}</div>` : ""}
@@ -285,7 +314,7 @@ function apriPagamento(ctx, id, n) {
   const cs = casse(ctx.arch);
   const mod = rata.modalita;
   const cassa = modalitaInContanti(mod) ? "A02-01-01" : (cs.find((c) => c.codice !== "A02-01-01") ?? cs[0])?.codice ?? "";
-  const pagate = ctx.arch.fatture().filter((x) => x.id !== f.id && chiaveFornitore(x) === chiaveFornitore(f) && x.rate.some((r) => r.stato === PAGATA && r.voce));
+  const pagate = ctx.arch.fatture().filter((x) => x.id !== f.id && chiaveFornitore(x) === chiaveFornitore(f) && !diversoServizio(x, f) && x.rate.some((r) => r.stato === PAGATA && r.voce));
   const proposta = proponiVoce(f, { ricordo: ricordo(ctx.arch, f), pagate, contiAttivi: new Set(ctx.arch.contiAttivi().map((c) => c.codice)) });
   const t = teatro(ctx.arch);
   const pt = !t.attivo ? null : gestioneValida(f.quotaTeatro)
@@ -382,11 +411,13 @@ function vistaFornitori(arch) {
   return `<div class="card"><details data-chiave="fornitori"><summary>Fornitori ricordati (${Math.max(ricordati.length, modelli.length)})</summary>
     ${ricordati.length ? `<p class="hint">Per questi fornitori Divisio propone già la voce${t.attivo ? " e la scelta parrocchia / 50% / altra gestione" : ""} dell'ultima volta.</p>` : ""}
     <table>${ricordati.sort((a, b) => String(a.valore.nome).localeCompare(String(b.valore.nome))).map((i) => `<tr><td>${esc(i.valore.nome)}</td>
-      <td>${i.valore.voce ? `${esc(arch.nomeConto(i.valore.voce))} <span class="codice">${i.valore.voce}</span>` : t.attivo && gestioneValida(i.valore.quotaTeatro) ? esc(nomeGestione(i.valore.quotaTeatro)) : "—"}${t.attivo ? pillaGestione(i.valore.quotaTeatro) : ""}</td>
+      <td>${Object.keys(i.valore.servizi ?? {}).length ? Object.values(i.valore.servizi).map((x) => `<div><span class="hint">${esc(x.nome)}:</span> ${sceltaRicordata(x, arch, t)}</div>`).join("") : sceltaRicordata(i.valore, arch, t)}</td>
       <td class="n"><button class="btn sec piccolo" data-azione="dimentica" data-chiave="${esc(i.chiave)}">Dimentica</button></td></tr>`).join("")}</table>
     ${pdf}
   </details></div>`;
 }
+
+const sceltaRicordata = (x, arch, t) => `${x.voce ? `${esc(arch.nomeConto(x.voce))} <span class="codice">${x.voce}</span>` : t.attivo && gestioneValida(x.quotaTeatro) ? esc(nomeGestione(x.quotaTeatro)) : "—"}${t.attivo ? pillaGestione(x.quotaTeatro) : ""}`;
 
 /* ---------- trascinamento dei file ---------- */
 export function dopo(ctx) {
@@ -421,7 +452,7 @@ export const cambia = {
   async scadenza(el, ev, ctx) {
     const f = ctx.arch.fattura(el.dataset.id);
     if (!f) return;
-    await ctx.arch.salvaInsieme({ fatture: [{ ...f, rate: f.rate.map((r) => (r.n === Number(el.dataset.n) ? { ...r, scadenza: el.value } : r)) }] });
+    await ctx.arch.salvaInsieme({ fatture: [{ ...f, rate: f.rate.map((r) => (r.n === Number(el.dataset.n) ? { ...r, scadenza: el.value } : r)) }], etichetta: `Scadenza della fattura ${f.fornitore} n. ${f.numero}` });
     toast("Scadenza salvata ✓");
     ctx.aggiorna();
   },
@@ -433,10 +464,20 @@ export const cambia = {
 
 export const azioni = {
   filtro(el, ev, ctx) { filtro = el.dataset.v; locale.scrivi("fatture-filtro", filtro); ctx.aggiorna(); },
+  nonDoppione(el, ev, ctx) { voce(el).diversa = true; ctx.aggiorna(); },
+  forseDoppione(el, ev, ctx) { voce(el).diversa = false; ctx.aggiorna(); },
   togliVoce(el, ev, ctx) { const v = voce(el); v.tolta = true; if (v.urlPDF) URL.revokeObjectURL(v.urlPDF); segnaDoppioni(ctx.arch); if (!carico.voci.some((x) => !x.tolta)) carico = null; ctx.aggiorna(); },
   annullaCarico(el, ev, ctx) { for (const v of carico?.voci ?? []) if (v.urlPDF) URL.revokeObjectURL(v.urlPDF); carico = null; ctx.aggiorna(); },
   async aggiungi(el, ev, ctx) {
-    const valide = carico.voci.filter((v) => v.dati && !v.errore && !v.doppione && !v.tolta);
+    // i dati possono essere stati corretti a mano: si ricontrollano i doppioni
+    const primaForse = carico.voci.filter((v) => v.forse && !v.diversa).length, primaDoppi = carico.voci.filter((v) => v.doppione).length;
+    segnaDoppioni(ctx.arch);
+    if (carico.voci.filter((v) => v.forse && !v.diversa).length > primaForse || carico.voci.filter((v) => v.doppione).length > primaDoppi) {
+      toast("Con i dati corretti una fattura sembra un doppione: controlli prima di aggiungere");
+      ctx.aggiorna();
+      return;
+    }
+    const valide = daAggiungere();
     for (const v of valide) {
       const d = v.dati;
       const nome = `${d.fornitore || v.nomeFile}`;
@@ -455,8 +496,8 @@ export const azioni = {
     // la scelta parrocchia / 50% / altra gestione viene ricordata per ogni fornitore
     const ricordi = new Map();
     if (divisione) for (const f of fatture) {
-      const prima = ricordo(ctx.arch, f);
-      ricordi.set(chiaveFornitore(f), { ...prima, nome: f.fornitore, voce: prima?.voce || "", quotaTeatro: f.quotaTeatro });
+      const prima = ricordi.get(chiaveFornitore(f)) ?? ricordoSalvato(ctx.arch, f);
+      ricordi.set(chiaveFornitore(f), ricordoAggiornato(prima, f, { quotaTeatro: f.quotaTeatro }));
     }
     // per i PDF: Divisio impara dove stanno i dati di quel fornitore (con le correzioni fatte qui), per leggerli da solo la volta dopo
     const modelli = new Map();
@@ -471,7 +512,7 @@ export const azioni = {
     coda = valide.map((v, i) => ({ v, f: salvate.fatture[i] })).filter(({ v, f }) => v.dati.pagata?.data && f.rate.length === 1)
       .map(({ v, f }) => ({ id: f.id, data: v.dati.pagata.data, modalita: v.dati.pagata.modalita }));
     for (const v of carico.voci) if (v.urlPDF) URL.revokeObjectURL(v.urlPDF);
-    const saltate = carico.voci.filter((v) => v.doppione && !v.tolta).length;
+    const saltate = carico.voci.filter((v) => (v.doppione || (v.forse && !v.diversa)) && !v.tolta).length;
     carico = null;
     filtro = "dapagare";
     const altre = fatture.filter((f) => divisione && f.quotaTeatro === 100).length;
@@ -493,8 +534,7 @@ export const azioni = {
     const f = ctx.arch.fattura(el.dataset.id);
     if (!f) return;
     const q = Number(el.dataset.q);
-    const prima = ricordo(ctx.arch, f);
-    await ctx.arch.salvaInsieme({ fatture: [{ ...f, quotaTeatro: q }], impostazioni: [{ chiave: chiaveFornitore(f), valore: { ...prima, nome: f.fornitore, voce: prima?.voce || "", quotaTeatro: q } }] });
+    await ctx.arch.salvaInsieme({ fatture: [{ ...f, quotaTeatro: q }], impostazioni: [daRicordare(ctx.arch, f, { quotaTeatro: q })], etichetta: `Fattura ${f.fornitore} n. ${f.numero}: ${nomeGestione(q).toLowerCase()}` });
     toast(`${nomeGestione(q)} ✓${q === 100 ? " (non entra in contabilità)" : ""}`);
     ctx.aggiorna();
   },
@@ -508,7 +548,7 @@ export const azioni = {
     }
     el.disabled = true;
     const divisione = teatro(ctx.arch).attivo;
-    const impostazioni = pag.ricorda ? [{ chiave: chiaveFornitore(f), valore: { ...ricordo(ctx.arch, f), nome: f.fornitore, voce: pagamento.voce || ricordo(ctx.arch, f)?.voce || "", ...(divisione ? { quotaTeatro: pagamento.quotaTeatro } : {}) } }] : [];
+    const impostazioni = pag.ricorda ? [daRicordare(ctx.arch, f, { voce: pagamento.voce || ricordo(ctx.arch, f)?.voce || undefined, ...(divisione ? { quotaTeatro: pagamento.quotaTeatro } : {}) })] : [];
     await ctx.arch.salvaInsieme({ fatture: [divisione ? { ...esito.fattura, quotaTeatro: pagamento.quotaTeatro } : esito.fattura], movimenti: esito.movimento ? [esito.movimento] : [], impostazioni });
     const anno = pagamento.data.slice(0, 4);
     toast(esito.movimento ? `Pagata e registrata in contabilità ✓${anno !== String(ctx.anno) ? ` (nell'anno ${anno})` : ""}` : "Segnata come pagata ✓ (nessuna registrazione)");
@@ -525,7 +565,7 @@ export const azioni = {
       : `La fattura tornerà "da pagare".`;
     if (!confirm(testo + "\n\nProcedere?")) return;
     const { fattura, movimentoDaEliminare } = tornaDaPagare(f, n);
-    await ctx.arch.salvaInsieme({ fatture: [fattura], movimentiDaEliminare: movimentoDaEliminare || m ? [movimentoDaEliminare || m.id] : [] });
+    await ctx.arch.salvaInsieme({ fatture: [fattura], movimentiDaEliminare: movimentoDaEliminare || m ? [movimentoDaEliminare || m.id] : [], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da pagare` });
     toast(m ? "Fattura di nuovo da pagare; registrazione tolta ✓" : "Fattura di nuovo da pagare ✓");
     ctx.aggiorna();
   },
@@ -544,14 +584,14 @@ export const azioni = {
     const { fattura, movimento } = segnaPagata(base, n, { data: rata.pagataIl, modalita: rata.modalitaPagamento, cassa: rata.cassa, voce: rata.voce, quotaTeatro: rata.quotaTeatro, contoTeatro: rata.contoTeatro });
     const err = movimento ? verificaMovimento(movimento, { conti: ctx.arch.conti }) : [];
     if (err.length) { toast(err[0]); return; }
-    await ctx.arch.salvaInsieme({ fatture: [fattura], movimenti: movimento ? [movimento] : [] });
+    await ctx.arch.salvaInsieme({ fatture: [fattura], movimenti: movimento ? [movimento] : [], etichetta: `Fattura ${f.fornitore} n. ${f.numero} registrata di nuovo` });
     toast("Registrata di nuovo ✓");
     ctx.aggiorna();
   },
   async rimettiDaPagare(el, ev, ctx) {
     const f = ctx.arch.fattura(el.dataset.id);
     if (!f) return;
-    await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, Number(el.dataset.n)).fattura] });
+    await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, Number(el.dataset.n)).fattura], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da pagare` });
     toast("Fattura di nuovo da pagare ✓");
     ctx.aggiorna();
   },
@@ -560,12 +600,12 @@ export const azioni = {
     const id = idMovimento(f, Number(el.dataset.n));
     const m = ctx.arch.movimento(id);
     if (!m || !confirm(`Togliere dalla contabilità il movimento «${m.descr}» del ${dataIt(m.data)}?`)) return;
-    await ctx.arch.salvaInsieme({ movimentiDaEliminare: [id] });
+    await ctx.arch.salvaInsieme({ movimentiDaEliminare: [id], etichetta: `Uscita della fattura ${f.fornitore} n. ${f.numero} tolta dalla contabilità` });
     toast("Uscita tolta dalla contabilità");
     ctx.aggiorna();
   },
   async dimentica(el, ev, ctx) {
-    await ctx.arch.salvaImpostazione(el.dataset.chiave, null);
+    await ctx.arch.salvaImpostazione(el.dataset.chiave, null, { etichetta: "Fornitore dimenticato" });
     toast("Fornitore dimenticato");
     ctx.aggiorna();
   },
