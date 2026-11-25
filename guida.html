@@ -163,7 +163,12 @@ i dati di quel computer spariscono. Per questo servono le <a href="#copie">copie
   <li><b>Cassa e banche</b>: la <b>cassa</b> c'è sempre. Aggiunga una riga per ogni banca di appoggio, anche più di una:
     la sceglie dall'elenco (Intesa Sanpaolo, UniCredit, BancoPosta…) oppure ne scrive il nome. Anche <b>PayPal</b> è tra le scelte, se la parrocchia lo usa.
     Il numero del conto (A02-01-02, A02-01-03…) lo dà Divisio, nell'ordine in cui le banche si aggiungono.
-    Per una banca chiusa basta <span class="bottone">Togli</span>: i movimenti già registrati restano.</li>
+    Per una banca chiusa basta <span class="bottone">Togli</span>: i movimenti già registrati restano.<br>
+    <b>Attenzione al codice di UNIO:</b> in UNIO ogni banca ha già il suo codice (per esempio A02-01-02). Se in Divisio la stessa banca ha preso un altro numero
+    (per esempio A02-01-04, perché prima è stato aggiunto PayPal), i movimenti restano divisi fra due codici. In questo caso Divisio apre da solo il riquadro
+    <b>Due nomi per la stessa banca?</b>: si sceglie la banca da tenere (quella con il codice di UNIO), quella da unire e il nome, poi
+    <span class="bottone">Unisci le due banche</span>. Tutti i movimenti, le fatture pagate e le scelte degli estratti conto passano al codice di UNIO;
+    si può annullare con <span class="bottone">↶ Annulla</span>.</li>
   <li><b>Piano dei conti</b>: è già quello della Diocesi. Può <b>rinominare</b> i sottoconti come in UNIO,
     aggiungerne, metterli "fuori uso" oppure <b>eliminarli</b> con il <b style="color:#b3261e">cestino rosso</b> accanto al nome (solo se nessun movimento li usa:
     altrimenti si possono solo mettere fuori uso). Gruppi e voci del Rendiconto non si cambiano.
@@ -259,6 +264,8 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <li><b>Possibili doppioni:</b> se una registrazione di UNIO ha lo <b>stesso importo e la stessa data</b> di un movimento scritto a mano in Divisio
     (oppure lo stesso importo e la stessa descrizione, a pochi giorni di distanza), l'anteprima la mostra in arancione e non la carica.
     Se è davvero un movimento diverso, la spunti prima di <span class="bottone">Carica</span>.</li>
+  <li><b>Stessa banca, due codici:</b> se nel file di UNIO una banca ha un codice che in Divisio non è in uso, mentre in Divisio la stessa banca ha un altro codice,
+    l'anteprima lo segnala e propone (già spuntato quando i nomi coincidono) di unirle sul codice di UNIO subito dopo il caricamento.</li>
   <li><b>Ricominciare da capo:</b> Movimenti → in fondo <b>"Azzera i movimenti del …"</b> cancella tutti i movimenti dell'anno scelto in alto
     (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.</li>
   <li>Nel Rendiconto, <span class="bottone">Azzera il confronto</span> toglie il CSV di UNIO caricato (le scritte "= UNIO").</li>
@@ -307,7 +314,8 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo. In fondo all'elenco: <b>totale entrate</b>, <b>totale uscite</b> e differenza dei movimenti mostrati.
     <span class="bottone">Scarica in CSV (Excel)</span> scarica <b>solo i movimenti mostrati</b> (con la ricerca e i filtri scelti), divisi in Entrate e Uscite,
     una riga per ogni dettaglio, con il totale in fondo.</td></tr>
-  <tr><td>controllare la cassa o la banca</td><td>Movimenti → in "Cassa / banca" scelga una sola cassa o banca: compare la colonna <b>Saldo dopo</b>, cioè quanto c'era dopo ogni movimento.
+  <tr><td>controllare la cassa o la banca</td><td>Movimenti → in "Cassa / banca" scelga una sola cassa o banca
+    (compaiono anche quelle «non in uso» che hanno movimenti nell'anno, con il loro codice): compare la colonna <b>Saldo dopo</b>, cioè quanto c'era dopo ogni movimento.
     Si confronta con i contanti contati o con l'estratto conto.</td></tr>
 </table>
 <div class="box ok">Divisio non lascia salvare un movimento sbagliato: ogni registrazione è in partita doppia con Dare = Avere, e la pagina Inizio controlla sempre che i conti tornino.</div>
@@ -493,6 +501,8 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>L'estratto conto non viene letto</td><td>Nella banca online lo scarichi in formato CSV o Excel (.xlsx). Se Divisio non riconosce le colonne, le indichi in <b>Colonne del file</b>. Un vecchio Excel .xls va salvato come .xlsx o CSV.</td></tr>
   <tr><td>Dopo l'estratto conto il saldo della banca non coincide</td><td>Controlli i saldi di apertura (Impostazioni), i movimenti in "Non registrati" e quelli della banca scritti a mano con un importo diverso.</td></tr>
   <tr><td>In Fatture compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura "da pagare").</td></tr>
+  <tr><td>Scegliendo la banca in Movimenti mancano dei movimenti (per esempio quelli caricati da UNIO)</td><td>Probabilmente la stessa banca ha due codici, uno di UNIO e uno di Divisio.
+    Impostazioni → Cassa e banche → <b>Due nomi per la stessa banca?</b> → <span class="bottone">Unisci le due banche</span>, tenendo il codice di UNIO.</td></tr>
   <tr><td>Ho fatto un'operazione per sbaglio</td><td><span class="bottone">↶ Annulla</span> in alto a destra (o Ctrl+Z / Cmd+Z). Funziona finché non si chiude o ricarica Divisio;
     dopo, si corregge a mano o si torna a una copia di sicurezza.</td></tr>
   <tr><td>Una fattura o un movimento vero è segnato come «forse doppione»</td><td>Se è davvero diverso: nelle Fatture <span class="bottone">È una fattura diversa: aggiungila</span>;
@@ -500,7 +510,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 25 novembre 2026 (versione 0.13.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 25 novembre 2026 (versione 0.13.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

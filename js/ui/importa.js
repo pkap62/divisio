@@ -8,6 +8,7 @@ import { nuovoIstante } from "../dominio/unione.js";
 import { esc, eur, dataIt, locale, toast } from "./util.js";
 import { isCassaBanca } from "../dominio/piano.js";
 import { trovaMovimentoSimile, importoConSegno } from "../dominio/doppioni.js";
+import { banchePerUNIO, unisciBanche } from "../dominio/unisciBanche.js";
 
 let anteprima = null;   // { nomeFile, errore } oppure { nomeFile, anno, movimenti, problemi, nomiDiversi, nuovi, giaPresenti, altriDellAnno, usaNomi, ... }
 let aperto = false;      // riquadro aperto nella pagina Movimenti
@@ -83,11 +84,28 @@ function vistaAnteprima(ctx) {
         Senza spunta non verranno caricate; spunti quelle che sono davvero movimenti diversi.</div>
       <ul class="elenco-forse">${a.movimenti.filter((m) => a.forse.has(m.id)).map((m) => `<li><label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="caricaForse" data-id="${esc(m.id)}" ${a.caricaForse.has(m.id) ? "checked" : ""}>
         <span><b>${dataIt(m.data)} – ${esc(m.descr)}</b><br><span class="hint">${esc(a.forse.get(m.id))}</span></span></label></li>`).join("")}</ul>` : ""}
+    ${vistaBanche(a)}
     <details><summary>Vedi le registrazioni come entreranno in Divisio</summary>${tabellaAnteprima(a)}</details>
     ${a.conCausali && !ctx.arch.impostazione("causale-unio", false) ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="accendiCausale" ${a.accendiCausale ? "checked" : ""}>
         Il file ha le causali: mostrale anche nella pagina Registra (si può cambiare in Impostazioni)</label>` : ""}
     <div class="riga-bottoni"><button class="btn" data-azione="caricaUNIO" ${daCaricare(a).length ? "" : "disabled"}>Carica ${n_(daCaricare(a).length, "movimento", "movimenti")}</button>
       <button class="btn sec" data-azione="annullaAnteprima">Annulla</button></div>`;
+}
+
+/** Avviso: la stessa banca ha un codice in UNIO e un altro in Divisio. Si propone di unirle sul codice di UNIO. */
+function vistaBanche(a) {
+  if (!a.banche.length) return "";
+  const perUNIO = [...new Set(a.banche.map((b) => b.unio))];
+  return perUNIO.map((codice) => {
+    const coppie = a.banche.filter((b) => b.unio === codice);
+    const nomeUNIO = coppie[0].nomeUNIO;
+    return `<div class="avviso">In UNIO la banca «${esc(nomeUNIO)}» ha il codice <b>${codice}</b>, che in Divisio non è in uso.
+        ${coppie.length === 1 && coppie[0].proposta ? `In Divisio la stessa banca sembra «${esc(coppie[0].nomeDivisio)}», con il codice <b>${coppie[0].divisio}</b>.` : ""}
+        Se sono la stessa banca, conviene unirle sul codice di UNIO: altrimenti i movimenti restano divisi fra due codici
+        (in Movimenti, scegliendo la banca, non si vedrebbero tutti) e i file per UNIO userebbero il conto sbagliato.</div>
+      ${coppie.map((b) => `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="unisciBanca" data-unio="${b.unio}" data-divisio="${b.divisio}" ${b.unisci ? "checked" : ""}>
+        <span>Dopo il caricamento, unisci «${esc(b.nomeDivisio)}» (${b.divisio}) di Divisio con «${esc(b.nomeUNIO)}» (${b.unio}) di UNIO: resta il codice ${b.unio}, con il nome «${esc(b.nomeDivisio)}»</span></label>`).join("")}`;
+  }).join("");
 }
 
 /** Ogni registrazione: data, numero, causale, descrizione, righe (voce, dettaglio, importo) e cassa o banca. */
@@ -123,11 +141,18 @@ export const cambia = {
       nuovi: [...l.nomi].filter(([c]) => !conti.has(c)).map(([codice, nome]) => ({ codice, nome })),
       giaPresenti: movimenti.filter((m) => ctx.arch.movimento(m.id)).length,
       forse: possibiliDoppioni(movimenti, ctx.arch), caricaForse: new Set(),
+      // banche con un codice in UNIO e un altro in Divisio (es. A02-01-02 in UNIO, A02-01-04 aggiunta in Divisio)
+      banche: banchePerUNIO(l.nomi, conti, new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto)))).map((b) => ({ ...b, unisci: b.proposta })),
       altriDellAnno: movimentiAnno(ctx.arch.movimenti(), l.anno).filter((m) => m.origine !== "UNIO" && m.tipo !== "apertura").length,
     };
     ctx.aggiorna();
   },
   usaNomi(el) { anteprima.usaNomi = el.checked; },
+  unisciBanca(el, ev, ctx) {
+    // per ogni codice di UNIO si unisce al massimo una banca di Divisio
+    for (const b of anteprima.banche) if (b.unio === el.dataset.unio) b.unisci = el.checked && b.divisio === el.dataset.divisio;
+    ctx.aggiorna();
+  },
   caricaForse(el, ev, ctx) { if (el.checked) anteprima.caricaForse.add(el.dataset.id); else anteprima.caricaForse.delete(el.dataset.id); ctx.aggiorna(); },
   accendiCausale(el) { anteprima.accendiCausale = el.checked; },
 };
@@ -150,14 +175,29 @@ export const azioni = {
     ];
     const movimenti = daCaricare(a).map((m) => ({ ...m, creatoIl: ora, modificatoIl: marca(), autore }));
     const saltati = a.movimenti.length - movimenti.length;
+    const daUnire = a.banche.filter((b) => b.unisci);
+    // le casse e banche usate dai movimenti di UNIO tornano in uso (altrimenti quei movimenti non si potrebbero scegliere)
+    const casseUNIO = new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto)).filter(isCassaBanca));
+    for (const c of casseUNIO) {
+      const gia = conti.find((x) => x.codice === c), qui = ctx.arch.conti.get(c);
+      if (gia) gia.attivo = true;
+      else if (qui && qui.attivo === false) conti.push({ ...qui, attivo: true, modificatoIl: marca(), autore });
+    }
     const n = await ctx.arch.insieme(`Caricamento di ${n_(movimenti.length, "movimento", "movimenti")} da UNIO`, async () => {
       const cambiati = await ctx.arch.unisci({ conti, movimenti, impostazioni: [] }, { etichetta: "da UNIO" });
       if (a.conCausali && a.accendiCausale && !ctx.arch.impostazione("causale-unio", false)) await ctx.arch.salvaImpostazione("causale-unio", true);
+      for (const b of daUnire) {
+        const arch = ctx.arch;
+        if (!arch.conti.has(b.unio) || !arch.conti.has(b.divisio)) continue;
+        const u = unisciBanche({ conti: arch.conti, movimenti: arch.movimenti(), fatture: arch.fatture(), impostazioni: [...arch.impostazioniCon("banca:"), ...arch.impostazioniCon("formato-banca:")] }, b.divisio, b.unio, b.nomeDivisio);
+        await arch.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni });
+      }
       return cambiati;
     });
     anteprima = null;
     aperto = false;
-    toast(`${movimenti.length === 1 ? "Caricato 1 movimento" : `Caricati ${movimenti.length} movimenti`} da UNIO ✓${saltati ? ` (${n_(saltati, "possibile doppione saltato", "possibili doppioni saltati")})` : ""}`);
+    toast(`${movimenti.length === 1 ? "Caricato 1 movimento" : `Caricati ${movimenti.length} movimenti`} da UNIO ✓${saltati ? ` (${n_(saltati, "possibile doppione saltato", "possibili doppioni saltati")})` : ""}`
+      + daUnire.map((b) => `. Banche unite: «${b.nomeDivisio}» ora ha il codice di UNIO ${b.unio}`).join(""));
     if (!n) toast("Nessun cambiamento: i movimenti erano già tutti caricati");
     ctx.aggiorna();
   },

@@ -42,7 +42,10 @@ function elenco(ctx) {
 }
 
 export function vista(ctx) {
-  const casse = casseInOrdine(ctx.arch.contiAttivi());
+  // anche le casse e banche non più in uso, se hanno movimenti nell'anno: altrimenti quei movimenti non si potrebbero filtrare
+  const usate = new Set(movimentiAnno(ctx.arch.movimenti(), ctx.anno).flatMap((m) => m.righe.map((r) => r.conto)));
+  const casse = casseInOrdine([...ctx.arch.conti.values()].filter((c) => c.attivo !== false || usate.has(c.codice)))
+    .map((c) => ({ ...c, nome: c.attivo === false ? `${c.nome} (${c.codice}, non in uso)` : c.nome }));
   const opz = (valori, scelto) => valori.map(([v, n]) => `<option value="${v}" ${v === scelto ? "selected" : ""}>${esc(n)}</option>`).join("");
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>

@@ -7,6 +7,16 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.13.1 – Stessa banca con due codici (UNIO e Divisio)**
+- Causa del problema: Divisio dà alle banche aggiunte il primo numero libero (es. A02-01-04), mentre in UNIO la stessa banca ha il suo codice (es. A02-01-02).
+  I movimenti caricati da UNIO restavano sul codice di UNIO (spesso «non in uso» in Divisio) e non si vedevano scegliendo la banca in Movimenti.
+- Impostazioni → Cassa e banche → **Due nomi per la stessa banca?** (`js/dominio/unisciBanche.js`): unisce due casse o banche tenendo il codice di UNIO;
+  sposta movimenti (righe della stessa banca sommate, spostamenti fra le due eliminati, `banca.cassa`), rate delle fatture e memorie `banca:` / `formato-banca:`.
+  Una sola operazione (`salvaInsieme` ora salva anche i conti), annullabile. Si apre da solo se due banche hanno lo stesso nome (es. «Banca BPM» / «Banco BPM»).
+- Movimenti: l'elenco Cassa / banca mostra anche quelle non in uso che hanno movimenti nell'anno.
+- Carica da UNIO: avviso se una banca di UNIO ha un codice non in uso in Divisio e in Divisio c'è la stessa banca con un altro codice; proposta di unirle dopo il caricamento.
+  Le casse e banche usate dai movimenti caricati tornano in uso.
+
 **0.13.0 – Annulla, ordinare i movimenti, possibili doppioni, luce e gas dello stesso fornitore**
 - **↶ Annulla** a destra nel menu (anche Ctrl+Z / Cmd+Z fuori dai campi): annulla l'ultima operazione, poi quella prima, fino a 30, finché Divisio resta aperto.
   L'archivio (`js/dati/archivio.js`) ricorda per ogni operazione com'erano i record prima (`annullaUltima`, `insieme` per raggruppare più scritture);

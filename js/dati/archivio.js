@@ -143,13 +143,14 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
      * o si salva tutto o niente, così fattura e contabilità non restano mai a metà.
      * { fatture:[…], movimenti:[…], movimentiDaEliminare:[id], impostazioni:[{chiave, valore}] }
      */
-    async salvaInsieme({ fatture = [], movimenti = [], movimentiDaEliminare = [], impostazioni = [], etichetta = "" }) {
+    async salvaInsieme({ fatture = [], movimenti = [], movimentiDaEliminare = [], impostazioni = [], conti = [], etichetta = "" }) {
       let t = null;
       const marcaInOrdine = (prec) => {
         t = nuovoIstante([t, prec?.modificatoIl].filter(Boolean).sort().at(-1));
         return { modificatoIl: t, autore: chi };
       };
-      const scr = { fatture: [], movimenti: [], impostazioni: [] };
+      const scr = { fatture: [], movimenti: [], impostazioni: [], conti: [] };
+      for (const c of conti) scr.conti.push({ ...c, ...marcaInOrdine(stato.conti.get(c.codice)) });
       for (const m of movimenti) {
         const prec = m.id ? stato.movimenti.get(m.id) : undefined;
         const r = { ...m, id: m.id || nuovoId(), creatoIl: prec?.creatoIl ?? new Date().toISOString(), ...marcaInOrdine(prec) };
@@ -167,11 +168,12 @@ export async function apriArchivio({ autore, nomeDb } = {}) {
       for (const { chiave, valore } of impostazioni) scr.impostazioni.push({ chiave, valore, ...marcaInOrdine(stato.impostazioni.get(chiave)) });
       await db.scriviInsieme(conn, scr);
       if (!gruppo) gruppo = { etichetta: etichetta || descriviInsieme(scr, stato), cambi: [], proprio: true };
-      for (const tab of ["fatture", "movimenti", "impostazioni"]) ricordaCambi("", tab, scr[tab], fotografia(tab, scr[tab].map((r) => chiaveDi(tab, r))));
+      for (const tab of ["conti", "fatture", "movimenti", "impostazioni"]) ricordaCambi("", tab, scr[tab], fotografia(tab, scr[tab].map((r) => chiaveDi(tab, r))));
       if (gruppo.proprio) { delete gruppo.proprio; const g = gruppo; gruppo = null; if (g.cambi.length) { annullabili.push({ ...g, quando: new Date().toISOString() }); if (annullabili.length > MAX_ANNULLA) annullabili.shift(); } }
       for (const r of scr.movimenti) stato.movimenti.set(r.id, r);
       for (const r of scr.fatture) stato.fatture.set(r.id, r);
       for (const r of scr.impostazioni) stato.impostazioni.set(r.chiave, r);
+      for (const r of scr.conti) stato.conti.set(r.codice, r);
       avvisa();
       return scr;
     },
