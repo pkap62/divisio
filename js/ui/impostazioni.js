@@ -11,6 +11,8 @@ import { teatro } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
 import { unisciBanche, stessaBanca } from "../dominio/unisciBanche.js";
+import { ripartiDaZero, GRUPPI_IMPOSTAZIONI } from "../dominio/azzera.js";
+import { tornaDaPagare } from "../dominio/scadenzario.js";
 
 // Cestino rosso per eliminare un sottoconto (disegnato qui, senza file in più)
 const ICONA_CESTINO = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -50,6 +52,45 @@ function cardBanche(arch) {
     ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
       `${esc(c.nome)} <span class="codice">${c.codice}</span> <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
     ${vistaUnione(arch, tutti)}
+  </div>`;
+}
+
+/* ---------- ripartire da zero ---------- */
+// Scelte del riquadro "Ripartire da zero" (null = riquadro chiuso). I fornitori ricordati restano, se non si sceglie altrimenti.
+let riparti = null;
+const nuoveScelte = () => ({ movimenti: true, fatture: true, unio: true, previsioni: true, ricordati: false, capito: false });
+const datiRiparti = (arch) => ({ movimenti: arch.movimenti(), fatture: arch.fatture(), impostazioni: arch.impostazioniCon("") });
+
+function cardRiparti(arch) {
+  if (!riparti) {
+    return `<div class="card solo-schermo"><details data-chiave="riparti"><summary>Ripartire da zero</summary>
+      <p>Cancella da Divisio i movimenti di <b>tutti gli anni</b> e le fatture dello scadenzario, per ricominciare da capo
+        (per esempio dopo le prove). Restano i dati della parrocchia, cassa e banche, piano dei conti e impostazioni. In UNIO non cambia nulla.</p>
+      <p class="hint">Per cancellare solo un anno: Movimenti → «Azzera i movimenti del …». Solo le fatture: Fatture → «Azzera lo scadenzario».</p>
+      <button class="btn pericolo" data-azione="apriRiparti">Ripartire da zero…</button></details></div>`;
+  }
+  const d = datiRiparti(arch);
+  const conta = (g) => d.impostazioni.filter((i) => GRUPPI_IMPOSTAZIONI[g].vale(i.chiave)).length;
+  const n = (k, uno, molti) => (k === 1 ? `1 ${uno}` : `${k} ${molti}`);
+  const voci = [
+    ["movimenti", `Movimenti di tutti gli anni, anche i saldi di apertura (${n(d.movimenti.length, "movimento", "movimenti")})`],
+    ["fatture", `Fatture dello scadenzario (${n(d.fatture.length, "fattura", "fatture")})`],
+    ["unio", `Importazioni segnate per UNIO e segni «Rendiconto inviato» (${conta("unio")})`],
+    ["previsioni", `Bilanci di previsione (${conta("previsioni")})`],
+    ["ricordati", `Fornitori e nomi ricordati: voci proposte, PDF, estratti conto (${conta("ricordati")}). Se li tiene, Divisio continuerà a proporre le scelte già fatte.`],
+  ];
+  const niente = !voci.some(([k]) => riparti[k]);
+  return `<div class="card evidenza solo-schermo" id="riparti"><h3>Ripartire da zero</h3>
+    <p>Scelga cosa cancellare da Divisio:</p>
+    ${voci.map(([k, testo]) => `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="ripartiScelta" data-k="${k}" ${riparti[k] ? "checked" : ""}> ${esc(testo)}</label>`).join("")}
+    ${riparti.fatture && !riparti.movimenti ? `<div class="nota">Le uscite delle fatture già pagate restano in contabilità come movimenti normali.</div>` : ""}
+    ${riparti.movimenti && !riparti.fatture ? `<div class="nota">Le fatture restano; quelle pagate tornano «da pagare», perché la loro uscita viene cancellata.</div>` : ""}
+    <div class="avviso">Restano sempre: dati della parrocchia, cassa e banche, piano dei conti, impostazioni e collegamento per lavorare insieme.
+      Se Divisio è condiviso, quello che cancella sparisce anche dagli altri computer.</div>
+    <p>Prima di cancellare, Divisio scarica una <b>copia di sicurezza</b> (cartella Download): con quella, o subito con «↶ Annulla», si torna indietro.</p>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="ripartiCapito" ${riparti.capito ? "checked" : ""}> Ho capito: questi dati verranno cancellati da Divisio</label>
+    <div class="riga-bottoni"><button class="btn pericolo" data-azione="confermaRiparti" ${riparti.capito && !niente ? "" : "disabled"}>Cancella e riparti da zero</button>
+      <button class="btn sec" data-azione="chiudiRiparti">Annulla</button></div>
   </div>`;
 }
 
@@ -266,6 +307,8 @@ export function vista(ctx) {
       </div>`).join("")}</details>`).join("")}
   </div>
 
+  ${cardRiparti(arch)}
+
   <div class="card"><h3>Informazioni</h3>
     <p><a href="guida.html" target="_blank" rel="noopener">Apri la guida di Divisio</a> (si può stampare o salvare in PDF).</p>
     <p class="hint">Divisio versione ${VERSIONE}. Per leggere i PDF usa il lettore di Mozilla (pdf.js), che lavora su questo computer.</p>
@@ -289,6 +332,8 @@ export const input = {
 };
 
 export const cambia = {
+  ripartiScelta(el, ev, ctx) { riparti[el.dataset.k] = el.checked; ctx.aggiorna(); },
+  ripartiCapito(el, ev, ctx) { riparti.capito = el.checked; ctx.aggiorna(); },
   unioneTieni(el, ev, ctx) { unione.tieni = el.value; ctx.aggiorna(); },
   unioneUnisci(el, ev, ctx) { unione.unisci = el.value; ctx.aggiorna(); },
   unioneNome(el) { unione.nome = el.value; },
@@ -395,6 +440,20 @@ export const azioni = {
     if (!confirm(`Togliere "${nome}" dall'elenco?\n\nNon comparirà più tra le scelte, ma i movimenti già registrati restano. Si può rimettere in uso quando si vuole.`)) return;
     await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: false });
     toast(`${nome} tolta dall'elenco`);
+    ctx.aggiorna();
+  },
+  apriRiparti(el, ev, ctx) { riparti = nuoveScelte(); ctx.aggiorna(); document.getElementById("riparti")?.scrollIntoView({ block: "start" }); },
+  chiudiRiparti(el, ev, ctx) { riparti = null; ctx.aggiorna(); },
+  async confermaRiparti(el, ev, ctx) {
+    if (!riparti?.capito) return;
+    const r = ripartiDaZero(datiRiparti(ctx.arch), riparti, tornaDaPagare);
+    el.disabled = true;
+    salvaCopia(ctx, "prima-di-ripartire-da-zero");
+    await ctx.arch.salvaInsieme({ fatture: r.fatture, movimenti: r.movimenti, movimentiDaEliminare: r.movimentiDaEliminare, impostazioni: r.impostazioni,
+      etichetta: "Ripartire da zero" });
+    riparti = null;
+    preparaApertura(ctx);
+    toast(`Fatto: Divisio riparte da zero ✓ (${r.conta.movimenti} movimenti, ${r.conta.fatture} fatture cancellati). Copia di sicurezza nella cartella Download`);
     ctx.aggiorna();
   },
   async unisciBanche(el, ev, ctx) {

@@ -7,6 +7,8 @@ import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
 import { ricordoPer, ricordoAggiornato, diversoServizio, etichettaServizio } from "../dominio/servizi.js";
 import { trovaForseDoppione } from "../dominio/doppioni.js";
+import { azzeraScadenzario } from "../dominio/azzera.js";
+import { salvaCopia } from "./impostazioni.js";
 import { verificaMovimento } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
 import { isCassaBanca, casseInOrdine, tipoDi } from "../dominio/piano.js";
@@ -17,6 +19,7 @@ let carico = null;   // { voci:[…], inLettura } — fatture lette e non ancora
 let pag = null;      // pagamento in compilazione
 let coda = [];       // fatture appena aggiunte con la scritta "PAGATA" sul PDF: si propone di segnarle pagate, una dopo l'altra
 let filtro = locale.leggi("fatture-filtro", "dapagare");
+let azzera = null;   // riquadro "Azzera lo scadenzario" aperto: { ancheUscite, capito }
 
 /* ---------- impostazioni che servono qui ---------- */
 // Divisione delle fatture parrocchia / 50% / teatro o altra gestione: SPENTA per tutti finché non la si accende nelle Impostazioni.
@@ -170,7 +173,8 @@ export function vista(ctx) {
       Se una è finita qui per sbaglio, apra «Dettagli» e scelga «Della parrocchia» o «Al 50%».</p>` : ""}
     ${tabellaScadenze(mostrate, ctx)}
   </div>
-  ${vistaFornitori(arch)}`;
+  ${vistaFornitori(arch)}
+  ${vistaAzzera(ctx)}`;
 }
 
 function vistaProblemi(pr) {
@@ -417,6 +421,28 @@ function vistaFornitori(arch) {
   </details></div>`;
 }
 
+/** "Azzera lo scadenzario": tutte le fatture spariscono; le uscite di quelle pagate si tolgono o restano, a scelta. */
+function vistaAzzera(ctx) {
+  const tutte = ctx.arch.fatture();
+  if (!azzera) {
+    return `<div class="card solo-schermo"><details data-chiave="azzera-scadenzario"><summary>Azzera lo scadenzario</summary>
+      <p>Toglie da Divisio <b>tutte le fatture</b> dello scadenzario (${tutte.length}), per ricaricarle da capo. Movimenti, conti e impostazioni restano.</p>
+      <button class="btn pericolo" data-azione="apriAzzera" ${tutte.length ? "" : "disabled"}>Azzera lo scadenzario…</button></details></div>`;
+  }
+  const s = azzeraScadenzario({ movimenti: ctx.arch.movimenti(), fatture: tutte }, { ancheUscite: azzera.ancheUscite });
+  const fatture = (n) => (n === 1 ? "1 fattura" : `${n} fatture`);
+  return `<div class="card evidenza solo-schermo" id="azzera-scadenzario"><h3>Azzera lo scadenzario</h3>
+    <div class="avviso">Verranno tolte <b>${fatture(s.conta.fatture)}</b>${s.conta.pagate ? `, di cui ${s.conta.pagate === 1 ? "1 pagata" : `${s.conta.pagate} pagate`}` : ""}. Se Divisio è condiviso, spariranno anche dagli altri computer.</div>
+    ${s.conta.uscite ? `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="azzeraUscite" ${azzera.ancheUscite ? "checked" : ""}>
+        Togli dalla contabilità anche le uscite delle fatture pagate (${s.conta.uscite === 1 ? "1 movimento" : `${s.conta.uscite} movimenti`})</label>
+      <p class="hint">${azzera.ancheUscite ? "Le uscite spariranno anche dai Movimenti." : "Le uscite resteranno nei Movimenti come movimenti normali, senza il collegamento alla fattura."}</p>` : ""}
+    <p>Prima di azzerare, Divisio scarica una <b>copia di sicurezza</b> (cartella Download). Si può anche annullare subito con «↶ Annulla».</p>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="azzeraCapito" ${azzera.capito ? "checked" : ""}> Ho capito: le fatture verranno tolte da Divisio</label>
+    <div class="riga-bottoni"><button class="btn pericolo" data-azione="confermaAzzera" ${azzera.capito ? "" : "disabled"}>Azzera lo scadenzario</button>
+      <button class="btn sec" data-azione="chiudiAzzera">Annulla</button></div>
+  </div>`;
+}
+
 const sceltaRicordata = (x, arch, t) => `${x.voce ? `${esc(arch.nomeConto(x.voce))} <span class="codice">${x.voce}</span>` : t.attivo && gestioneValida(x.quotaTeatro) ? esc(nomeGestione(x.quotaTeatro)) : "—"}${t.attivo ? pillaGestione(x.quotaTeatro) : ""}`;
 
 /* ---------- trascinamento dei file ---------- */
@@ -460,9 +486,23 @@ export const cambia = {
   pagModalita(el, ev, ctx) { pag.modalita = el.value; if (modalitaInContanti(el.value) && ctx.arch.conti.has("A02-01-01")) pag.cassa = "A02-01-01"; ctx.aggiorna(); },
   pagVoce(el, ev, ctx) { pag.voce = el.value; ctx.aggiorna(); },
   pagRicorda(el) { pag.ricorda = el.checked; },
+  azzeraUscite(el, ev, ctx) { azzera.ancheUscite = el.checked; ctx.aggiorna(); },
+  azzeraCapito(el, ev, ctx) { azzera.capito = el.checked; ctx.aggiorna(); },
 };
 
 export const azioni = {
+  apriAzzera(el, ev, ctx) { azzera = { ancheUscite: true, capito: false }; ctx.aggiorna(); document.getElementById("azzera-scadenzario")?.scrollIntoView({ block: "start" }); },
+  chiudiAzzera(el, ev, ctx) { azzera = null; ctx.aggiorna(); },
+  async confermaAzzera(el, ev, ctx) {
+    if (!azzera?.capito) return;
+    const s = azzeraScadenzario({ movimenti: ctx.arch.movimenti(), fatture: ctx.arch.fatture() }, { ancheUscite: azzera.ancheUscite });
+    el.disabled = true;
+    salvaCopia(ctx, "prima-di-azzerare-lo-scadenzario");
+    await ctx.arch.salvaInsieme({ fatture: s.fatture, movimenti: s.movimenti, movimentiDaEliminare: s.movimentiDaEliminare, etichetta: "Azzeramento dello scadenzario" });
+    azzera = null; pag = null; coda = [];
+    toast(`Scadenzario azzerato (${s.conta.fatture === 1 ? "1 fattura" : `${s.conta.fatture} fatture`}) ✓ Copia di sicurezza nella cartella Download`);
+    ctx.aggiorna();
+  },
   filtro(el, ev, ctx) { filtro = el.dataset.v; locale.scrivi("fatture-filtro", filtro); ctx.aggiorna(); },
   nonDoppione(el, ev, ctx) { voce(el).diversa = true; ctx.aggiorna(); },
   forseDoppione(el, ev, ctx) { voce(el).diversa = false; ctx.aggiorna(); },

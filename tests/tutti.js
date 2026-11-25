@@ -15,4 +15,5 @@ import "./scadenzario.test.js";
 import "./banca.test.js";
 import "./doppioni.test.js";
 import "./unisciBanche.test.js";
+import "./azzera.test.js";
 export { esegui } from "./mini.js";

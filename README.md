@@ -7,6 +7,12 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.13.2 – Azzerare lo scadenzario; ripartire da zero**
+- Fatture → in fondo **Azzera lo scadenzario**: toglie tutte le fatture; con la spunta (predefinita) anche le uscite delle fatture pagate, altrimenti le uscite restano senza collegamento.
+- Impostazioni → in fondo **Ripartire da zero**: a scelta movimenti di tutti gli anni, fatture, importazioni segnate per UNIO e segni «Rendiconto inviato»,
+  bilanci di previsione, fornitori e nomi ricordati (questi ultimi non spuntati all'inizio). Restano parrocchia, cassa e banche, piano dei conti, impostazioni, condivisione.
+- Logica in `js/dominio/azzera.js`; entrambe le operazioni scaricano prima una copia di sicurezza e si possono annullare con ↶ Annulla.
+
 **0.13.1 – Stessa banca con due codici (UNIO e Divisio)**
 - Causa del problema: Divisio dà alle banche aggiunte il primo numero libero (es. A02-01-04), mentre in UNIO la stessa banca ha il suo codice (es. A02-01-02).
   I movimenti caricati da UNIO restavano sul codice di UNIO (spesso «non in uso» in Divisio) e non si vedevano scegliendo la banca in Movimenti.
