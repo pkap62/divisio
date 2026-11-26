@@ -191,7 +191,7 @@ export const azioni = {
     const datiBanche = (arch) => ({ conti: arch.conti, movimenti: arch.movimenti(), fatture: arch.fatture(), impostazioni: [...arch.impostazioniCon("banca:"), ...arch.impostazioniCon("formato-banca:")] });
     const salvaBanche = (u) => ctx.arch.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni });
     const n = await ctx.arch.insieme(`Caricamento di ${n_(movimenti.length, "movimento", "movimenti")} da UNIO`, async () => {
-      // 1. le banche di Divisio che hanno il numero che in UNIO è di un'altra banca passano a un numero libero
+      // 1. le banche di Divisio che hanno il numero che in UNIO è di un'altra banca passano al numero dopo l'ultima banca
       for (const b of daSpostare) {
         if (ctx.arch.conti.has(b.divisio) && !ctx.arch.conti.has(b.verso)) await salvaBanche(spostaBanca(datiBanche(ctx.arch), b.divisio, b.verso));
       }

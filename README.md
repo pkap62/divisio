@@ -7,6 +7,13 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.14.3 – Banche nell'ordine in cui si scelgono; togliere il doppione di una banca**
+- Come in UNIO, una banca scelta in «Cassa e banche» prende il numero dopo l'ultima (`prossimoCodiceCassa`), non il primo libero;
+  casse e banche si mostrano ovunque in ordine di numero (`casseInOrdine`). Il vecchio campo `ordine` non conta più (e si toglie quando due banche si uniscono).
+- «Togli» su una banca con movimenti: riquadro «È la stessa banca di…?» (proposta quella con lo stesso nome, `stessaBanca`). Se sì,
+  `unisciBanche` sposta movimenti, rate pagate e memorie degli estratti conto sull'altro numero e il doppione sparisce (annullabile);
+  se no, la banca esce solo dall'elenco come prima.
+
 **0.14.2 – Piano dei conti: A02-01 come «Cassa e banche»**
 - Impostazioni → Piano dei conti: la voce A02-01 mostra le stesse righe di «Cassa e banche», nello stesso ordine (`casseInOrdine`), prima quelle in uso e poi quelle non più in uso.
   Solo da vedere: niente «+ Sottoconto», nomi o «in uso» da cambiare lì; il pulsante «Cambia in «Cassa e banche»» porta alla scheda di sopra.

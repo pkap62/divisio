@@ -33,7 +33,7 @@ test("banche: unire due codici della stessa banca", () => {
   const impostazioni = [{ chiave: "banca:rossi", valore: { scelte: [{ tipo: "spostamento", altra: DIVISIO }] } }, { chiave: "formato-banca:x", valore: { cassa: DIVISIO } }];
   const u = unisciBanche({ conti, movimenti, fatture, impostazioni }, DIVISIO, UNIO, "Banco Esempio");
 
-  uguale(u.conti[0], { codice: UNIO, nome: "Banco Esempio", attivo: true, ordine: 105 });
+  uguale(u.conti[0], { codice: UNIO, nome: "Banco Esempio", attivo: true });
   uguale([u.conti[1].codice, u.conti[1].eliminato, u.conti[1].attivo], [DIVISIO, true, false]);
   uguale(u.movimenti.map((m) => m.id), ["da-estratto", "apertura-2026"]);
   const estratto = u.movimenti[0];

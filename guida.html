@@ -163,9 +163,12 @@ i dati di quel computer spariscono. Per questo servono le <a href="#copie">copie
   <li><b>Cassa e banche</b>: la <b>cassa</b> c'è sempre. Aggiunga una riga per ogni banca di appoggio, anche più di una:
     la sceglie dall'elenco (le banche più diffuse in provincia di Firenze: Intesa Sanpaolo, UniCredit, Monte dei Paschi, Banco BPM, ChiantiBanca,
     Banca Cambiano 1884, BancoPosta…) oppure ne scrive il nome. Anche <b>PayPal</b> è tra le scelte, se la parrocchia lo usa.
-    Solo la cassa è fissa: nessuna banca ha un numero già dato. Il numero (A02-01-02, A02-01-03…) Divisio lo dà quando la banca viene aggiunta.
-    Per togliere una banca: <span class="bottone">Togli</span>. Se nessun movimento la usa sparisce e il suo numero torna libero;
-    se ha movimenti esce dall'elenco delle scelte, ma i movimenti già registrati restano.<br>
+    Solo la cassa è fissa: nessuna banca ha un numero già dato. Come in UNIO, il numero segue l'ordine in cui le banche vengono scelte:
+    la prima prende A02-01-02, la seconda A02-01-03 e così via. In tutte le pagine di Divisio casse e banche compaiono in quest'ordine.<br>
+    Per togliere una banca: <span class="bottone">Togli</span>. Se nessun movimento la usa sparisce da tutto Divisio.
+    Se ha movimenti, Divisio chiede se è <b>la stessa banca</b> di un'altra riga dell'elenco (per esempio «Banco BPM» A02-01-04 e «Banca BPM» A02-01-02):
+    se sì, con <span class="bottone">Sposta i movimenti…</span> i movimenti passano all'altro numero e il doppione sparisce;
+    se è un'altra banca, esce dall'elenco delle scelte e i movimenti già registrati restano.<br>
     <b>Il numero che conta è quello di UNIO.</b> In UNIO ogni banca ha già il suo numero. Se in Divisio la stessa banca ne ha preso un altro,
     Divisio si adegua da solo: quando si caricano i movimenti da UNIO propone di usare il numero di UNIO (vedi «Carica da UNIO»).
     Se la stessa banca ha già due numeri in Divisio, Divisio li unisce da solo all'apertura sul numero di UNIO e lo dice con un messaggio
@@ -269,7 +272,7 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
     Se è davvero un movimento diverso, la spunti prima di <span class="bottone">Carica</span>.</li>
   <li><b>Numeri delle banche:</b> vale il numero di UNIO. Se una banca di UNIO in Divisio ha un altro numero, l'anteprima propone
     (già spuntato quando i nomi coincidono) di unirle sul numero di UNIO subito dopo il caricamento. Se in Divisio il numero di UNIO è di un'altra banca
-    (per esempio PayPal ha preso A02-01-02, che in UNIO è la banca), l'anteprima propone di spostare prima quella banca a un numero libero,
+    (per esempio PayPal ha preso A02-01-02, che in UNIO è la banca), l'anteprima propone di spostare prima quella banca al numero dopo l'ultima banca,
     con tutti i suoi movimenti.</li>
   <li><b>Ricominciare da capo:</b> Movimenti → in fondo <b>"Azzera i movimenti del …"</b> cancella tutti i movimenti dell'anno scelto in alto
     (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.
@@ -538,7 +541,7 @@ e si può annullare subito con <span class="bottone">↶ Annulla</span>. In UNIO
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 26 novembre 2026 (versione 0.14.2) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 26 novembre 2026 (versione 0.14.3) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

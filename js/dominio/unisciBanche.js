@@ -1,10 +1,10 @@
-// Numeri delle banche: Divisio dà a ogni banca aggiunta il primo numero libero (A02-01-02, 03…), ma è un numero provvisorio.
+// Numeri delle banche: Divisio dà a ogni banca aggiunta il numero dopo l'ultima (A02-01-02, 03…), come UNIO, ma è un numero provvisorio.
 // Quello che conta è il numero che la stessa banca ha in UNIO: quando arrivano i movimenti di UNIO, Divisio si adegua da solo.
 // - la banca ha in UNIO un altro numero → si uniscono sul numero di UNIO (unisciBanche);
-// - il numero di UNIO in Divisio è di un'altra banca (es. PayPal) → quella passa a un numero libero (spostaBanca), poi si carica.
+// - il numero di UNIO in Divisio è di un'altra banca (es. PayPal) → quella passa al numero dopo l'ultima banca (spostaBanca), poi si carica.
 // Si tiene sempre il codice di UNIO (così i file per UNIO usano il conto giusto) e il nome scelto in Divisio.
 
-import { isCassaBanca, nuovoCodiceSottoconto } from "./piano.js";
+import { isCassaBanca, prossimoCodiceCassa } from "./piano.js";
 
 const norm = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 // parole che non distinguono una banca dall'altra
@@ -75,9 +75,9 @@ export function unisciBanche(dati, da, verso, nome) {
     if (JSON.stringify(valore) !== JSON.stringify(i.valore)) impostazioni.push({ chiave: i.chiave, valore });
   }
   const base = cVerso && !cVerso.eliminato ? cVerso : { ...cDa, codice: verso };
-  const tenuto = { ...base, nome: String(nome || base.nome).trim(), attivo: true, ordine: Math.min(base.ordine ?? Infinity, cDa.ordine ?? Infinity) };
-  if (!Number.isFinite(tenuto.ordine)) delete tenuto.ordine;
+  const tenuto = { ...base, nome: String(nome || base.nome).trim(), attivo: true };
   delete tenuto.eliminato;
+  delete tenuto.ordine;   // campo delle versioni precedenti: ora l'ordine è quello dei numeri
   const conti = [tenuto, { ...cDa, attivo: false, eliminato: true }];
   return { conti, movimenti, movimentiDaEliminare, fatture, impostazioni,
     conta: { movimenti: movimenti.length, eliminati: movimentiDaEliminare.length, fatture: fatture.length, impostazioni: impostazioni.length } };
@@ -91,7 +91,7 @@ export const spostaBanca = (dati, da, verso) => unisciBanche(dati, da, verso, da
  * nomiUNIO: Map codice → nome nel file di UNIO; contiDivisio: Map codice → conto; codiciUNIO: codici usati nel file.
  * Restituisce un elenco di:
  * - { tipo: "sposta", unio, nomeUNIO, divisio, nomeDivisio, verso, proposta: true }: in Divisio il numero di UNIO è di un'altra banca,
- *   che passa al numero libero «verso» prima di caricare;
+ *   che passa al numero «verso», dopo l'ultima banca prima di caricare;
  * - { tipo: "unisci", unio, nomeUNIO, divisio, nomeDivisio, proposta }: la stessa banca ha in Divisio un altro numero;
  *   dopo il caricamento si unisce sul numero di UNIO. proposta = true se i nomi dicono la stessa banca
  *   (altrimenti si mostrano le possibilità, senza spunta).
@@ -108,7 +108,7 @@ export function banchePerUNIO(nomiUNIO, contiDivisio, codiciUNIO) {
     // lo stesso numero, ma in Divisio è un'altra banca in uso (i due nomi dicono banche diverse)
     const altraBanca = qui && qui.attivo !== false && distintivo(qui.nome) && distintivo(nomeUNIO) && !stessaBanca(qui.nome, nomeUNIO);
     if (altraBanca) {
-      const verso = nuovoCodiceSottoconto("A02-01", occupati);
+      const verso = prossimoCodiceCassa(occupati);
       if (!verso) continue;
       occupati.add(verso);
       coppie.push({ tipo: "sposta", unio: codice, nomeUNIO, divisio: codice, nomeDivisio: qui.nome, verso, proposta: true });

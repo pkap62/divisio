@@ -146,7 +146,7 @@ function collega() {
 /**
  * All'apertura Divisio mette a posto i numeri delle banche (vedi dominio/unisciBanche.js):
  * la stessa banca con due numeri (uno dai movimenti di UNIO, uno aggiunto in Divisio) si unisce sul numero di UNIO,
- * e le banche non in uso che nessuno usa spariscono, lasciando libero il loro numero. Si può annullare con «↶ Annulla».
+ * e le banche non in uso che nessuno usa spariscono. Si può annullare con «↶ Annulla».
  */
 async function sistemaBanche(arch) {
   const unite = [];

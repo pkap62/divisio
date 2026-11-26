@@ -3,14 +3,14 @@
 import { creaBackup, leggiBackup, datiPerRipristino } from "../dominio/backup.js";
 import { scritturaApertura, CONTO_PATRIMONIO } from "../dominio/scritture.js";
 import { parseEuro, formatDecimale } from "../dominio/importi.js";
-import { GRUPPI, isCassaBanca, casseInOrdine, prossimoOrdineCassa, crescInDare, tipoDi, nuovoCodiceSottoconto, voce, gruppo, contiUsati } from "../dominio/piano.js";
+import { GRUPPI, isCassaBanca, casseInOrdine, prossimoCodiceCassa, crescInDare, tipoDi, nuovoCodiceSottoconto, voce, gruppo, contiUsati } from "../dominio/piano.js";
 import { causaliPer, libera } from "../dominio/causali.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisioneImpostata } from "./condivisione.js";
 import { teatro } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
-import { stessaBanca } from "../dominio/unisciBanche.js";
+import { stessaBanca, unisciBanche } from "../dominio/unisciBanche.js";
 import { ripartiDaZero, GRUPPI_IMPOSTAZIONI } from "../dominio/azzera.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 
@@ -20,9 +20,10 @@ const ICONA_CESTINO = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidd
 
 /* ---------- cassa e banche ---------- */
 // La cassa è sempre presente e non si toglie; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
-// Nessun numero è fissato prima: la banca prende un numero solo quando si aggiunge (il primo libero, oppure quello che
-// la stessa banca ha già nei movimenti caricati da UNIO). Una banca mai usata, tolta, sparisce e lascia libero il suo numero.
-// Negli elenchi compaiono nell'ordine in cui sono state aggiunte (vedi casseInOrdine).
+// Nessun numero è fissato prima: come in UNIO, la banca prende un numero quando si sceglie, quello dopo l'ultima
+// (oppure quello che la stessa banca ha già nei movimenti caricati da UNIO). Una banca mai usata, tolta, sparisce.
+// Negli elenchi compaiono sempre in ordine di numero, cioè nell'ordine in cui sono state scelte (vedi casseInOrdine).
+// «Togli» su una banca con movimenti: se è la stessa banca entrata due volte, i movimenti passano all'altro numero e questo sparisce.
 const CASSA = "A02-01-01";
 const VOCE_CASSE = "A02-01";
 // Banche proposte (prima quelle con più sportelli in provincia di Firenze); si può sempre scrivere un altro nome.
@@ -43,12 +44,13 @@ function cardBanche(arch) {
   <div class="card" id="cassa-banche"><h3>Cassa e banche</h3>
     <p class="hint">Dove stanno i soldi della parrocchia. La <b>cassa</b> c'è sempre; poi aggiunga una riga per ogni banca o conto di appoggio
       (anche <b>PayPal</b>, se lo usa). Compariranno nelle registrazioni, nei saldi di apertura e nella pagina Per UNIO.</p>
-    <p class="hint">Il numero (es. A02-01-02) Divisio lo dà solo quando la banca viene aggiunta. Se in UNIO la stessa banca ha un altro numero,
-      quando carica i movimenti da UNIO Divisio prende quello di UNIO.</p>
+    <p class="hint">Come in UNIO, il numero segue l'ordine in cui le banche vengono scelte: la prima A02-01-02, poi A02-01-03 e così via.
+      Se in UNIO la stessa banca ha un altro numero, quando carica i movimenti da UNIO Divisio prende quello di UNIO.</p>
     <div class="sottoconto"><span class="codice">${CASSA}</span><b class="spazio">${esc(arch.nomeConto(CASSA))}</b><span class="hint">sempre presente</span></div>
     ${inUso.map((c) => `<div class="sottoconto"><span class="codice">${c.codice}</span>
       <input type="text" value="${esc(c.nome)}" data-cambia="rinomina" data-codice="${c.codice}" aria-label="Nome della banca ${c.codice}">
-      <button class="btn sec piccolo" data-azione="bancaTogli" data-codice="${c.codice}">Togli</button></div>`).join("")}
+      <button class="btn sec piccolo" data-azione="bancaTogli" data-codice="${c.codice}">Togli</button></div>
+      ${togli?.codice === c.codice ? riquadroTogli(arch, c, inUso) : ""}`).join("")}
     ${inUso.length ? "" : `<p class="hint">Nessuna banca: per ora si usa solo la cassa.</p>`}
     <div class="riga" style="margin-top:12px">
       <input type="text" id="banca-nuova" list="banche-proposte" placeholder="Scelga dall'elenco o scriva il nome della banca" style="max-width:360px" aria-label="Nuova banca">
@@ -57,6 +59,35 @@ function cardBanche(arch) {
     </div>
     ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
       `${esc(c.nome)} <span class="codice">${c.codice}</span> <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
+  </div>`;
+}
+
+// «Togli» su una banca che ha movimenti: { codice, verso } (verso = la stessa banca con l'altro numero, "" se è un'altra banca).
+let togli = null;
+const usoBanca = (arch, codice) => ({
+  movimenti: arch.movimenti().filter((m) => !m.eliminato && m.righe.some((r) => r.conto === codice)).length,
+  fatture: arch.fatture().filter((f) => !f.eliminato && f.rate.some((r) => r.cassa === codice)).length,
+});
+
+function riquadroTogli(arch, c, inUso) {
+  const u = usoBanca(arch, c.codice);
+  const altre = inUso.filter((b) => b.codice !== c.codice);
+  const uso = [u.movimenti ? `${u.movimenti} ${u.movimenti === 1 ? "movimento" : "movimenti"}` : "", u.fatture ? `${u.fatture} ${u.fatture === 1 ? "fattura pagata" : "fatture pagate"}` : ""].filter(Boolean).join(" e ");
+  const verso = altre.find((b) => b.codice === togli.verso);
+  return `<div class="card evidenza" style="margin:8px 0 12px 8px">
+    <p>«${esc(c.nome)}» (${c.codice}) ha ${uso}.</p>
+    ${altre.length ? `<label class="campo" for="togli-verso">È la stessa banca di un'altra riga dell'elenco?</label>
+      <select id="togli-verso" data-cambia="togliVerso" style="max-width:360px">
+        <option value="">No, è un'altra banca</option>
+        ${altre.map((b) => `<option value="${b.codice}" ${b.codice === togli.verso ? "selected" : ""}>Sì, è «${esc(b.nome)}» (${b.codice})</option>`).join("")}
+      </select>` : ""}
+    ${verso ? `<p class="hint">I movimenti passano a «${esc(verso.nome)}» (${verso.codice}) e il numero ${c.codice} sparisce da tutto Divisio.
+        Gli spostamenti fra le due diventano inutili e si cancellano. Si può annullare con «↶ Annulla».</p>`
+      : `<p class="hint">Non comparirà più tra le scelte, ma i movimenti già registrati restano su ${c.codice}. Si può rimettere in uso quando si vuole.</p>`}
+    <div class="riga-bottoni">${verso
+      ? `<button class="btn" data-azione="togliUnisci">Sposta i movimenti su ${verso.codice} e togli ${c.codice}</button>`
+      : `<button class="btn" data-azione="togliSpegni">Togli dall'elenco</button>`}
+      <button class="btn sec" data-azione="togliChiudi">Annulla</button></div>
   </div>`;
 }
 
@@ -303,6 +334,7 @@ export const input = {
 };
 
 export const cambia = {
+  togliVerso(el, ev, ctx) { if (togli) togli.verso = el.value; ctx.aggiorna(); },
   ripartiScelta(el, ev, ctx) { riparti[el.dataset.k] = el.checked; ctx.aggiorna(); },
   ripartiCapito(el, ev, ctx) { riparti.capito = el.checked; ctx.aggiorna(); },
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
@@ -335,8 +367,7 @@ export const cambia = {
     toast("Nome cambiato ✓");
   },
   async attivo(el, ev, ctx) {
-    const ordine = el.checked && isCassaBanca(el.dataset.codice) ? { ordine: prossimoOrdineCassa(ctx.arch.conti.values()) } : {};
-    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: el.checked, ...ordine });
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: el.checked });
     el.closest(".sottoconto").classList.toggle("spento", !el.checked);
   },
   async ripristina(el, ev, ctx) {
@@ -405,11 +436,11 @@ export const azioni = {
     const esistente = banche.find((c) => c.attivo === false && stessoNome(c.nome, nome))
       ?? banche.filter((c) => c.attivo === false && stessaBanca(c.nome, nome)).at(0);
     if (esistente) {
-      await ctx.arch.salvaConto({ codice: esistente.codice, nome, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
+      await ctx.arch.salvaConto({ codice: esistente.codice, nome, attivo: true });
     } else {
-      const codice = nuovoCodiceSottoconto(VOCE_CASSE, ctx.arch.conti.keys());
+      const codice = prossimoCodiceCassa(ctx.arch.conti.keys());
       if (!codice) { toast("Non si possono aggiungere altre banche"); return; }
-      await ctx.arch.salvaConto({ codice, nome, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
+      await ctx.arch.salvaConto({ codice, nome, attivo: true });
     }
     toast(`${nome} aggiunta ✓`);
     ctx.aggiorna();
@@ -417,17 +448,42 @@ export const azioni = {
   async bancaTogli(el, ev, ctx) {
     const codice = el.dataset.codice, nome = ctx.arch.nomeConto(codice);
     if (codice === CASSA) return;
-    const usata = contiUsati(ctx.arch.movimenti()).has(codice) || ctx.arch.fatture().some((f) => f.rate.some((r) => r.cassa === codice));
-    if (!usata) {
-      if (!confirm(`Togliere "${nome}"?\n\nNessun movimento la usa: sparisce dall'elenco e il suo numero (${codice}) torna libero per un'altra banca.`)) return;
+    const u = usoBanca(ctx.arch, codice);
+    if (!u.movimenti && !u.fatture) {
+      if (!confirm(`Togliere "${nome}"?\n\nNessun movimento la usa: sparisce da tutto Divisio.`)) return;
+      togli = null;
       await ctx.arch.eliminaConto(codice);
       toast(`${nome} tolta ✓`);
       ctx.aggiorna();
       return;
     }
-    if (!confirm(`Togliere "${nome}" dall'elenco?\n\nNon comparirà più tra le scelte, ma i movimenti già registrati restano. Si può rimettere in uso quando si vuole.`)) return;
+    // ha movimenti: si chiede se è la stessa banca di un'altra riga (proposta quella con lo stesso nome)
+    const altra = [...ctx.arch.conti.values()].find((c) => isCassaBanca(c.codice) && c.codice !== codice && c.codice !== CASSA
+      && c.attivo !== false && stessaBanca(c.nome, nome));
+    togli = { codice, verso: altra?.codice ?? "" };
+    ctx.aggiorna();
+  },
+  togliChiudi(el, ev, ctx) { togli = null; ctx.aggiorna(); },
+  async togliSpegni(el, ev, ctx) {
+    if (!togli) return;
+    const { codice } = togli, nome = ctx.arch.nomeConto(codice);
+    togli = null;
     await ctx.arch.salvaConto({ codice, attivo: false });
     toast(`${nome} tolta dall'elenco`);
+    ctx.aggiorna();
+  },
+  async togliUnisci(el, ev, ctx) {
+    if (!togli?.verso) return;
+    const { codice, verso } = togli, a = ctx.arch, nomeDa = a.nomeConto(codice), nome = a.nomeConto(verso);
+    let u;
+    try { u = unisciBanche({ conti: a.conti, movimenti: a.movimenti(), fatture: a.fatture(), impostazioni: [...a.impostazioniCon("banca:"), ...a.impostazioniCon("formato-banca:")] }, codice, verso, nome); }
+    catch (e) { toast(e.message); return; }
+    el.disabled = true;
+    await a.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni,
+      etichetta: `«${nomeDa}» (${codice}) unita a «${nome}» (${verso})` });
+    togli = null;
+    preparaApertura(ctx);
+    toast(`«${nomeDa}» (${codice}) tolta: i suoi movimenti ora sono su «${nome}» (${verso}) ✓`);
     ctx.aggiorna();
   },
   apriRiparti(el, ev, ctx) { riparti = nuoveScelte(); ctx.aggiorna(); document.getElementById("riparti")?.scrollIntoView({ block: "start" }); },
@@ -445,7 +501,7 @@ export const azioni = {
     ctx.aggiorna();
   },
   async bancaRimetti(el, ev, ctx) {
-    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
+    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: true });
     toast(`${ctx.arch.nomeConto(el.dataset.codice)} di nuovo in uso ✓`);
     ctx.aggiorna();
   },
@@ -462,8 +518,7 @@ export const azioni = {
     if (!codice) { toast("Questa voce ha già 99 sottoconti"); return; }
     const nome = prompt(`Nome del nuovo sottoconto (${codice}):`);
     if (!nome?.trim()) return;
-    const ordine = isCassaBanca(codice) ? { ordine: prossimoOrdineCassa(ctx.arch.conti.values()) } : {};
-    await ctx.arch.salvaConto({ codice, nome: nome.trim(), attivo: true, ...ordine });
+    await ctx.arch.salvaConto({ codice, nome: nome.trim(), attivo: true });
     toast("Sottoconto aggiunto ✓");
     ctx.aggiorna();
   },

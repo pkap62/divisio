@@ -117,28 +117,26 @@ test("quadratura su 2000 movimenti casuali: Dare = Avere e stato patrimoniale in
   vero(r.quadra, `Attività ${r.attivita} ≠ Passività ${r.passivita} + Patrimonio ${r.patrimonio} + Avanzo ${r.avanzo}`);
 });
 
-test("cassa e banche nell'ordine in cui sono state aggiunte, PayPal non più al secondo posto", async () => {
-  const { casseInOrdine, prossimoOrdineCassa } = await import("../js/dominio/piano.js");
+test("cassa e banche: numero e ordine seguono la sequenza di scelta, come in UNIO", async () => {
+  const { casseInOrdine, prossimoCodiceCassa } = await import("../js/dominio/piano.js");
   const nomi = (cs) => casseInOrdine(cs).map((c) => c.nome);
-  const conti = [{ codice: "A02-01-03", nome: "PayPal" }, { codice: "A02-01-02", nome: "Banca" }, { codice: "A02-01-01", nome: "Cassa" }];
-  // Dati di prima: PayPal già in uso, senza "ordine" → dopo le banche.
-  conti.push({ codice: "A02-01-04", nome: "Intesa" });
-  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "PayPal"]);
-  // Una banca aggiunta dopo PayPal va in fondo.
-  conti.push({ codice: "A02-01-05", nome: "BancoPosta", ordine: prossimoOrdineCassa(conti) });
-  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "PayPal", "BancoPosta"]);
-  // PayPal rimesso in uso adesso: ultimo. La cassa resta sempre prima.
-  conti[0] = { ...conti[0], ordine: prossimoOrdineCassa(conti) };
-  uguale(nomi(conti), ["Cassa", "Banca", "Intesa", "BancoPosta", "PayPal"]);
+  // l'ordine è quello dei numeri, anche per i dati salvati con il vecchio campo "ordine"
+  const conti = [{ codice: "A02-01-04", nome: "UniCredit", ordine: 2 }, { codice: "A02-01-03", nome: "PayPal", ordine: 100 },
+    { codice: "A02-01-02", nome: "Banca BPM" }, { codice: "A02-01-01", nome: "Cassa" }];
+  uguale(nomi(conti), ["Cassa", "Banca BPM", "PayPal", "UniCredit"]);
+  // la banca scelta adesso prende il numero dopo l'ultima, anche se prima c'è un numero libero
+  uguale(prossimoCodiceCassa(["A02-01-01", "A02-01-02", "A02-01-04"]), "A02-01-05");
+  uguale(prossimoCodiceCassa(["A02-01-01"]), "A02-01-02");
+  uguale(prossimoCodiceCassa([]), "A02-01-02");
+  uguale(prossimoCodiceCassa(["A02-01-01", "U08-01-09"]), "A02-01-02");
   vero(!casseInOrdine([{ codice: "E01-02-01", nome: "x" }]).length, "solo casse e banche");
 });
-
 test("di partenza solo la cassa; le banche prendono i numeri man mano (02, 03…)", async () => {
-  const { nuovoCodiceSottoconto } = await import("../js/dominio/piano.js");
+  const { prossimoCodiceCassa } = await import("../js/dominio/piano.js");
   uguale(sottocontiIniziali().filter((c) => isCassaBanca(c.codice)).map((c) => c.nome), ["Cassa"]);
   const codici = sottocontiIniziali().map((c) => c.codice);
-  uguale(nuovoCodiceSottoconto("A02-01", codici), "A02-01-02");
-  uguale(nuovoCodiceSottoconto("A02-01", [...codici, "A02-01-02"]), "A02-01-03");
+  uguale(prossimoCodiceCassa(codici), "A02-01-02");
+  uguale(prossimoCodiceCassa([...codici, "A02-01-02"]), "A02-01-03");
 });
 
 test("vecchi 'Banca' e 'PayPal' predefiniti: tolti solo se mai toccati né usati", async () => {

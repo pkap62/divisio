@@ -139,20 +139,18 @@ export function tipoDi(codice) {
 /** Casse, banche e conti di pagamento: sottoconti di "A02-01 Cassa e conti correnti". */
 export const isCassaBanca = (codice) => codice.startsWith("A02-01-");
 
-// Di partenza c'è solo la cassa (A02-01-01): ogni banca aggiunta prende il primo numero libero (02, 03…).
-// Ordine negli elenchi: la cassa sempre per prima, poi nell'ordine in cui sono state aggiunte
-// (o rimesse in uso), indicato dal campo "ordine". Per i conti salvati prima che esistesse vale il numero
-// del codice; il vecchio PayPal già previsto (A02-01-03, scelto più tardi) va dopo le banche.
-const CASSA_PRINCIPALE = "A02-01-01";
-const vecchioPayPal = (c) => c.codice === "A02-01-03" && /paypal/i.test(c.nome ?? "");
-const chiaveCassa = (c) => (c.codice === CASSA_PRINCIPALE ? -1 : c.ordine ?? (vecchioPayPal(c) ? 100 : Number(c.codice.slice(7))));
-export const confrontaCasse = (a, b) => chiaveCassa(a) - chiaveCassa(b) || a.codice.localeCompare(b.codice);
+// Di partenza c'è solo la cassa (A02-01-01). Come in UNIO, ogni banca scelta prende il numero dopo l'ultima (02, 03, 04…):
+// così il numero dice l'ordine in cui sono state scelte, e negli elenchi casse e banche compaiono sempre in ordine di numero.
+export const confrontaCasse = (a, b) => a.codice.localeCompare(b.codice);
 
-/** Casse e banche fra i conti dati, nell'ordine in cui la parrocchia le ha aggiunte. */
+/** Casse e banche fra i conti dati, in ordine di numero (= ordine in cui la parrocchia le ha scelte). */
 export const casseInOrdine = (conti) => [...conti].filter((c) => isCassaBanca(c.codice)).sort(confrontaCasse);
 
-/** Valore di "ordine" per una banca aggiunta o rimessa in uso adesso: dopo tutte le altre. */
-export const prossimoOrdineCassa = (conti) => Math.max(0, ...casseInOrdine(conti).map(chiaveCassa)) + 1;
+/** Numero per una banca scelta adesso: quello dopo l'ultima cassa o banca che c'è (es. dopo A02-01-03 → A02-01-04). */
+export function prossimoCodiceCassa(codiciEsistenti) {
+  const n = Math.max(1, ...[...codiciEsistenti].filter(isCassaBanca).map((c) => Number(c.slice(7))).filter(Number.isFinite)) + 1;
+  return n <= 99 ? `A02-01-${String(n).padStart(2, "0")}` : null;
+}
 
 /** Attività e Uscite crescono in Dare; tutti gli altri in Avere. */
 export const crescInDare = (codice) => ["A", "U"].includes(tipoDi(codice));
