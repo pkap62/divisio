@@ -40,7 +40,7 @@ function cardBanche(arch) {
   const tolti = tutti.filter((c) => c.attivo === false);
   const proposte = BANCHE_PROPOSTE.filter((n) => !inUso.some((c) => stessoNome(c.nome, n)));
   return `
-  <div class="card"><h3>Cassa e banche</h3>
+  <div class="card" id="cassa-banche"><h3>Cassa e banche</h3>
     <p class="hint">Dove stanno i soldi della parrocchia. La <b>cassa</b> c'è sempre; poi aggiunga una riga per ogni banca o conto di appoggio
       (anche <b>PayPal</b>, se lo usa). Compariranno nelle registrazioni, nei saldi di apertura e nella pagina Per UNIO.</p>
     <p class="hint">Il numero (es. A02-01-02) Divisio lo dà solo quando la banca viene aggiunta. Se in UNIO la stessa banca ha un altro numero,
@@ -57,6 +57,19 @@ function cardBanche(arch) {
     </div>
     ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
       `${esc(c.nome)} <span class="codice">${c.codice}</span> <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
+  </div>`;
+}
+
+// Nel piano dei conti, "A02-01 Cassa e Conti Correnti" mostra esattamente quello che c'è in «Cassa e banche»:
+// stesso ordine, stessi nomi, prima quelle in uso e poi quelle non più in uso. Solo da vedere: si cambia di sopra.
+function vocePianoCasse(arch, v) {
+  const tutti = casseInOrdine(arch.conti.values());
+  const riga = (c, nota) => `<div class="sottoconto ${c.attivo === false ? "spento" : ""}"><span class="codice">${c.codice}</span>
+    <b class="spazio">${esc(c.nome)}</b><span class="hint">${nota}</span></div>`;
+  return `<div class="voce-piano"><div class="riga"><b class="spazio">${v.codice} ${esc(v.nome)}</b>
+      <button class="btn sec piccolo" data-azione="vaiCasseBanche">Cambia in «Cassa e banche»</button></div>
+    ${tutti.filter((c) => c.attivo !== false).map((c) => riga(c, c.codice === CASSA ? "sempre presente" : "")).join("")}
+    ${tutti.filter((c) => c.attivo === false).map((c) => riga(c, "non più in uso")).join("")}
   </div>`;
 }
 
@@ -251,9 +264,9 @@ export function vista(ctx) {
     <p class="hint">Gruppi e voci sono quelli della Diocesi e non si cambiano. I sottoconti si possono rinominare (es. "Offerte diverse" → "Offerte per il presepe"),
       aggiungere, mettere "fuori uso" (non compaiono più negli elenchi, ma i movimenti già registrati restano) oppure <b>eliminare</b>, se nessun movimento li usa.
       I sottoconti aggiunti valgono solo per questa parrocchia; con la cartella condivisa i collaboratori vedono lo stesso piano dei conti.
-      Cassa e banche si cambiano più sopra, in «Cassa e banche».</p>
+      Cassa e banche si cambiano più sopra, in «Cassa e banche»: qui si vedono nello stesso ordine.</p>
     ${GRUPPI.map((g) => `<details data-chiave="gruppo-${g.codice}"><summary>${g.codice} · ${esc(g.nome)}</summary>
-      ${g.voci.map((v) => `<div class="voce-piano"><div class="riga"><b class="spazio">${v.codice} ${esc(v.nome)}</b>
+      ${g.voci.map((v) => v.codice === VOCE_CASSE ? vocePianoCasse(arch, v) : `<div class="voce-piano"><div class="riga"><b class="spazio">${v.codice} ${esc(v.nome)}</b>
           <button class="btn sec piccolo" data-azione="aggiungiSottoconto" data-voce="${v.codice}">+ Sottoconto</button></div>
         ${[...arch.conti.values()].filter((c) => c.codice.startsWith(v.codice + "-")).sort((a, b) => a.codice.localeCompare(b.codice)).map((c) => `
           <div class="sottoconto ${c.attivo === false ? "spento" : ""}"><span class="codice">${c.codice}</span>
@@ -356,6 +369,13 @@ export function salvaCopia(ctx, suffisso = "") {
 export const azioni = {
   ...azioniCondivisione,
   vaiCaricaUNIO(el, ev, ctx) { apriCaricaUNIO(); ctx.vai("movimenti"); },
+  vaiCasseBanche() {
+    const card = document.getElementById("cassa-banche");
+    if (!card) return;
+    const barra = document.querySelector("nav")?.getBoundingClientRect().bottom ?? 0;   // la barra in alto resta ferma: il titolo va subito sotto
+    window.scrollTo({ top: window.scrollY + card.getBoundingClientRect().top - barra - 12 });
+    $("#banca-nuova")?.focus({ preventScroll: true });
+  },
   salvaCopia(el, ev, ctx) { salvaCopia(ctx); toast("Copia scaricata ✓ (cartella Download)"); ctx.aggiorna(); },
   apAggiungi(el, ev, ctx) { AP.altre.push({ conto: "", importo: "" }); ctx.aggiorna(); },
   apTogli(el, ev, ctx) { AP.altre.splice(Number(el.dataset.i), 1); ctx.aggiorna(); },

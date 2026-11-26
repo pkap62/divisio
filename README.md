@@ -7,6 +7,10 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.14.2 – Piano dei conti: A02-01 come «Cassa e banche»**
+- Impostazioni → Piano dei conti: la voce A02-01 mostra le stesse righe di «Cassa e banche», nello stesso ordine (`casseInOrdine`), prima quelle in uso e poi quelle non più in uso.
+  Solo da vedere: niente «+ Sottoconto», nomi o «in uso» da cambiare lì; il pulsante «Cambia in «Cassa e banche»» porta alla scheda di sopra.
+
 **0.14.1 – Caricare movimenti salvati**
 - Movimenti → **Carica movimenti salvati…** (`js/ui/movimentiSalvati.js`, `js/dominio/movimentiSalvati.js`): riconosce da solo il file.
   - Copia di sicurezza (.json): solo i movimenti, com'erano (scelta degli anni); sottoconti mancanti rimessi in uso; il collegamento a una fattura resta solo se quella rata è ancora pagata.
