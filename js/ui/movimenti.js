@@ -1,4 +1,4 @@
-// Pagina "Movimenti": elenco con ricerca e filtri, correzione, eliminazione, esportazione CSV.
+// Pagina "Movimenti": elenco con ricerca e filtri, correzione, eliminazione, esportazione CSV, caricamento da UNIO o da file salvati.
 
 import { movimentiAnno, saldiProgressivi } from "../dominio/saldi.js";
 import { entrateUsciteCSV } from "../dominio/csv.js";
@@ -9,6 +9,7 @@ import { tabellaMovimenti, dettagliAperti, ordinaMovimenti, COLONNE } from "./el
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 import { salvaCopia } from "./impostazioni.js";
 import { vistaCard as cardUNIO, riquadroAperto, azioni as azioniUNIO, cambia as cambiaUNIO } from "./importa.js";
+import { vistaCard as cardSalvati, riquadroSalvatiAperto, azioni as azioniSalvati, cambia as cambiaSalvati } from "./movimentiSalvati.js";
 
 const PERIODI = { T1: ["01-01", "03-31", "1° trimestre"], T2: ["04-01", "06-30", "2° trimestre"], T3: ["07-01", "09-30", "3° trimestre"], T4: ["10-01", "12-31", "4° trimestre"] };
 const filtro = { testo: "", cassa: "", periodo: "", tipo: "" };
@@ -50,12 +51,14 @@ export function vista(ctx) {
   return `
   <div class="riga"><h2 class="spazio">Movimenti ${ctx.anno}</h2>
     <button class="btn sec piccolo" data-azione="apriUNIO">Carica da UNIO…</button>
+    <button class="btn sec piccolo" data-azione="apriSalvati" title="Da una copia di sicurezza di Divisio o da un file scaricato con «Scarica in CSV»">Carica movimenti salvati…</button>
     <button class="btn sec piccolo" data-azione="csv" title="Scarica solo i movimenti mostrati qui sotto (con la ricerca e i filtri scelti)">Scarica in CSV (Excel)</button></div>
   <p class="lead">Tutto quello che è stato registrato. Apra "Dettagli" per vedere la partita doppia, correggere, eliminare o registrare di nuovo lo stesso movimento.
     Per ordinare l'elenco clicchi sul titolo di una colonna (Data, Descrizione, Voce, Cassa / banca, Importo); un secondo clic inverte l'ordine.
     Scegliendo una sola cassa o banca compare anche il saldo dopo ogni movimento. «Scarica in CSV» scarica solo i movimenti mostrati, come entrate e uscite;
-    «Carica da UNIO» porta in Divisio i movimenti già inseriti in UNIO.</p>
+    «Carica da UNIO» porta in Divisio i movimenti già inseriti in UNIO; «Carica movimenti salvati» li riprende da una copia di sicurezza o da un CSV scaricato prima.</p>
   ${riquadroAperto() ? cardUNIO(ctx) : ""}
+  ${riquadroSalvatiAperto() ? cardSalvati(ctx) : ""}
   ${rendicontoInviato(ctx.arch, ctx.anno) ? `<div class="nota">Il Rendiconto ${ctx.anno} risulta già inviato da UNIO il ${dataIt(rendicontoInviato(ctx.arch, ctx.anno))}:
     le correzioni ai movimenti del ${ctx.anno} vanno fatte anche in UNIO.</div>` : ""}
   <div class="card"><div class="griglia g4">
@@ -109,6 +112,7 @@ const ridisegnaElenco = (ctx) => { $("#elenco").innerHTML = elenco(ctx); };
 export const input = { testo(el, ev, ctx) { filtro.testo = el.value; ridisegnaElenco(ctx); } };
 export const cambia = {
   ...cambiaUNIO,
+  ...cambiaSalvati,
   cassa(el, ev, ctx) { filtro.cassa = el.value; ridisegnaElenco(ctx); },
   periodo(el, ev, ctx) { filtro.periodo = el.value; ridisegnaElenco(ctx); },
   tipo(el, ev, ctx) { filtro.tipo = el.value; ridisegnaElenco(ctx); },
@@ -117,6 +121,7 @@ export const cambia = {
 
 export const azioni = {
   ...azioniUNIO,
+  ...azioniSalvati,
   ordina(el, ev, ctx) {
     ordine = { campo: el.dataset.campo, verso: el.dataset.verso === "su" ? "su" : "giu" };
     locale.scrivi("movimenti-ordine", ordine);

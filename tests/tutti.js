@@ -16,4 +16,5 @@ import "./banca.test.js";
 import "./doppioni.test.js";
 import "./unisciBanche.test.js";
 import "./azzera.test.js";
+import "./movimentiSalvati.test.js";
 export { esegui } from "./mini.js";

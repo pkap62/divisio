@@ -270,7 +270,8 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
     (per esempio PayPal ha preso A02-01-02, che in UNIO è la banca), l'anteprima propone di spostare prima quella banca a un numero libero,
     con tutti i suoi movimenti.</li>
   <li><b>Ricominciare da capo:</b> Movimenti → in fondo <b>"Azzera i movimenti del …"</b> cancella tutti i movimenti dell'anno scelto in alto
-    (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.</li>
+    (anche i saldi di apertura), dopo aver scaricato una copia di sicurezza. Gli altri anni, le fatture e le impostazioni restano; in UNIO non cambia nulla.
+    Per riprenderli: <span class="bottone">Carica movimenti salvati…</span> con quella copia.</li>
   <li>Nel Rendiconto, <span class="bottone">Azzera il confronto</span> toglie il CSV di UNIO caricato (le scritte "= UNIO").</li>
 </ul>
 
@@ -317,6 +318,13 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
   <tr><td>cercare o esportare</td><td>Movimenti: cerca per parola, cassa, trimestre, tipo. In fondo all'elenco: <b>totale entrate</b>, <b>totale uscite</b> e differenza dei movimenti mostrati.
     <span class="bottone">Scarica in CSV (Excel)</span> scarica <b>solo i movimenti mostrati</b> (con la ricerca e i filtri scelti), divisi in Entrate e Uscite,
     una riga per ogni dettaglio, con il totale in fondo.</td></tr>
+  <tr><td><b>riprendere</b> movimenti salvati</td><td>Movimenti → <span class="bottone">Carica movimenti salvati…</span> → scelga il file. Va bene:
+    <ul><li>una <b>copia di sicurezza</b> di Divisio (file .json, anche quella scaricata prima di azzerare): si riprendono <b>solo i movimenti</b>, esattamente com'erano,
+      e se la copia ha più anni si scelgono quali; fatture, impostazioni e piano dei conti restano come sono adesso;</li>
+    <li>un file scaricato con <span class="bottone">Scarica in CSV (Excel)</span>, anche modificato in Excel: tornano entrate, uscite e spostamenti.
+      I saldi di apertura no (il CSV ne ha solo il totale); le casse e le banche devono avere lo stesso nome che hanno in Divisio.</li></ul>
+    Prima di caricare Divisio mostra cosa entrerà. I movimenti che ci sono già <b>non si caricano di nuovo</b>; quelli che forse ci sono già
+    (stesso importo e stessa data, o stessa descrizione a pochi giorni) sono elencati e si caricano solo se li spunta. Si può annullare con <span class="bottone">↶ Annulla</span>.</td></tr>
   <tr><td>controllare la cassa o la banca</td><td>Movimenti → in "Cassa / banca" scelga una sola cassa o banca
     (compaiono anche quelle «non in uso» che hanno movimenti nell'anno, con il loro codice): compare la colonna <b>Saldo dopo</b>, cioè quanto c'era dopo ogni movimento.
     Si confronta con i contanti contati o con l'estratto conto.</td></tr>
@@ -488,6 +496,7 @@ e i due modi non si mescolano nello stesso anno.</div>
   <li>Per tornare indietro: <span class="bottone">Ripristina da file…</span>. Prima di sostituire i dati, Divisio scarica una copia di quelli attuali.
     Se Divisio è condiviso (capitolo 5), anche gli altri computer ricevono i dati della copia ripristinata.</li>
   <li>Con il lavoro insieme attivo, ogni file della cartella Divisio di Google Drive è anche una copia completa.</li>
+  <li>Per riprendere <b>solo i movimenti</b> da una copia (senza toccare fatture e impostazioni): Movimenti → <span class="bottone">Carica movimenti salvati…</span>.</li>
 </ul>
 <h3>Ripartire da zero</h3>
 <p>Per ricominciare da capo, per esempio dopo un periodo di prova, ci sono tre possibilità. Ognuna chiede conferma, scarica prima una copia di sicurezza
@@ -527,7 +536,7 @@ e si può annullare subito con <span class="bottone">↶ Annulla</span>. In UNIO
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 26 novembre 2026 (versione 0.14.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 26 novembre 2026 (versione 0.14.1) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

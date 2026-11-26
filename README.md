@@ -7,6 +7,13 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.14.1 – Caricare movimenti salvati**
+- Movimenti → **Carica movimenti salvati…** (`js/ui/movimentiSalvati.js`, `js/dominio/movimentiSalvati.js`): riconosce da solo il file.
+  - Copia di sicurezza (.json): solo i movimenti, com'erano (scelta degli anni); sottoconti mancanti rimessi in uso; il collegamento a una fattura resta solo se quella rata è ancora pagata.
+  - CSV di «Scarica in CSV (Excel)», anche rivisto in Excel: righe consecutive con stessa data, causale, descrizione e cassa diventano un movimento; spostamenti «A → B»;
+    i saldi di apertura e i movimenti senza cassa non si ricostruiscono (avviso). Casse e banche riconosciute per nome.
+  - Doppioni (`confrontaSalvati`): saltati se stesso id, stesso contenuto o stesse righe (anche se in Divisio erano divisi in più movimenti); forse doppioni da spuntare. Annullabile.
+
 **0.14.0 – Banche: nessun numero già dato, vale quello di UNIO**
 - Impostazioni → Cassa e banche: tolto il riquadro «Due nomi per la stessa banca?». Solo la cassa è fissa; il numero di una banca si dà quando viene aggiunta
   (il primo libero, o quello che la stessa banca ha già dai movimenti di UNIO). «Togli» su una banca mai usata la elimina e libera il numero.
