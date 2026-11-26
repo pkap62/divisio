@@ -13,6 +13,7 @@ import * as impostazioni from "./ui/impostazioni.js";
 import * as condivisione from "./ui/condivisione.js";
 
 import { VERSIONE } from "./versione.js";
+import { banchePerUnire, bancheInutili, unisciBanche } from "./dominio/unisciBanche.js";
 export { VERSIONE };
 
 const PAGINE = {
@@ -142,6 +143,26 @@ function collega() {
   });
 }
 
+/**
+ * All'apertura Divisio mette a posto i numeri delle banche (vedi dominio/unisciBanche.js):
+ * la stessa banca con due numeri (uno dai movimenti di UNIO, uno aggiunto in Divisio) si unisce sul numero di UNIO,
+ * e le banche non in uso che nessuno usa spariscono, lasciando libero il loro numero. Si può annullare con «↶ Annulla».
+ */
+async function sistemaBanche(arch) {
+  const unite = [];
+  for (let giro = 0; giro < 10; giro++) {
+    const [c] = banchePerUnire(arch.conti, arch.movimenti());
+    if (!c) break;
+    const u = unisciBanche({ conti: arch.conti, movimenti: arch.movimenti(), fatture: arch.fatture(),
+      impostazioni: [...arch.impostazioniCon("banca:"), ...arch.impostazioniCon("formato-banca:")] }, c.da, c.verso, c.nome);
+    await arch.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni,
+      etichetta: `Unione delle banche ${c.da} e ${c.verso} in «${c.nome}» (${c.verso})` });
+    unite.push(c);
+  }
+  for (const c of bancheInutili(arch.conti, arch.movimenti(), arch.fatture())) await arch.eliminaConto(c.codice);
+  if (unite.length) toast(unite.map((c) => `«${c.nome}» aveva due numeri: ora usa solo quello di UNIO, ${c.verso} ✓`).join(" "));
+}
+
 async function avvia() {
   try {
     ctx.arch = await apriArchivio({ autore: locale.leggi("autore", "") });
@@ -152,6 +173,7 @@ async function avvia() {
       <p class="hint">${esc(e.message)}</p></div>`;
     return;
   }
+  await sistemaBanche(ctx.arch).catch((e) => console.error("Sistemazione delle banche non riuscita", e));
   collega();
   ctx.arch.ascolta(aggiornaAnnulla);
   ctx.vai("inizio");

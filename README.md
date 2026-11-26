@@ -7,6 +7,15 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.14.0 – Banche: nessun numero già dato, vale quello di UNIO**
+- Impostazioni → Cassa e banche: tolto il riquadro «Due nomi per la stessa banca?». Solo la cassa è fissa; il numero di una banca si dà quando viene aggiunta
+  (il primo libero, o quello che la stessa banca ha già dai movimenti di UNIO). «Togli» su una banca mai usata la elimina e libera il numero.
+  Elenco di banche proposte ampliato (soprattutto quelle della provincia di Firenze).
+- All'apertura (`sistemaBanche` in `js/app.js`): la stessa banca con due numeri (uno con movimenti da UNIO, l'altro aggiunto in Divisio senza movimenti da UNIO)
+  si unisce da sola sul numero di UNIO (`banchePerUnire`); le banche non in uso e mai usate si tolgono (`bancheInutili`). Annullabile.
+- Carica da UNIO: se il numero di UNIO in Divisio è di un'altra banca in uso (nomi di banche diverse), quella passa prima a un numero libero (`spostaBanca`);
+  poi si carica e si unisce la stessa banca con un altro numero (`banchePerUNIO` restituisce `tipo: "sposta" | "unisci"`).
+
 **0.13.2 – Azzerare lo scadenzario; ripartire da zero**
 - Fatture → in fondo **Azzera lo scadenzario**: toglie tutte le fatture; con la spunta (predefinita) anche le uscite delle fatture pagate, altrimenti le uscite restano senza collegamento.
 - Impostazioni → in fondo **Ripartire da zero**: a scelta movimenti di tutti gli anni, fatture, importazioni segnate per UNIO e segni «Rendiconto inviato»,
@@ -18,7 +27,7 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
   I movimenti caricati da UNIO restavano sul codice di UNIO (spesso «non in uso» in Divisio) e non si vedevano scegliendo la banca in Movimenti.
 - Impostazioni → Cassa e banche → **Due nomi per la stessa banca?** (`js/dominio/unisciBanche.js`): unisce due casse o banche tenendo il codice di UNIO;
   sposta movimenti (righe della stessa banca sommate, spostamenti fra le due eliminati, `banca.cassa`), rate delle fatture e memorie `banca:` / `formato-banca:`.
-  Una sola operazione (`salvaInsieme` ora salva anche i conti), annullabile. Si apre da solo se due banche hanno lo stesso nome (es. «Banca BPM» / «Banco BPM»).
+  Una sola operazione (`salvaInsieme` ora salva anche i conti), annullabile. Si apre da solo se due banche hanno lo stesso nome (es. «Banco BPM» / «Banco BPM S.p.A.»).
 - Movimenti: l'elenco Cassa / banca mostra anche quelle non in uso che hanno movimenti nell'anno.
 - Carica da UNIO: avviso se una banca di UNIO ha un codice non in uso in Divisio e in Divisio c'è la stessa banca con un altro codice; proposta di unirle dopo il caricamento.
   Le casse e banche usate dai movimenti caricati tornano in uso.

@@ -8,7 +8,7 @@ import { nuovoIstante } from "../dominio/unione.js";
 import { esc, eur, dataIt, locale, toast } from "./util.js";
 import { isCassaBanca } from "../dominio/piano.js";
 import { trovaMovimentoSimile, importoConSegno } from "../dominio/doppioni.js";
-import { banchePerUNIO, unisciBanche } from "../dominio/unisciBanche.js";
+import { banchePerUNIO, unisciBanche, spostaBanca } from "../dominio/unisciBanche.js";
 
 let anteprima = null;   // { nomeFile, errore } oppure { nomeFile, anno, movimenti, problemi, nomiDiversi, nuovi, giaPresenti, altriDellAnno, usaNomi, ... }
 let aperto = false;      // riquadro aperto nella pagina Movimenti
@@ -50,7 +50,7 @@ export function vistaCard(ctx) {
     <p class="hint">Le righe di UNIO con lo stesso <b>numero di registrazione</b> diventano un solo movimento: la <b>causale</b> resta la causale,
       il <b>commento</b> diventa la descrizione («Che cos'è?») e il <b>commento di riga</b> il dettaglio di ogni riga (es. «Esequie Mario Rossi»).
       Caricando di nuovo lo stesso file (o uno più recente) i movimenti si aggiornano, senza doppioni.</p>
-    ${caricati.length ? `<div class="ok">✓ Già caricati da UNIO: ${caricati.length} movimenti (${anni.join(", ")}).</div>
+    ${caricati.length ? `<div class="ok">✓ Già caricati da UNIO: ${n_(caricati.length, "movimento", "movimenti")} (${anni.join(", ")}).</div>
       <div class="riga-bottoni"><button class="btn sec" data-azione="apriRendicontoUNIO" data-anno="${anni.at(-1)}">Confronta nel Rendiconto ${anni.at(-1)}</button>
       <button class="btn pericolo" data-azione="togliUNIO">Togli i movimenti caricati da UNIO</button></div>` : ""}
     <div class="riga-bottoni"><label class="btn ${caricati.length ? "sec" : ""}">Scegli il file di UNIO…<input type="file" accept=".csv,text/csv" hidden data-cambia="fileUNIO"></label></div>
@@ -92,20 +92,27 @@ function vistaAnteprima(ctx) {
       <button class="btn sec" data-azione="annullaAnteprima">Annulla</button></div>`;
 }
 
-/** Avviso: la stessa banca ha un codice in UNIO e un altro in Divisio. Si propone di unirle sul codice di UNIO. */
+/** Banche: il numero giusto è quello di UNIO. Divisio propone di spostare o unire le banche che hanno un altro numero. */
 function vistaBanche(a) {
   if (!a.banche.length) return "";
-  const perUNIO = [...new Set(a.banche.map((b) => b.unio))];
-  return perUNIO.map((codice) => {
-    const coppie = a.banche.filter((b) => b.unio === codice);
+  const sposta = a.banche.filter((b) => b.tipo === "sposta");
+  const unisci = a.banche.filter((b) => b.tipo === "unisci");
+  const htmlSposta = sposta.map((b) => `<div class="avviso">In UNIO il numero <b>${b.unio}</b> è «${esc(b.nomeUNIO)}», ma in Divisio è «${esc(b.nomeDivisio)}».
+      Vale il numero di UNIO: «${esc(b.nomeDivisio)}» passa al numero ${b.verso}, con tutti i suoi movimenti, e ${b.unio} diventa «${esc(b.nomeUNIO)}».</div>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="spostaBanca" data-unio="${b.unio}" ${b.sposta ? "checked" : ""}>
+      <span>Prima di caricare, sposta «${esc(b.nomeDivisio)}» al numero ${b.verso}</span></label>`).join("");
+  const perUNIO = [...new Set(unisci.map((b) => b.unio))];
+  const htmlUnisci = perUNIO.map((codice) => {
+    const coppie = unisci.filter((b) => b.unio === codice);
     const nomeUNIO = coppie[0].nomeUNIO;
-    return `<div class="avviso">In UNIO la banca «${esc(nomeUNIO)}» ha il codice <b>${codice}</b>, che in Divisio non è in uso.
-        ${coppie.length === 1 && coppie[0].proposta ? `In Divisio la stessa banca sembra «${esc(coppie[0].nomeDivisio)}», con il codice <b>${coppie[0].divisio}</b>.` : ""}
-        Se sono la stessa banca, conviene unirle sul codice di UNIO: altrimenti i movimenti restano divisi fra due codici
+    return `<div class="avviso">In UNIO la banca «${esc(nomeUNIO)}» ha il numero <b>${codice}</b>.
+        ${coppie.length === 1 && coppie[0].proposta ? `In Divisio la stessa banca sembra «${esc(coppie[0].nomeDivisio)}», con il numero <b>${coppie[0].divisio}</b>.` : "È una di queste banche di Divisio?"}
+        Se sono la stessa banca, conviene unirle sul numero di UNIO: altrimenti i movimenti restano divisi fra due numeri
         (in Movimenti, scegliendo la banca, non si vedrebbero tutti) e i file per UNIO userebbero il conto sbagliato.</div>
       ${coppie.map((b) => `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="unisciBanca" data-unio="${b.unio}" data-divisio="${b.divisio}" ${b.unisci ? "checked" : ""}>
-        <span>Dopo il caricamento, unisci «${esc(b.nomeDivisio)}» (${b.divisio}) di Divisio con «${esc(b.nomeUNIO)}» (${b.unio}) di UNIO: resta il codice ${b.unio}, con il nome «${esc(b.nomeDivisio)}»</span></label>`).join("")}`;
+        <span>Dopo il caricamento, unisci «${esc(b.nomeDivisio)}» (${b.divisio}) di Divisio con «${esc(b.nomeUNIO)}» (${b.unio}) di UNIO: resta il numero ${b.unio}, con il nome «${esc(b.nomeDivisio)}»</span></label>`).join("")}`;
   }).join("");
+  return htmlSposta + htmlUnisci;
 }
 
 /** Ogni registrazione: data, numero, causale, descrizione, righe (voce, dettaglio, importo) e cassa o banca. */
@@ -133,16 +140,20 @@ export const cambia = {
     const { daCaricare, saltate } = separaDoppioniDivisio(l.registrazioni, ctx.arch.movimenti(), ctx.arch.fatture());
     const movimenti = aMovimenti(daCaricare, l.anno);
     const conti = ctx.arch.conti;
+    // banche con un numero in UNIO e un altro in Divisio (es. A02-01-02 in UNIO, A02-01-04 aggiunta in Divisio),
+    // o con il numero che in UNIO è di un'altra banca
+    const banche = banchePerUNIO(l.nomi, conti, new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto))))
+      .map((b) => (b.tipo === "sposta" ? { ...b, sposta: true } : { ...b, unisci: b.proposta }));
+    const spostati = new Set(banche.filter((b) => b.tipo === "sposta").map((b) => b.divisio));
     anteprima = {
       nomeFile: file.name, anno: l.anno, movimenti, problemi: l.problemi, usaNomi: true, saltate, nomi: l.nomi,
       conCausali: movimenti.some((m) => m.causale), accendiCausale: true,
       daDivisio: daCaricare.filter((r) => r.daDivisio).length,
-      nomiDiversi: [...l.nomi].filter(([c, n]) => conti.has(c) && conti.get(c).nome !== n).map(([codice, unio]) => ({ codice, attuale: conti.get(codice).nome, unio })),
+      nomiDiversi: [...l.nomi].filter(([c, n]) => conti.has(c) && !spostati.has(c) && conti.get(c).nome !== n).map(([codice, unio]) => ({ codice, attuale: conti.get(codice).nome, unio })),
       nuovi: [...l.nomi].filter(([c]) => !conti.has(c)).map(([codice, nome]) => ({ codice, nome })),
       giaPresenti: movimenti.filter((m) => ctx.arch.movimento(m.id)).length,
       forse: possibiliDoppioni(movimenti, ctx.arch), caricaForse: new Set(),
-      // banche con un codice in UNIO e un altro in Divisio (es. A02-01-02 in UNIO, A02-01-04 aggiunta in Divisio)
-      banche: banchePerUNIO(l.nomi, conti, new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto)))).map((b) => ({ ...b, unisci: b.proposta })),
+      banche,
       altriDellAnno: movimentiAnno(ctx.arch.movimenti(), l.anno).filter((m) => m.origine !== "UNIO" && m.tipo !== "apertura").length,
     };
     ctx.aggiorna();
@@ -150,7 +161,11 @@ export const cambia = {
   usaNomi(el) { anteprima.usaNomi = el.checked; },
   unisciBanca(el, ev, ctx) {
     // per ogni codice di UNIO si unisce al massimo una banca di Divisio
-    for (const b of anteprima.banche) if (b.unio === el.dataset.unio) b.unisci = el.checked && b.divisio === el.dataset.divisio;
+    for (const b of anteprima.banche) if (b.tipo === "unisci" && b.unio === el.dataset.unio) b.unisci = el.checked && b.divisio === el.dataset.divisio;
+    ctx.aggiorna();
+  },
+  spostaBanca(el, ev, ctx) {
+    for (const b of anteprima.banche) if (b.tipo === "sposta" && b.unio === el.dataset.unio) b.sposta = el.checked;
     ctx.aggiorna();
   },
   caricaForse(el, ev, ctx) { if (el.checked) anteprima.caricaForse.add(el.dataset.id); else anteprima.caricaForse.delete(el.dataset.id); ctx.aggiorna(); },
@@ -169,35 +184,46 @@ export const azioni = {
     const ora = new Date().toISOString();
     let t = null;
     const marca = () => (t = nuovoIstante(t));
-    const conti = [
-      ...a.nuovi.map((x) => ({ codice: x.codice, nome: x.nome, attivo: true, modificatoIl: marca(), autore })),
-      ...(a.usaNomi ? a.nomiDiversi.map((x) => ({ ...ctx.arch.conti.get(x.codice), nome: x.unio, modificatoIl: marca(), autore })) : []),
-    ];
     const movimenti = daCaricare(a).map((m) => ({ ...m, creatoIl: ora, modificatoIl: marca(), autore }));
     const saltati = a.movimenti.length - movimenti.length;
-    const daUnire = a.banche.filter((b) => b.unisci);
-    // le casse e banche usate dai movimenti di UNIO tornano in uso (altrimenti quei movimenti non si potrebbero scegliere)
-    const casseUNIO = new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto)).filter(isCassaBanca));
-    for (const c of casseUNIO) {
-      const gia = conti.find((x) => x.codice === c), qui = ctx.arch.conti.get(c);
-      if (gia) gia.attivo = true;
-      else if (qui && qui.attivo === false) conti.push({ ...qui, attivo: true, modificatoIl: marca(), autore });
-    }
+    const daSpostare = a.banche.filter((b) => b.tipo === "sposta" && b.sposta);
+    const daUnire = a.banche.filter((b) => b.tipo === "unisci" && b.unisci);
+    const datiBanche = (arch) => ({ conti: arch.conti, movimenti: arch.movimenti(), fatture: arch.fatture(), impostazioni: [...arch.impostazioniCon("banca:"), ...arch.impostazioniCon("formato-banca:")] });
+    const salvaBanche = (u) => ctx.arch.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni });
     const n = await ctx.arch.insieme(`Caricamento di ${n_(movimenti.length, "movimento", "movimenti")} da UNIO`, async () => {
+      // 1. le banche di Divisio che hanno il numero che in UNIO è di un'altra banca passano a un numero libero
+      for (const b of daSpostare) {
+        if (ctx.arch.conti.has(b.divisio) && !ctx.arch.conti.has(b.verso)) await salvaBanche(spostaBanca(datiBanche(ctx.arch), b.divisio, b.verso));
+      }
+      // 2. sottoconti nuovi e nomi di UNIO (dopo gli spostamenti: il numero lasciato libero prende il nome di UNIO)
+      const attuali = ctx.arch.conti;
+      const spostati = new Set(daSpostare.map((b) => b.divisio));
+      const conti = [...a.nomi]
+        .filter(([c, nome]) => !attuali.has(c) || spostati.has(c) || (a.usaNomi && attuali.get(c).nome !== nome))
+        .map(([codice, nome]) => (attuali.has(codice) && !spostati.has(codice)
+          ? { ...attuali.get(codice), nome, modificatoIl: marca(), autore }
+          : { codice, nome, attivo: true, modificatoIl: marca(), autore }));
+      // le casse e banche usate dai movimenti di UNIO tornano in uso (altrimenti quei movimenti non si potrebbero scegliere)
+      const casseUNIO = new Set(movimenti.flatMap((m) => m.righe.map((r) => r.conto)).filter(isCassaBanca));
+      for (const c of casseUNIO) {
+        const gia = conti.find((x) => x.codice === c), qui = attuali.get(c);
+        if (gia) gia.attivo = true;
+        else if (qui && qui.attivo === false) conti.push({ ...qui, attivo: true, modificatoIl: marca(), autore });
+      }
       const cambiati = await ctx.arch.unisci({ conti, movimenti, impostazioni: [] }, { etichetta: "da UNIO" });
       if (a.conCausali && a.accendiCausale && !ctx.arch.impostazione("causale-unio", false)) await ctx.arch.salvaImpostazione("causale-unio", true);
+      // 3. la stessa banca con un altro numero in Divisio si unisce sul numero di UNIO
       for (const b of daUnire) {
-        const arch = ctx.arch;
-        if (!arch.conti.has(b.unio) || !arch.conti.has(b.divisio)) continue;
-        const u = unisciBanche({ conti: arch.conti, movimenti: arch.movimenti(), fatture: arch.fatture(), impostazioni: [...arch.impostazioniCon("banca:"), ...arch.impostazioniCon("formato-banca:")] }, b.divisio, b.unio, b.nomeDivisio);
-        await arch.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni });
+        if (!ctx.arch.conti.has(b.unio) || !ctx.arch.conti.has(b.divisio)) continue;
+        await salvaBanche(unisciBanche(datiBanche(ctx.arch), b.divisio, b.unio, b.nomeDivisio));
       }
       return cambiati;
     });
     anteprima = null;
     aperto = false;
     toast(`${movimenti.length === 1 ? "Caricato 1 movimento" : `Caricati ${movimenti.length} movimenti`} da UNIO ✓${saltati ? ` (${n_(saltati, "possibile doppione saltato", "possibili doppioni saltati")})` : ""}`
-      + daUnire.map((b) => `. Banche unite: «${b.nomeDivisio}» ora ha il codice di UNIO ${b.unio}`).join(""));
+      + daSpostare.map((b) => `. «${b.nomeDivisio}» ora ha il numero ${b.verso}`).join("")
+      + daUnire.map((b) => `. Banche unite: «${b.nomeDivisio}» ora ha il numero di UNIO ${b.unio}`).join(""));
     if (!n) toast("Nessun cambiamento: i movimenti erano già tutti caricati");
     ctx.aggiorna();
   },

@@ -1,6 +1,6 @@
 // Due codici per la stessa banca (dati inventati, come nel caso UNIO A02-01-02 / Divisio A02-01-04).
 import { test, uguale, vero } from "./mini.js";
-import { unisciBanche, stessaBanca, banchePerUNIO } from "../js/dominio/unisciBanche.js";
+import { unisciBanche, stessaBanca, banchePerUNIO, spostaBanca, banchePerUnire, bancheInutili } from "../js/dominio/unisciBanche.js";
 import { verificaMovimento } from "../js/dominio/scritture.js";
 
 const UNIO = "A02-01-02", DIVISIO = "A02-01-04", CASSA = "A02-01-01";
@@ -14,7 +14,7 @@ const uscita = (id, conto, imp, extra = {}) => ({ id, data: "2026-02-10", descr:
   righe: [{ conto: "U08-01-01", dare: imp, avere: 0 }, { conto, dare: 0, avere: imp }] });
 
 test("banche: nomi diversi della stessa banca", () => {
-  vero(stessaBanca("Banca BPM", "Banco BPM"));
+  vero(stessaBanca("Banco BPM", "Banco BPM S.p.A."));
   vero(stessaBanca("Banca Esempio S.p.A.", "banco esempio"));
   vero(!stessaBanca("Banco BPM", "UniCredit"));
   vero(!stessaBanca("Banca Etica", "Banca di Cambiano"));
@@ -58,4 +58,44 @@ test("banche: avviso quando UNIO usa per una banca un altro codice", () => {
   // nomi diversi: si mostrano le possibilità, senza spunta
   const altre = banchePerUNIO(new Map([[UNIO, "Banca Lontana"]]), conti, new Set([UNIO]));
   uguale(altre.map((c) => [c.divisio, c.proposta]), [["A02-01-03", false], [DIVISIO, false]]);
+});
+
+test("banche: il numero di UNIO è di un'altra banca in Divisio", () => {
+  // in Divisio PayPal ha preso il 02 (aggiunto per primo); in UNIO il 02 è la banca
+  const qui = new Map([[CASSA, conti.get(CASSA)], [UNIO, { codice: UNIO, nome: "PayPal", attivo: true, ordine: 1 }],
+    ["A02-01-03", { codice: "A02-01-03", nome: "Banco Esempio", attivo: true, ordine: 2 }]]);
+  const piano = banchePerUNIO(new Map([[UNIO, "Banco Esempio S.p.A."]]), qui, new Set([CASSA, UNIO]));
+  uguale(piano.map((b) => [b.tipo, b.divisio, b.verso ?? b.unio, b.proposta]), [["sposta", UNIO, "A02-01-04", true], ["unisci", "A02-01-03", UNIO, true]]);
+  // il numero lasciato libero non è uno di quelli usati da UNIO
+  uguale(banchePerUNIO(new Map([[UNIO, "Banco Esempio"]]), qui, new Set([CASSA, UNIO, "A02-01-04"]))[0].verso, "A02-01-05");
+  // nome generico in UNIO («Banca»): non si può dire che sia un'altra banca
+  uguale(banchePerUNIO(new Map([[UNIO, "Banca c/c"]]), qui, new Set([UNIO])), []);
+});
+
+test("banche: spostare una banca a un numero libero", () => {
+  const qui = new Map([[CASSA, conti.get(CASSA)], [UNIO, { codice: UNIO, nome: "PayPal", attivo: true, ordine: 1 }]]);
+  const movimenti = [uscita("pp", UNIO, 900), uscita("contanti", CASSA, 50)];
+  const fatture = [{ id: "f1", rate: [{ n: 1, cassa: UNIO, stato: "pagata" }] }];
+  const s = spostaBanca({ conti: qui, movimenti, fatture, impostazioni: [] }, UNIO, "A02-01-04");
+  uguale(s.conti.map((c) => [c.codice, c.nome, Boolean(c.eliminato)]), [["A02-01-04", "PayPal", false], [UNIO, "PayPal", true]]);
+  uguale(s.movimenti.map((m) => [m.id, m.righe[1].conto]), [["pp", "A02-01-04"]]);
+  uguale(s.fatture[0].rate[0].cassa, "A02-01-04");
+});
+
+test("banche: stessa banca con due numeri già in Divisio, unita da sola all'apertura", () => {
+  const qui = new Map([[CASSA, conti.get(CASSA)], [UNIO, { codice: UNIO, nome: "Banco Esempio", attivo: false }],
+    ["A02-01-03", { codice: "A02-01-03", nome: "PayPal", attivo: true }], [DIVISIO, { codice: DIVISIO, nome: "Banco Esempio S.p.A.", attivo: true }]]);
+  const movimenti = [uscita("u", UNIO, 100, { origine: "UNIO" }), uscita("d", DIVISIO, 200), uscita("p", "A02-01-03", 5)];
+  uguale(banchePerUnire(qui, movimenti), [{ da: DIVISIO, verso: UNIO, nome: "Banco Esempio S.p.A." }]);
+  // se anche l'altra ha movimenti da UNIO non è il caso «aggiunta in Divisio»: non si tocca
+  uguale(banchePerUnire(qui, [...movimenti, uscita("u2", DIVISIO, 1, { origine: "UNIO" })]), []);
+  // nomi di banche diverse: niente
+  uguale(banchePerUnire(new Map([...qui, [DIVISIO, { codice: DIVISIO, nome: "Banca Lontana", attivo: true }]]), movimenti), []);
+});
+
+test("banche: quelle non in uso e mai usate si tolgono, il numero torna libero", () => {
+  const qui = new Map([[CASSA, conti.get(CASSA)], [UNIO, { codice: UNIO, nome: "Banca", attivo: false }],
+    ["A02-01-03", { codice: "A02-01-03", nome: "PayPal", attivo: false }], [DIVISIO, { codice: DIVISIO, nome: "Vecchia", attivo: false }]]);
+  const inutili = bancheInutili(qui, [uscita("p", "A02-01-03", 5)], [{ id: "f", rate: [{ n: 1, cassa: DIVISIO }] }]);
+  uguale(inutili.map((c) => c.codice), [UNIO]);
 });

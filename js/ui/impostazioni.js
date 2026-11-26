@@ -10,7 +10,7 @@ import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisio
 import { teatro } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
-import { unisciBanche, stessaBanca } from "../dominio/unisciBanche.js";
+import { stessaBanca } from "../dominio/unisciBanche.js";
 import { ripartiDaZero, GRUPPI_IMPOSTAZIONI } from "../dominio/azzera.js";
 import { tornaDaPagare } from "../dominio/scadenzario.js";
 
@@ -19,14 +19,18 @@ const ICONA_CESTINO = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidd
   <path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
 /* ---------- cassa e banche ---------- */
-// La cassa è sempre presente; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
+// La cassa è sempre presente e non si toglie; banche (e PayPal) si aggiungono, si rinominano e si tolgono.
+// Nessun numero è fissato prima: la banca prende un numero solo quando si aggiunge (il primo libero, oppure quello che
+// la stessa banca ha già nei movimenti caricati da UNIO). Una banca mai usata, tolta, sparisce e lascia libero il suo numero.
 // Negli elenchi compaiono nell'ordine in cui sono state aggiunte (vedi casseInOrdine).
 const CASSA = "A02-01-01";
 const VOCE_CASSE = "A02-01";
+// Banche proposte (prima quelle con più sportelli in provincia di Firenze); si può sempre scrivere un altro nome.
 const BANCHE_PROPOSTE = [
-  "Intesa Sanpaolo", "UniCredit", "BNL BNP Paribas", "Banco BPM", "Monte dei Paschi di Siena", "BPER Banca",
-  "Crédit Agricole Italia", "Banca Popolare di Sondrio", "Banca Etica", "ChiantiBanca", "Banca di Cambiano",
-  "Banco Fiorentino", "Banca Alta Toscana", "BancoPosta (Poste Italiane)", "PayPal",
+  "Intesa Sanpaolo", "UniCredit", "Monte dei Paschi di Siena", "Banco BPM", "BPER Banca", "BNL BNP Paribas",
+  "Crédit Agricole Italia", "ChiantiBanca", "Banca Cambiano 1884", "Banco Fiorentino", "Banca di Pontassieve",
+  "Banca Alta Toscana", "Banca Valdarno (Credito Cooperativo Valdarno Fiorentino)", "Banca Etica", "Banca Popolare di Sondrio",
+  "Credem", "Banca Sella", "Deutsche Bank", "Fineco", "Banca Mediolanum", "BancoPosta (Poste Italiane)", "PayPal", "Satispay",
 ];
 const stessoNome = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -39,6 +43,8 @@ function cardBanche(arch) {
   <div class="card"><h3>Cassa e banche</h3>
     <p class="hint">Dove stanno i soldi della parrocchia. La <b>cassa</b> c'è sempre; poi aggiunga una riga per ogni banca o conto di appoggio
       (anche <b>PayPal</b>, se lo usa). Compariranno nelle registrazioni, nei saldi di apertura e nella pagina Per UNIO.</p>
+    <p class="hint">Il numero (es. A02-01-02) Divisio lo dà solo quando la banca viene aggiunta. Se in UNIO la stessa banca ha un altro numero,
+      quando carica i movimenti da UNIO Divisio prende quello di UNIO.</p>
     <div class="sottoconto"><span class="codice">${CASSA}</span><b class="spazio">${esc(arch.nomeConto(CASSA))}</b><span class="hint">sempre presente</span></div>
     ${inUso.map((c) => `<div class="sottoconto"><span class="codice">${c.codice}</span>
       <input type="text" value="${esc(c.nome)}" data-cambia="rinomina" data-codice="${c.codice}" aria-label="Nome della banca ${c.codice}">
@@ -51,7 +57,6 @@ function cardBanche(arch) {
     </div>
     ${tolti.length ? `<p class="hint">Non più in uso (i movimenti già registrati restano): ${tolti.map((c) =>
       `${esc(c.nome)} <span class="codice">${c.codice}</span> <button class="btn sec piccolo" data-azione="bancaRimetti" data-codice="${c.codice}">Rimetti in uso</button>`).join(" ")}</p>` : ""}
-    ${vistaUnione(arch, tutti)}
   </div>`;
 }
 
@@ -92,53 +97,6 @@ function cardRiparti(arch) {
     <div class="riga-bottoni"><button class="btn pericolo" data-azione="confermaRiparti" ${riparti.capito && !niente ? "" : "disabled"}>Cancella e riparti da zero</button>
       <button class="btn sec" data-azione="chiudiRiparti">Annulla</button></div>
   </div>`;
-}
-
-/* ---------- due nomi per la stessa banca ---------- */
-let unione = null;   // { tieni, unisci, nome } scelti nel riquadro "Due nomi per la stessa banca?"
-
-/** Movimenti per ogni cassa o banca, e quanti caricati da UNIO. */
-function usoCasse(arch) {
-  const uso = new Map();
-  for (const m of arch.movimenti()) for (const c of new Set(m.righe.map((r) => r.conto).filter(isCassaBanca))) {
-    const u = uso.get(c) ?? { n: 0, unio: 0 };
-    u.n++; if (m.origine === "UNIO") u.unio++;
-    uso.set(c, u);
-  }
-  return uso;
-}
-
-/** Coppia proposta: due banche con lo stesso nome (es. «Banca BPM» e «Banco BPM»); si tiene quella usata da UNIO. */
-function coppiaProposta(banche, uso) {
-  for (const a of banche) for (const b of banche) {
-    if (a.codice >= b.codice || !stessaBanca(a.nome, b.nome)) continue;
-    const [tieni, unisci] = (uso.get(b.codice)?.unio ?? 0) > (uso.get(a.codice)?.unio ?? 0) ? [b, a] : [a, b];
-    return { tieni: tieni.codice, unisci: unisci.codice, nome: (unisci.attivo !== false ? unisci : tieni).nome };
-  }
-  return null;
-}
-
-function vistaUnione(arch, banche) {
-  if (banche.length < 2) return "";
-  const uso = usoCasse(arch);
-  const proposta = coppiaProposta(banche, uso);
-  if (!unione || ![unione.tieni, unione.unisci].every((c) => banche.some((b) => b.codice === c))) unione = proposta ?? { tieni: banche[0].codice, unisci: banche[1].codice, nome: banche[0].nome };
-  const etichetta = (c) => { const u = uso.get(c.codice); return `${c.nome} (${c.codice})${c.attivo === false ? " – non in uso" : ""} – ${u ? `${u.n} movimenti${u.unio ? `, ${u.unio} da UNIO` : ""}` : "nessun movimento"}`; };
-  const opz = (scelto) => banche.map((c) => `<option value="${c.codice}" ${c.codice === scelto ? "selected" : ""}>${esc(etichetta(c))}</option>`).join("");
-  return `<details data-chiave="unisci-banche" ${proposta ? "open" : ""} style="margin-top:14px"><summary>Due nomi per la stessa banca?</summary>
-    ${proposta ? `<div class="avviso">«${esc(arch.nomeConto(proposta.tieni))}» (${proposta.tieni}) e «${esc(arch.nomeConto(proposta.unisci))}» (${proposta.unisci}) sembrano la stessa banca.
-      I movimenti sono divisi fra i due codici: per esempio, scegliendo una delle due in Movimenti non si vedono quelli dell'altra.</div>` : ""}
-    <p class="hint">Succede quando la banca è stata aggiunta in Divisio e in UNIO la stessa banca ha un altro codice.
-      Tenga il codice <b>di UNIO</b> (quello dei movimenti caricati da UNIO): così anche i file per UNIO useranno il conto giusto.
-      Tutti i movimenti, le fatture pagate e le scelte ricordate degli estratti conto passano alla banca tenuta; l'altro codice sparisce.
-      Si può annullare con «↶ Annulla» in alto.</p>
-    <div class="griglia g2">
-      <div><label class="campo" for="u-tieni">Banca da tenere (codice di UNIO)</label><select id="u-tieni" data-cambia="unioneTieni">${opz(unione.tieni)}</select></div>
-      <div><label class="campo" for="u-unisci">È la stessa banca di</label><select id="u-unisci" data-cambia="unioneUnisci">${opz(unione.unisci)}</select></div>
-      <div><label class="campo" for="u-nome">Nome da usare</label><input id="u-nome" type="text" value="${esc(unione.nome)}" data-cambia="unioneNome"></div>
-    </div>
-    <div class="riga-bottoni"><button class="btn" data-azione="unisciBanche" ${unione.tieni === unione.unisci ? "disabled" : ""}>Unisci le due banche</button></div>
-  </details>`;
 }
 
 /* ---------- causale come in UNIO (facoltativa, spenta all'inizio) ---------- */
@@ -334,9 +292,6 @@ export const input = {
 export const cambia = {
   ripartiScelta(el, ev, ctx) { riparti[el.dataset.k] = el.checked; ctx.aggiorna(); },
   ripartiCapito(el, ev, ctx) { riparti.capito = el.checked; ctx.aggiorna(); },
-  unioneTieni(el, ev, ctx) { unione.tieni = el.value; ctx.aggiorna(); },
-  unioneUnisci(el, ev, ctx) { unione.unisci = el.value; ctx.aggiorna(); },
-  unioneNome(el) { unione.nome = el.value; },
   apConto(el) { AP.altre[el.dataset.i].conto = el.value; $("#ap-riepilogo").innerHTML = riepilogoApertura(); },
   async causaleAttiva(el, ev, ctx) {
     await ctx.arch.salvaImpostazione("causale-unio", el.checked, { etichetta: el.checked ? "Causale come in UNIO accesa" : "Causale come in UNIO spenta" });
@@ -423,10 +378,14 @@ export const azioni = {
     const campo = $("#banca-nuova");
     const nome = campo.value.trim();
     if (!nome) { toast("Scelga o scriva il nome della banca"); campo.focus(); return; }
-    const esistente = [...ctx.arch.conti.values()].find((c) => isCassaBanca(c.codice) && stessoNome(c.nome, nome));
-    if (esistente && esistente.attivo !== false) { toast(`"${esistente.nome}" c'è già`); return; }
+    const banche = [...ctx.arch.conti.values()].filter((c) => isCassaBanca(c.codice) && c.codice !== CASSA);
+    const inUso = banche.find((c) => c.attivo !== false && stessoNome(c.nome, nome));
+    if (inUso) { toast(`"${inUso.nome}" c'è già`); return; }
+    // la stessa banca c'è già, non in uso (per esempio dai movimenti caricati da UNIO): si usa il suo numero
+    const esistente = banche.find((c) => c.attivo === false && stessoNome(c.nome, nome))
+      ?? banche.filter((c) => c.attivo === false && stessaBanca(c.nome, nome)).at(0);
     if (esistente) {
-      await ctx.arch.salvaConto({ codice: esistente.codice, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
+      await ctx.arch.salvaConto({ codice: esistente.codice, nome, attivo: true, ordine: prossimoOrdineCassa(ctx.arch.conti.values()) });
     } else {
       const codice = nuovoCodiceSottoconto(VOCE_CASSE, ctx.arch.conti.keys());
       if (!codice) { toast("Non si possono aggiungere altre banche"); return; }
@@ -436,9 +395,18 @@ export const azioni = {
     ctx.aggiorna();
   },
   async bancaTogli(el, ev, ctx) {
-    const nome = ctx.arch.nomeConto(el.dataset.codice);
+    const codice = el.dataset.codice, nome = ctx.arch.nomeConto(codice);
+    if (codice === CASSA) return;
+    const usata = contiUsati(ctx.arch.movimenti()).has(codice) || ctx.arch.fatture().some((f) => f.rate.some((r) => r.cassa === codice));
+    if (!usata) {
+      if (!confirm(`Togliere "${nome}"?\n\nNessun movimento la usa: sparisce dall'elenco e il suo numero (${codice}) torna libero per un'altra banca.`)) return;
+      await ctx.arch.eliminaConto(codice);
+      toast(`${nome} tolta ✓`);
+      ctx.aggiorna();
+      return;
+    }
     if (!confirm(`Togliere "${nome}" dall'elenco?\n\nNon comparirà più tra le scelte, ma i movimenti già registrati restano. Si può rimettere in uso quando si vuole.`)) return;
-    await ctx.arch.salvaConto({ codice: el.dataset.codice, attivo: false });
+    await ctx.arch.salvaConto({ codice, attivo: false });
     toast(`${nome} tolta dall'elenco`);
     ctx.aggiorna();
   },
@@ -454,26 +422,6 @@ export const azioni = {
     riparti = null;
     preparaApertura(ctx);
     toast(`Fatto: Divisio riparte da zero ✓ (${r.conta.movimenti} movimenti, ${r.conta.fatture} fatture cancellati). Copia di sicurezza nella cartella Download`);
-    ctx.aggiorna();
-  },
-  async unisciBanche(el, ev, ctx) {
-    const { tieni, unisci, nome } = unione ?? {};
-    if (!tieni || !unisci || tieni === unisci) { toast("Scelga due banche diverse"); return; }
-    if (!nome?.trim()) { toast("Scriva il nome da usare"); return; }
-    const a = ctx.arch;
-    let u;
-    try { u = unisciBanche({ conti: a.conti, movimenti: a.movimenti(), fatture: a.fatture(), impostazioni: [...a.impostazioniCon("banca:"), ...a.impostazioniCon("formato-banca:")] }, unisci, tieni, nome); }
-    catch (e) { toast(e.message); return; }
-    const c = u.conta;
-    if (!confirm(`Unire «${a.nomeConto(unisci)}» (${unisci}) dentro «${a.nomeConto(tieni)}» (${tieni}), con il nome «${nome.trim()}»?\n\n`
-      + `${c.movimenti === 1 ? "1 movimento passa" : `${c.movimenti} movimenti passano`} a ${tieni}${c.eliminati ? `; ${c.eliminati} spostamenti fra le due banche spariscono (erano dalla banca a sé stessa)` : ""}`
-      + `${c.fatture ? `; ${c.fatture} fatture pagate` : ""}. Il codice ${unisci} sparisce.\n\nSi può annullare con «↶ Annulla».`)) return;
-    el.disabled = true;
-    await a.salvaInsieme({ conti: u.conti, movimenti: u.movimenti, movimentiDaEliminare: u.movimentiDaEliminare, fatture: u.fatture, impostazioni: u.impostazioni,
-      etichetta: `Unione delle banche ${unisci} e ${tieni} in «${nome.trim()}» (${tieni})` });
-    unione = null;
-    preparaApertura(ctx);
-    toast(`Banche unite ✓ Ora c'è solo «${nome.trim()}» (${tieni})`);
     ctx.aggiorna();
   },
   async bancaRimetti(el, ev, ctx) {
