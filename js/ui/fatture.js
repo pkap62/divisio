@@ -1,9 +1,13 @@
-// Pagina "Fatture": caricamento delle fatture ricevute (XML, P7M, PDF), scadenzario, pagamento.
-// Regola: in contabilità entra solo una fattura PAGATA, e solo dopo la conferma dell'utente.
+// Pagina "Scadenzario" (prima "Fatture"): caricamento delle fatture ricevute (XML, P7M, PDF) e avviso delle scadenze.
+// Ogni rata ha un pulsante: «Da saldare» (blu, arancione se scaduta da non più di una settimana, rosso oltre) → un clic → «Saldata» (verde).
+// Saldare NON registra nulla. Solo se nelle Impostazioni è accesa «Registrare le fatture in contabilità»,
+// dopo si può registrare l'uscita («Registra in contabilità…»), sempre con la conferma dell'utente.
+// Regola: in contabilità entra solo una fattura saldata.
 
 import { leggiFatturaPA, xmlDaP7m, testoDaByte, trovaDoppione, stessaFattura, chiaveFornitore, MODALITA, nomeModalita, modalitaInContanti, TIPI_DOCUMENTO } from "../dominio/fatture.js";
 import { leggiFatturaDaTesto, imparaModello } from "../dominio/fatturePDF.js";
-import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, GESTIONI, gestioneValida, nomeGestione } from "../dominio/scadenzario.js";
+import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, righePagamento, dividi, descrizione, idMovimento, testoModalita, PAGATA, GESTIONI, gestioneValida, nomeGestione,
+  segnaSaldata, daRegistrare, registraSaldata, cambiaDataSaldata, colore } from "../dominio/scadenzario.js";
 import { proponiVoce, propostaTeatro } from "../dominio/suggerimenti.js";
 import { ricordoPer, ricordoAggiornato, diversoServizio, etichettaServizio } from "../dominio/servizi.js";
 import { trovaForseDoppione } from "../dominio/doppioni.js";
@@ -24,6 +28,12 @@ let azzera = null;   // riquadro "Azzera lo scadenzario" aperto: { ancheUscite, 
 /* ---------- impostazioni che servono qui ---------- */
 // Divisione delle fatture parrocchia / 50% / teatro o altra gestione: SPENTA per tutti finché non la si accende nelle Impostazioni.
 export const teatro = (arch) => ({ attivo: false, parole: [], ...arch.impostazione("teatro", {}) });
+// Registrare le fatture saldate in contabilità: SPENTO per tutti finché non lo si accende nelle Impostazioni (lo scadenzario resta un promemoria).
+export const CHIAVE_REGISTRA = "scadenzario-registra";
+export const registraFatture = (arch) => Boolean(arch.impostazione(CHIAVE_REGISTRA, false));
+/** Testi del pulsante: per le note di credito «Da rimborsare» / «Rimborsata». */
+const daSaldare = (f) => (f.notaCredito ? "Da rimborsare" : "Da saldare");
+const saldata = (f) => (f.notaCredito ? "Rimborsata" : "Saldata");
 const casse = (arch) => casseInOrdine(arch.contiAttivi());
 /** Scelte ricordate per il fornitore, così come sono salvate (per tutti i suoi servizi). */
 const ricordoSalvato = (arch, f) => arch.impostazione(chiaveFornitore(f));
@@ -149,20 +159,25 @@ export function vista(ctx) {
   const el = tutte.filter((x) => !diAltraGestione(arch, x.fattura));
   const r = riepilogo(el);
   if (filtro === "altre" && !altre.length) filtro = "dapagare";
-  const filtri = [["dapagare", "Da pagare"], ["pagate", "Pagate"], ["tutte", "Tutte"], ...(altre.length ? [["altre", `Teatro e altre gestioni (${altre.length})`]] : [])];
+  const filtri = [["dapagare", "Da saldare"], ["pagate", "Saldate"], ["tutte", "Tutte"], ...(altre.length ? [["altre", `Teatro e altre gestioni (${altre.length})`]] : [])];
   const mostrate = filtro === "altre" ? altre : filtro === "tutte" ? tutte : el.filter((x) => (filtro === "pagate") === (x.rata.stato === PAGATA));
   const pr = problemi(arch);
   return `
-  <h2>Fatture e scadenze</h2>
-  <p class="lead">Carichi le fatture ricevute: Divisio le mette nello scadenzario come "da pagare".
-    In contabilità entrano <b>solo quando le segna come pagate</b>, dopo la sua conferma.</p>
+  <h2>Scadenzario</h2>
+  <p class="lead">Carichi le fatture ricevute: Divisio le mette nello scadenzario e le ricorda quando scadono.
+    Quando ne ha pagata una, clicchi il suo pulsante <b>«Da saldare»</b>: diventa verde, <b>«Saldata»</b>.</p>
+  <p class="hint">${registraFatture(arch)
+    ? "È accesa la registrazione in contabilità: dopo averla saldata, se vuole, prema «Registra in contabilità…» e Divisio registra l'uscita (con la sua conferma)."
+    : "Le fatture saldate non vengono registrate in contabilità. Chi vuole registrarle può accendere la scelta in <a href=\"#\" data-azione=\"vaiImpostazioni\">Impostazioni</a> → «Scadenzario: registrare le fatture in contabilità»."}
+    Colori: <span class="pill stato-blu">blu</span> non ancora scaduta, <span class="pill stato-arancio">arancione</span> scaduta da non più di una settimana,
+    <span class="pill stato-rosso">rosso</span> scaduta da più di una settimana, <span class="pill stato-saldata">verde</span> saldata.</p>
   ${pr.length ? vistaProblemi(pr) : ""}
   ${vistaCarica()}
   ${carico ? vistaCarico(ctx) : ""}
   ${pag ? vistaPagamento(ctx) : ""}
-  <div class="card" id="scadenzario"><div class="riga"><h3 class="spazio">Scadenzario</h3></div>
+  <div class="card" id="scadenzario"><div class="riga"><h3 class="spazio">Le scadenze</h3></div>
     <div class="griglia g4 riepilogo-fatture">
-      <div class="saldo"><div class="etichetta">Da pagare</div><div class="valore">${eur(r.totale)}</div><div class="hint">${r.daPagare === 1 ? "1 scadenza" : `${r.daPagare} scadenze`}</div></div>
+      <div class="saldo"><div class="etichetta">Da saldare</div><div class="valore">${eur(r.totale)}</div><div class="hint">${r.daPagare === 1 ? "1 scadenza" : `${r.daPagare} scadenze`}</div></div>
       <div class="saldo"><div class="etichetta">Scadute</div><div class="valore ${r.scadute ? "neg" : ""}">${eur(r.totaleScadute)}</div><div class="hint">${r.scadute === 1 ? "1 fattura" : `${r.scadute} fatture`}</div></div>
       <div class="saldo"><div class="etichetta">Entro 7 giorni</div><div class="valore">${eur(r.totalePresto)}</div><div class="hint">${r.presto === 1 ? "1 fattura" : `${r.presto} fatture`}</div></div>
     </div>
@@ -181,8 +196,8 @@ function vistaProblemi(pr) {
   return `<div class="card"><h3>Da sistemare</h3><p class="hint">Scadenzario e contabilità non coincidono: scelga come rimettere a posto.</p>
     ${pr.map((p) => `<div class="errore">${esc(p.testo)}
       ${p.problema === "manca" ? `<div class="riga-bottoni stretta"><button class="btn sec piccolo" data-azione="riregistra" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Registrala di nuovo</button>
-        <button class="btn sec piccolo" data-azione="rimettiDaPagare" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Rimetti la fattura "da pagare"</button></div>` : ""}
-      ${p.problema === "in-piu" ? `<div class="riga-bottoni stretta"><button class="btn sec piccolo" data-azione="apriPagamento" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Segna la fattura come pagata</button>
+        <button class="btn sec piccolo" data-azione="rimettiDaPagare" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Rimetti la fattura «Da saldare»</button></div>` : ""}
+      ${p.problema === "in-piu" ? `<div class="riga-bottoni stretta"><button class="btn sec piccolo" data-azione="apriPagamento" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Segna la fattura «Saldata» e registrata</button>
         <button class="btn sec piccolo" data-azione="togliUscita" data-id="${esc(p.fattura.id)}" data-n="${p.rata.n}">Togli l'uscita dalla contabilità</button></div>` : ""}
     </div>`).join("")}</div>`;
 }
@@ -267,24 +282,30 @@ function vistaVoce(v, divisione) {
 }
 
 function tabellaScadenze(el, ctx) {
-  if (!el.length) return `<p class="hint">${filtro === "dapagare" ? "Nessuna fattura da pagare." : "Nessuna fattura."}</p>`;
+  if (!el.length) return `<p class="hint">${filtro === "dapagare" ? "Nessuna fattura da saldare." : "Nessuna fattura."}</p>`;
   const t = teatro(ctx.arch);
+  const reg = registraFatture(ctx.arch);
   return `<div class="scorri"><table class="scadenze">
     <tr><th>Scadenza</th><th>Fornitore e fattura</th><th class="n">Importo</th><th>Stato</th></tr>
-    ${el.map(({ fattura: f, rata, giorni, urgenza }) => {
+    ${el.map((x) => {
+      const { fattura: f, rata, giorni, urgenza } = x;
       const pagata = rata.stato === PAGATA;
       const altra = diAltraGestione(ctx.arch, f);
-      const stato = altra ? `<span class="pill">fuori contabilità</span>` : pagata ? `<span class="pill ok-pill">${f.notaCredito ? "rimborsata" : "pagata"} il ${dataIt(rata.pagataIl)}</span>${rata.fuori ? ` <span class="pill">fuori contabilità</span>` : ""}`
-        : urgenza === "scaduta" ? `<span class="pill ko-pill">scaduta ${giorniTesto(giorni)}</span>`
-        : urgenza === "presto" ? `<span class="pill presto-pill">scade ${giorniTesto(giorni)}</span>`
-        : urgenza === "senza-data" ? `<span class="pill presto-pill">scadenza da indicare</span>` : `<span class="pill">da pagare</span>`;
+      const dati = `data-id="${esc(f.id)}" data-n="${rata.n}"`;
+      const quando = urgenza === "scaduta" ? `scaduta ${giorniTesto(giorni)}` : urgenza === "senza-data" ? "scadenza da indicare" : urgenza === "pagata" ? "" : `scade ${giorniTesto(giorni)}`;
+      const stato = altra ? `<span class="pill">fuori contabilità</span>`
+        : pagata ? `<button class="btn piccolo stato stato-saldata" data-azione="tornaDaPagare" ${dati} title="Saldata per errore? Clicchi per rimetterla da saldare">✓ ${saldata(f)}</button>
+            <div class="hint piccola">il ${dataIt(rata.pagataIl)}${rata.fuori ? " · fuori contabilità" : daRegistrare(rata) ? "" : " · registrata in contabilità"}</div>
+            ${daRegistrare(rata) && reg ? `<div><button class="btn sec piccolo" data-azione="apriPagamento" ${dati}>Registra in contabilità…</button></div>` : ""}`
+        : `<button class="btn piccolo stato stato-${colore(x)}" data-azione="salda" ${dati} title="Clicchi quando l'ha pagata">${daSaldare(f)}</button>
+            <div class="hint piccola">${quando}</div>`;
       const quota = pagata ? rata.quotaTeatro : f.quotaTeatro;
       return `<tr class="${urgenza === "scaduta" && !altra ? "riga-scaduta" : ""}"><td class="nowrap">${rata.scadenza ? dataIt(rata.scadenza) : "—"}</td>
         <td><b>${esc(f.fornitore || "Fornitore?")}</b>${pillaServizio(f)}${t.attivo ? pillaGestione(quota) : ""}<br>
           <span class="hint">${f.notaCredito ? "Nota di credito" : TIPI_DOCUMENTO[f.tipoDoc] && f.tipoDoc !== "TD01" ? TIPI_DOCUMENTO[f.tipoDoc] : "Fattura"} n. ${esc(f.numero)} del ${dataIt(f.data)}${f.rate.length > 1 ? ` · rata ${rata.n} di ${f.rate.length}` : ""}</span>
           ${dettagli(f, rata, ctx)}</td>
         <td class="n ${f.notaCredito ? "pos" : ""}">${f.notaCredito ? "−" : ""}${eur(rata.importo)}</td>
-        <td>${stato}${pagata || altra ? "" : `<div><button class="btn piccolo" data-azione="apriPagamento" data-id="${esc(f.id)}" data-n="${rata.n}">${f.notaCredito ? "Segna come rimborsata" : "Segna come pagata"}</button></div>`}</td></tr>`;
+        <td class="stato-rata">${stato}</td></tr>`;
     }).join("")}</table></div>`;
 }
 
@@ -300,12 +321,15 @@ function dettagli(f, rata, ctx) {
     ${f.note ? `<div class="nota">${esc(f.note)}</div>` : ""}
     ${rata.stato === PAGATA
       ? `${m ? `<p class="hint">Registrazione in contabilità (${dataIt(m.data)}):</p>${tabellaRighe(m.righe, ctx.arch)}` : rata.fuori ? `<p class="hint">Pagata fuori dai conti della parrocchia: nessuna registrazione.</p>` : ""}
-         <div class="riga-bottoni stretta"><button class="btn pericolo piccolo" data-azione="tornaDaPagare" data-id="${esc(f.id)}" data-n="${rata.n}">Torna da pagare</button></div>`
+         ${daRegistrare(rata) ? `<div class="riga stretta"><label class="campo" for="ps-${esc(f.id)}-${rata.n}">Saldata il</label>
+           <input id="ps-${esc(f.id)}-${rata.n}" type="date" value="${esc(rata.pagataIl)}" style="max-width:200px" data-cambia="dataSaldata" data-id="${esc(f.id)}" data-n="${rata.n}"></div>
+           <p class="hint">Non è registrata in contabilità${registraFatture(ctx.arch) ? ": se vuole, prema «Registra in contabilità…»." : "."}</p>` : ""}
+         <div class="riga-bottoni stretta"><button class="btn pericolo piccolo" data-azione="tornaDaPagare" data-id="${esc(f.id)}" data-n="${rata.n}">Rimetti «${daSaldare(f)}»</button></div>`
       : `<div class="riga stretta"><label class="campo" for="sc-${esc(f.id)}-${rata.n}">Scadenza</label>
            <input id="sc-${esc(f.id)}-${rata.n}" type="date" value="${esc(rata.scadenza)}" style="max-width:200px" data-cambia="scadenza" data-id="${esc(f.id)}" data-n="${rata.n}"></div>
          ${nessunaPagata && teatro(ctx.arch).attivo ? `<label class="campo">Di chi è questa fattura?</label>
            ${pulsantiGestione(gestioneValida(f.quotaTeatro) ? f.quotaTeatro : null, `data-azione="cambiaGestione" data-id="${esc(f.id)}"`, true)}
-           ${gestioneValida(f.quotaTeatro) ? spiegaGestione(f.quotaTeatro) : `<p class="hint">Non ancora scelto: Divisio lo chiederà quando la segnerà pagata.</p>`}` : ""}
+           ${gestioneValida(f.quotaTeatro) ? spiegaGestione(f.quotaTeatro) : `<p class="hint">Non ancora scelto: Divisio lo chiederà quando la registrerà in contabilità.</p>`}` : ""}
          ${nessunaPagata ? `<div class="riga-bottoni stretta"><button class="btn pericolo piccolo" data-azione="togliFattura" data-id="${esc(f.id)}">Togli dallo scadenzario</button></div>` : ""}`}
   </details>`;
 }
@@ -325,7 +349,8 @@ function apriPagamento(ctx, id, n) {
     ? { quota: f.quotaTeatro, motivo: `Scelta quando ha caricato la fattura: ${nomeGestione(f.quotaTeatro).toLowerCase()}. La confermi o la cambi.`, chiedi: false }
     : propostaTeatro(f, { ricordo: ricordo(ctx.arch, f), parole: t.parole });
   const oggi = oggiISO();
-  pag = { id, n, data: oggi, modalita: mod, cassa, voce: proposta.voce, cerca: "", proposta, pt,
+  const registra = daRegistrare(rata);   // già «Saldata»: ora si registra in contabilità
+  pag = { id, n, registra, data: registra ? rata.pagataIl || oggi : oggi, modalita: registra ? rata.modalitaPagamento || mod : mod, cassa, voce: proposta.voce, cerca: "", proposta, pt,
     quota: pt ? pt.quota ?? 0 : 0, quotaScelta: pt ? !pt.chiedi : true, ricorda: true, errore: "" };
 }
 
@@ -334,7 +359,7 @@ function prossimaDellaCoda(ctx) {
   while (coda.length) {
     const x = coda.shift();
     const f = ctx.arch.fattura(x.id);
-    if (!f || f.rate[0].stato === PAGATA) continue;
+    if (!f || !daRegistrare(f.rate[0])) continue;
     apriPagamento(ctx, x.id, 1);
     pag.data = x.data;
     if (x.modalita) pag.modalita = x.modalita;
@@ -372,10 +397,10 @@ function vistaPagamento(ctx) {
   const escludiVoce = (c) => isCassaBanca(c) || tipoDi(c) === "PAT" || tipoDi(c) === "E";
   const p = pag.proposta;
   return `<div class="card evidenza" id="pagamento">
-    <h3>${nc ? "Segna come rimborsata" : "Segna come pagata"}: ${esc(descrizione(f, rata))}</h3>
+    <h3>${pag.registra ? "Registra in contabilità" : nc ? "Segna come rimborsata" : "Segna come pagata"}: ${esc(descrizione(f, rata))}</h3>
     <p class="lead">Importo: <b>${eur(rata.importo)}</b>${rata.scadenza ? ` · scadenza ${dataIt(rata.scadenza)}` : ""}</p>
-    ${pag.dalPDF ? `<div class="nota">Sul PDF c'è scritto che è stata pagata il <b>${dataIt(pag.dalPDF.data)}</b>: controlli i dati qui sotto e confermi.
-      Se non è stata pagata, prema «Annulla»: resterà da pagare.${pag.dalPDF.rimaste ? ` Dopo, Divisio proporrà ${pag.dalPDF.rimaste === 1 ? "l'altra fattura segnata" : `le altre ${pag.dalPDF.rimaste} fatture segnate`} PAGATA
+    ${pag.dalPDF ? `<div class="nota">Sul PDF c'è scritto che è stata pagata il <b>${dataIt(pag.dalPDF.data)}</b>: Divisio l'ha già segnata «${saldata(f)}».
+      Se vuole registrarla in contabilità, controlli i dati qui sotto e confermi; altrimenti prema «Non registrare».${pag.dalPDF.rimaste ? ` Dopo, Divisio proporrà ${pag.dalPDF.rimaste === 1 ? "l'altra fattura segnata" : `le altre ${pag.dalPDF.rimaste} fatture segnate`} PAGATA
       (<a href="#" data-azione="saltaCoda">non ora</a>).` : ""}</div>` : ""}
     <div class="griglia g2">
       <div><label class="campo" for="p-data">${nc ? "Data del rimborso" : "Data del pagamento"}</label><input id="p-data" type="date" value="${esc(pag.data)}" data-cambia="pagData"></div>
@@ -397,8 +422,10 @@ function vistaPagamento(ctx) {
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="pagRicorda" ${pag.ricorda ? "checked" : ""}>
       Ricorda questa scelta per ${esc(f.fornitore || "questo fornitore")}: la prossima volta Divisio la proporrà già</label>
     ${pag.errore ? `<div class="errore">${esc(pag.errore)}</div>` : ""}
-    <div class="riga-bottoni"><button class="btn" data-azione="confermaPagamento" ${pronto ? "" : "disabled"}>${pagamento.fuori ? "Conferma: segna pagata (senza registrare)" : nc ? "Conferma: segna rimborsata e registra" : "Conferma: segna pagata e registra"}</button>
-      <button class="btn sec" data-azione="annullaPagamento">Annulla</button></div>
+    <div class="riga-bottoni"><button class="btn" data-azione="confermaPagamento" ${pronto ? "" : "disabled"}>${pag.registra
+        ? (pagamento.fuori ? "Conferma: non va in contabilità" : "Conferma: registra in contabilità")
+        : pagamento.fuori ? "Conferma: segna pagata (senza registrare)" : nc ? "Conferma: segna rimborsata e registra" : "Conferma: segna pagata e registra"}</button>
+      <button class="btn sec" data-azione="annullaPagamento">${pag.registra ? "Non registrare" : "Annulla"}</button></div>
   </div>`;
 }
 
@@ -482,6 +509,13 @@ export const cambia = {
     toast("Scadenza salvata ✓");
     ctx.aggiorna();
   },
+  async dataSaldata(el, ev, ctx) {
+    const f = ctx.arch.fattura(el.dataset.id);
+    if (!f || !el.value) return;
+    await ctx.arch.salvaInsieme({ fatture: [cambiaDataSaldata(f, Number(el.dataset.n), el.value)], etichetta: `Data di pagamento della fattura ${f.fornitore} n. ${f.numero}` });
+    toast("Data salvata ✓");
+    ctx.aggiorna();
+  },
   pagData(el, ev, ctx) { pag.data = el.value; ctx.aggiorna(); },
   pagModalita(el, ev, ctx) { pag.modalita = el.value; if (modalitaInContanti(el.value) && ctx.arch.conti.has("A02-01-01")) pag.cassa = "A02-01-01"; ctx.aggiorna(); },
   pagVoce(el, ev, ctx) { pag.voce = el.value; ctx.aggiorna(); },
@@ -530,7 +564,9 @@ export const azioni = {
     el.disabled = true;
     const fatture = valide.map((v) => {
       const { impronte, pagata, modello, ...dati } = v.dati;
-      const f = nuovaFattura({ ...dati, avvisi: (dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli|proporrà/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile });
+      let f = nuovaFattura({ ...dati, avvisi: (dati.avvisi ?? []).filter((a) => !/scansione|scriva lei|controlli|proporrà|«Saldata»/i.test(a)) }, { origine: v.tipo === "pdf" ? "pdf" : "xml", nomeFile: v.nomeFile });
+      // scritta "PAGATA" sul PDF: la fattura entra già «Saldata» (si rimette «Da saldare» con un clic)
+      if (pagata?.data && f.rate.length === 1) f = segnaSaldata(f, 1, { data: pagata.data, modalita: pagata.modalita });
       return divisione ? { ...f, quotaTeatro: v.quota } : f;
     });
     // la scelta parrocchia / 50% / altra gestione viene ricordata per ogni fornitore
@@ -548,18 +584,28 @@ export const azioni = {
       modelli.set(chiave, imparaModello(v.righe, f, { precedente: modelli.get(chiave) ?? ctx.arch.impostazione(chiave), ...opzioniPDF(ctx.arch) }));
     });
     const salvate = await ctx.arch.salvaInsieme({ fatture, impostazioni: [...ricordi, ...modelli].map(([chiave, valore]) => ({ chiave, valore })) });
-    // fatture con la scritta "PAGATA" sul PDF: si propone subito di segnarle pagate (sempre con conferma)
-    coda = valide.map((v, i) => ({ v, f: salvate.fatture[i] })).filter(({ v, f }) => v.dati.pagata?.data && f.rate.length === 1)
-      .map(({ v, f }) => ({ id: f.id, data: v.dati.pagata.data, modalita: v.dati.pagata.modalita }));
+    // fatture con la scritta "PAGATA" sul PDF: sono già «Saldate»; con la registrazione accesa si propone di registrarle (sempre con conferma)
+    const timbrate = valide.map((v, i) => ({ v, f: salvate.fatture[i] })).filter(({ f }) => daRegistrare(f.rate[0]) && f.rate.length === 1);
+    coda = registraFatture(ctx.arch) ? timbrate.map(({ v, f }) => ({ id: f.id, data: v.dati.pagata.data, modalita: v.dati.pagata.modalita })) : [];
     for (const v of carico.voci) if (v.urlPDF) URL.revokeObjectURL(v.urlPDF);
     const saltate = carico.voci.filter((v) => (v.doppione || (v.forse && !v.diversa)) && !v.tolta).length;
     carico = null;
     filtro = "dapagare";
     const altre = fatture.filter((f) => divisione && f.quotaTeatro === 100).length;
-    toast(`${fatture.length === 1 ? "1 fattura aggiunta" : `${fatture.length} fatture aggiunte`} ✓${altre ? ` (${altre} del teatro o di altra gestione: fuori contabilità)` : ""}${saltate ? ` (${saltate} ${saltate === 1 ? "doppione saltato" : "doppioni saltati"})` : ""}`);
+    toast(`${fatture.length === 1 ? "1 fattura aggiunta" : `${fatture.length} fatture aggiunte`} ✓${timbrate.length ? ` (${timbrate.length === 1 ? "1 già saldata" : `${timbrate.length} già saldate`}: sul PDF c'è scritto PAGATA)` : ""}${altre ? ` (${altre} del teatro o di altra gestione: fuori contabilità)` : ""}${saltate ? ` (${saltate} ${saltate === 1 ? "doppione saltato" : "doppioni saltati"})` : ""}`);
     prossimaDellaCoda(ctx);
     ctx.aggiorna();
   },
+  async salda(el, ev, ctx) {
+    const f = ctx.arch.fattura(el.dataset.id), n = Number(el.dataset.n);
+    const rata = f?.rate.find((r) => r.n === n);
+    if (!rata || rata.stato === PAGATA) return;
+    el.disabled = true;
+    await ctx.arch.salvaInsieme({ fatture: [segnaSaldata(f, n, { data: oggiISO() })], etichetta: `Fattura ${f.fornitore} n. ${f.numero} saldata` });
+    toast(`${saldata(f)} ✓${registraFatture(ctx.arch) ? " Se vuole, ora «Registra in contabilità…»" : ""}`);
+    ctx.aggiorna();
+  },
+  vaiImpostazioni(el, ev, ctx) { ctx.vai("impostazioni"); },
   apriPagamento(el, ev, ctx) { apriPagamento(ctx, el.dataset.id, Number(el.dataset.n)); pag.scorri = true; ctx.aggiorna(); },
   annullaPagamento(el, ev, ctx) { pag = null; prossimaDellaCoda(ctx); ctx.aggiorna(); },
   saltaCoda(el, ev, ctx) { coda = []; pag = null; ctx.aggiorna(); },
@@ -581,7 +627,7 @@ export const azioni = {
   async confermaPagamento(el, ev, ctx) {
     const { f, pagamento } = candidatoPagamento(ctx);
     let esito;
-    try { esito = segnaPagata(f, pag.n, pagamento); } catch (e) { pag.errore = e.message; ctx.aggiorna(); return; }
+    try { esito = (pag.registra ? registraSaldata : segnaPagata)(f, pag.n, pagamento); } catch (e) { pag.errore = e.message; ctx.aggiorna(); return; }
     if (esito.movimento) {
       const err = verificaMovimento(esito.movimento, { conti: ctx.arch.conti });
       if (err.length) { pag.errore = err[0]; ctx.aggiorna(); return; }
@@ -589,9 +635,10 @@ export const azioni = {
     el.disabled = true;
     const divisione = teatro(ctx.arch).attivo;
     const impostazioni = pag.ricorda ? [daRicordare(ctx.arch, f, { voce: pagamento.voce || ricordo(ctx.arch, f)?.voce || undefined, ...(divisione ? { quotaTeatro: pagamento.quotaTeatro } : {}) })] : [];
-    await ctx.arch.salvaInsieme({ fatture: [divisione ? { ...esito.fattura, quotaTeatro: pagamento.quotaTeatro } : esito.fattura], movimenti: esito.movimento ? [esito.movimento] : [], impostazioni });
+    await ctx.arch.salvaInsieme({ fatture: [divisione ? { ...esito.fattura, quotaTeatro: pagamento.quotaTeatro } : esito.fattura], movimenti: esito.movimento ? [esito.movimento] : [], impostazioni,
+      etichetta: `Fattura ${f.fornitore} n. ${f.numero} registrata in contabilità` });
     const anno = pagamento.data.slice(0, 4);
-    toast(esito.movimento ? `Pagata e registrata in contabilità ✓${anno !== String(ctx.anno) ? ` (nell'anno ${anno})` : ""}` : "Segnata come pagata ✓ (nessuna registrazione)");
+    toast(esito.movimento ? `${pag.registra ? "Registrata" : "Pagata e registrata"} in contabilità ✓${anno !== String(ctx.anno) ? ` (nell'anno ${anno})` : ""}` : "Segnata come pagata ✓ (nessuna registrazione)");
     pag = null;
     prossimaDellaCoda(ctx);
     ctx.aggiorna();
@@ -601,12 +648,13 @@ export const azioni = {
     const rata = f?.rate.find((r) => r.n === n);
     if (!rata) return;
     const m = ctx.arch.movimento(idMovimento(f, n));
-    const testo = m ? `La fattura tornerà "da pagare" e la sua registrazione del ${dataIt(m.data)} (${eur(rata.importo)}) sarà tolta dalla contabilità.\n\nSe l'aveva già passata a UNIO, la pagina "Per UNIO" preparerà da sola la correzione.`
-      : `La fattura tornerà "da pagare".`;
+    const testo = m ? `La fattura tornerà «${daSaldare(f)}» e la sua registrazione del ${dataIt(m.data)} (${eur(rata.importo)}) sarà tolta dalla contabilità.\n\nSe l'aveva già passata a UNIO, la pagina "Per UNIO" preparerà da sola la correzione.`
+      : `La fattura di ${f.fornitore} n. ${f.numero} tornerà «${daSaldare(f)}».`;
     if (!confirm(testo + "\n\nProcedere?")) return;
     const { fattura, movimentoDaEliminare } = tornaDaPagare(f, n);
-    await ctx.arch.salvaInsieme({ fatture: [fattura], movimentiDaEliminare: movimentoDaEliminare || m ? [movimentoDaEliminare || m.id] : [], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da pagare` });
-    toast(m ? "Fattura di nuovo da pagare; registrazione tolta ✓" : "Fattura di nuovo da pagare ✓");
+    await ctx.arch.salvaInsieme({ fatture: [fattura], movimentiDaEliminare: movimentoDaEliminare || m ? [movimentoDaEliminare || m.id] : [], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da saldare` });
+    if (pag?.id === f.id && pag.n === n) pag = null;
+    toast(m ? `Di nuovo «${daSaldare(f)}»; registrazione tolta ✓` : `Di nuovo «${daSaldare(f)}» ✓`);
     ctx.aggiorna();
   },
   async togliFattura(el, ev, ctx) {
@@ -631,8 +679,8 @@ export const azioni = {
   async rimettiDaPagare(el, ev, ctx) {
     const f = ctx.arch.fattura(el.dataset.id);
     if (!f) return;
-    await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, Number(el.dataset.n)).fattura], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da pagare` });
-    toast("Fattura di nuovo da pagare ✓");
+    await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, Number(el.dataset.n)).fattura], etichetta: `Fattura ${f.fornitore} n. ${f.numero} di nuovo da saldare` });
+    toast(`Di nuovo «${daSaldare(f)}» ✓`);
     ctx.aggiorna();
   },
   async togliUscita(el, ev, ctx) {

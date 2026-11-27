@@ -7,7 +7,7 @@ import { GRUPPI, isCassaBanca, casseInOrdine, prossimoCodiceCassa, crescInDare, 
 import { causaliPer, libera } from "../dominio/causali.js";
 import { esc, eur, oggiISO, scarica, toast, locale, opzioniConti, $ } from "./util.js";
 import { vistaCard as cardCondivisione, azioni as azioniCondivisione, condivisioneImpostata } from "./condivisione.js";
-import { teatro } from "./fatture.js";
+import { teatro, registraFatture, CHIAVE_REGISTRA } from "./fatture.js";
 import { apriRiquadro as apriCaricaUNIO } from "./importa.js";
 import { VERSIONE } from "../versione.js";
 import { stessaBanca, unisciBanche } from "../dominio/unisciBanche.js";
@@ -115,7 +115,7 @@ function cardRiparti(arch) {
     return `<div class="card solo-schermo"><details data-chiave="riparti"><summary>Ripartire da zero</summary>
       <p>Cancella da Divisio i movimenti di <b>tutti gli anni</b> e le fatture dello scadenzario, per ricominciare da capo
         (per esempio dopo le prove). Restano i dati della parrocchia, cassa e banche, piano dei conti e impostazioni. In UNIO non cambia nulla.</p>
-      <p class="hint">Per cancellare solo un anno: Movimenti → «Azzera i movimenti del …». Solo le fatture: Fatture → «Azzera lo scadenzario».</p>
+      <p class="hint">Per cancellare solo un anno: Movimenti → «Azzera i movimenti del …». Solo le fatture: Scadenzario → «Azzera lo scadenzario».</p>
       <button class="btn pericolo" data-azione="apriRiparti">Ripartire da zero…</button></details></div>`;
   }
   const d = datiRiparti(arch);
@@ -133,7 +133,7 @@ function cardRiparti(arch) {
     <p>Scelga cosa cancellare da Divisio:</p>
     ${voci.map(([k, testo]) => `<label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="ripartiScelta" data-k="${k}" ${riparti[k] ? "checked" : ""}> ${esc(testo)}</label>`).join("")}
     ${riparti.fatture && !riparti.movimenti ? `<div class="nota">Le uscite delle fatture già pagate restano in contabilità come movimenti normali.</div>` : ""}
-    ${riparti.movimenti && !riparti.fatture ? `<div class="nota">Le fatture restano; quelle pagate tornano «da pagare», perché la loro uscita viene cancellata.</div>` : ""}
+    ${riparti.movimenti && !riparti.fatture ? `<div class="nota">Le fatture restano; quelle pagate tornano «da saldare», perché la loro uscita viene cancellata.</div>` : ""}
     <div class="avviso">Restano sempre: dati della parrocchia, cassa e banche, piano dei conti, impostazioni e collegamento per lavorare insieme.
       Se Divisio è condiviso, quello che cancella sparisce anche dagli altri computer.</div>
     <p>Prima di cancellare, Divisio scarica una <b>copia di sicurezza</b> (cartella Download): con quella, o subito con «↶ Annulla», si torna indietro.</p>
@@ -179,6 +179,19 @@ function elencoCausali(arch) {
     </table></div></details>`;
 }
 
+/* ---------- scadenzario: registrare le fatture saldate in contabilità (facoltativo, spento per tutti all'inizio) ---------- */
+function cardRegistraFatture(arch) {
+  const attiva = registraFatture(arch);
+  return `<div class="card"><h3>Scadenzario: registrare le fatture in contabilità</h3>
+    <p class="hint">Lo Scadenzario serve prima di tutto ad avvisare quando le fatture scadono: si clicca «Da saldare» e la fattura diventa «Saldata».
+      Così, però, in contabilità non entra nulla: l'uscita si registra a parte (in Registra, o dalla pagina Banca).</p>
+    <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="registraFatture" ${attiva ? "checked" : ""}>
+      Dopo che una fattura è saldata, permettimi di registrarla in contabilità</label>
+    ${attiva ? `<p class="hint">Sotto ogni fattura «Saldata» compare il pulsante <b>«Registra in contabilità…»</b>: si scelgono la cassa o la banca e la voce di spesa
+      (Divisio la propone e la ricorda per ogni fornitore), si vede cosa verrà registrato e si conferma. Si può farlo subito o più avanti.</p>` : ""}
+  </div>`;
+}
+
 /* ---------- fatture del teatro o di altre gestioni (facoltativo, spento per tutti all'inizio) ---------- */
 function cardTeatro(arch) {
   const t = teatro(arch);
@@ -190,7 +203,7 @@ function cardTeatro(arch) {
     ${t.attivo ? `<p>Quando carica le fatture (e quando le segna pagate) Divisio chiede di scegliere tra:</p>
       <ol class="passi">
         <li><b>Della parrocchia</b>: entra in contabilità per intero.</li>
-        <li><b>Del teatro o di altra gestione</b>: non entra in contabilità; resta da parte, nell'elenco «Teatro e altre gestioni» della pagina Fatture.</li>
+        <li><b>Del teatro o di altra gestione</b>: non entra in contabilità; resta da parte, nell'elenco «Teatro e altre gestioni» della pagina Scadenzario.</li>
         <li><b>Al 50%</b>: il totale con l'IVA si divide a metà e in contabilità entra solo una metà.</li>
       </ol>
       <p class="hint">Divisio ricorda la scelta fatta per ogni fornitore e la volta dopo la propone già; lei la vede sempre e può confermarla o cambiarla.</p>
@@ -278,6 +291,7 @@ export function vista(ctx) {
     <button class="btn sec" data-azione="vaiCaricaUNIO">Vai a Movimenti → Carica da UNIO</button></div>
 
   ${cardCausale(arch)}
+  ${cardRegistraFatture(arch)}
   ${cardTeatro(arch)}
 
   <div class="card"><h3>Chi usa questo computer</h3>
@@ -341,6 +355,11 @@ export const cambia = {
   async causaleAttiva(el, ev, ctx) {
     await ctx.arch.salvaImpostazione("causale-unio", el.checked, { etichetta: el.checked ? "Causale come in UNIO accesa" : "Causale come in UNIO spenta" });
     toast(el.checked ? "Causale come in UNIO: attivata ✓ (la trova nella pagina Registra)" : "Causale come in UNIO: spenta");
+    ctx.aggiorna();
+  },
+  async registraFatture(el, ev, ctx) {
+    await ctx.arch.salvaImpostazione(CHIAVE_REGISTRA, el.checked, { etichetta: el.checked ? "Registrazione delle fatture in contabilità accesa" : "Registrazione delle fatture in contabilità spenta" });
+    toast(el.checked ? "Scadenzario: registrazione in contabilità attivata ✓" : "Scadenzario: registrazione in contabilità spenta (le fatture già registrate restano)");
     ctx.aggiorna();
   },
   async teatroAttivo(el, ev, ctx) {

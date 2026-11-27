@@ -185,7 +185,7 @@ export function numeroNelTesto(numero, testo) {
   return new RegExp(`${prima}${esc}(?![a-z0-9]|/\\d)`).test(norm(testo));
 }
 
-/** La rata da pagare che questo movimento probabilmente paga: {fattura, rata, motivo} oppure null. */
+/** La rata da pagare (o saldata ma non registrata) che questo movimento probabilmente paga: {fattura, rata, motivo} oppure null. */
 export function trovaFattura(riga, fatture, giaUsate = new Set()) {
   if (riga.importo >= 0) return null;
   const importo = -riga.importo;
@@ -193,7 +193,7 @@ export function trovaFattura(riga, fatture, giaUsate = new Set()) {
   for (const f of fatture) {
     if (f.eliminato || f.notaCredito) continue;
     for (const r of f.rate) {
-      if (r.stato === PAGATA || r.importo !== importo || giaUsate.has(`${f.id}-${r.n}`)) continue;
+      if ((r.stato === PAGATA && !r.senzaRegistrazione) || r.importo !== importo || giaUsate.has(`${f.id}-${r.n}`)) continue;
       const nome = somiglianza(f.fornitore, riga.descrizione);
       const numero = numeroNelTesto(f.numero, riga.descrizione);
       if (nome < 0.5 && !numero) continue;

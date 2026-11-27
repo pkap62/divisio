@@ -191,6 +191,14 @@ img.pdf-vista { display: block; width: 100%; max-width: 820px; border: 1px solid
 .riepilogo-fatture .saldo { background: #faf8f3; border-radius: 10px; padding: 10px 14px; }
 table.scadenze td { vertical-align: top; }
 tr.riga-scaduta td:first-child { color: var(--rosso); font-weight: 650; }
+/* scadenzario: il pulsante è lo stato della fattura */
+td.stato-rata { min-width: 150px; }
+.btn.stato { min-width: 130px; font-weight: 650; color: #fff; }
+.stato-blu { --c: var(--blu); } .stato-arancio { --c: #b35300; } .stato-rosso { --c: var(--rosso); } .stato-saldata { --c: var(--verde); }
+.btn.stato-blu, .btn.stato-arancio, .btn.stato-rosso, .btn.stato-saldata { background: var(--c); border-color: var(--c); color: #fff; }
+.btn.stato:hover { filter: brightness(1.12); }
+.pill.stato-blu, .pill.stato-arancio, .pill.stato-rosso, .pill.stato-saldata { background: var(--c); color: #fff; margin-left: 0; }
+td.stato-rata .hint { margin: 3px 0 0; }
 .riga.stretta { margin-top: 8px; } .riga.stretta .campo { margin: 0; }
 
 /* piano dei conti */

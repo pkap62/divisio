@@ -385,7 +385,7 @@ export function leggiFatturaDaTesto(testo, { righe = null, escludiPiva = [], nom
   const ibanFornitore = impronte.find((x) => x.startsWith("iban:"))?.slice(5) ?? "";
   const pagata = timbro.length ? { data: date(timbro[0].t)[0], modalita: modalitaIn(timbro[0].t)[0] ?? "" } : null;
   if (pagata) {
-    avvisi.push(`Sul PDF c'è scritto «${timbro[0].t}»: dopo averla aggiunta, Divisio le proporrà di segnarla pagata il ${pagata.data.split("-").reverse().join("/")}.`);
+    avvisi.push(`Sul PDF c'è scritto «${timbro[0].t}»: verrà aggiunta già «Saldata» il ${pagata.data.split("-").reverse().join("/")}.`);
     if (!modalita.valore && pagata.modalita) { modalita.valore = pagata.modalita; modalita.sicuro = true; }
   }
 

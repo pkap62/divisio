@@ -282,7 +282,7 @@ function vistaFatte(ctx) {
     <table>${el.map((i) => `<tr><td>${esc(i.file || "estratto conto")}<br><span class="hint">${esc(ctx.arch.nomeConto(i.cassa))} · dal ${dataIt(i.dal)} al ${dataIt(i.al)} · caricato il ${new Date(i.il).toLocaleDateString("it-IT")}</span></td>
       <td class="n">${n_(i.n, "movimento", "movimenti")}</td>
       <td class="n"><button class="btn pericolo piccolo" data-azione="togliImportazione" data-id="${esc(i.id)}">Togli dalla contabilità</button></td></tr>`).join("")}</table>
-    <p class="hint">«Togli dalla contabilità» elimina tutti i movimenti registrati da quel file (le fatture pagate tornano "da pagare"). Le scelte ricordate restano.</p>
+    <p class="hint">«Togli dalla contabilità» elimina tutti i movimenti registrati da quel file (le fatture pagate tornano «da saldare»). Le scelte ricordate restano.</p>
   </details></div>`;
 }
 
@@ -419,7 +419,9 @@ export const azioni = {
         const rata = f?.rate.find((r) => r.n === p.fattura.n);
         if (!rata) { toast(`La fattura del movimento del ${dataIt(p.data)} non c'è più nello scadenzario`); return; }
         let esito;
-        try { esito = segnaPagata(f, p.fattura.n, { data: p.data, modalita: modalitaDaTesto(p.descrizione) || rata.modalita, cassa: imp.cassa, voce: p.voce, quotaTeatro: t.attivo ? p.quotaTeatro : 0 }); }
+        // una rata già «Saldata» nello scadenzario (senza registrazione) si registra ora, con questo movimento della banca
+        const base = rata.senzaRegistrazione ? tornaDaPagare(f, p.fattura.n).fattura : f;
+        try { esito = segnaPagata(base, p.fattura.n, { data: p.data, modalita: modalitaDaTesto(p.descrizione) || rata.modalita, cassa: imp.cassa, voce: p.voce, quotaTeatro: t.attivo ? p.quotaTeatro : 0 }); }
         catch (e) { toast(`${dataIt(p.data)}: ${e.message}`); return; }
         fatture.set(f.id, t.attivo ? { ...esito.fattura, quotaTeatro: p.quotaTeatro } : esito.fattura);
         m = esito.movimento ? { ...esito.movimento, banca: datiBanca(p, imp.cassa, importazione) } : null;   // null: del teatro o di altra gestione
@@ -448,7 +450,7 @@ export const azioni = {
     const mov = arch.movimenti().filter((m) => m.banca?.importazione === el.dataset.id);
     if (!mov.length) return;
     const conFattura = mov.filter((m) => m.fattura);
-    if (!confirm(`Togliere dalla contabilità i ${mov.length} movimenti registrati da «${mov[0].banca.file}»?${conFattura.length ? `\n\n${n_(conFattura.length, "fattura tornerà", "fatture torneranno")} "da pagare".` : ""}\n\nSe li aveva già passati a UNIO, la pagina "Per UNIO" preparerà la correzione.`)) return;
+    if (!confirm(`Togliere dalla contabilità i ${mov.length} movimenti registrati da «${mov[0].banca.file}»?${conFattura.length ? `\n\n${n_(conFattura.length, "fattura tornerà", "fatture torneranno")} «da saldare».` : ""}\n\nSe li aveva già passati a UNIO, la pagina "Per UNIO" preparerà la correzione.`)) return;
     const fatture = new Map();
     for (const m of conFattura) {
       const f = fatture.get(m.fattura.id) ?? arch.fattura(m.fattura.id);

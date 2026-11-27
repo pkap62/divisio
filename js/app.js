@@ -20,7 +20,7 @@ const PAGINE = {
   inizio: { modulo: inizio, nome: "Inizio" },
   registra: { modulo: registra, nome: "Registra" },
   movimenti: { modulo: movimenti, nome: "Movimenti" },
-  fatture: { modulo: fatture, nome: "Fatture" },
+  fatture: { modulo: fatture, nome: "Scadenzario" },
   banca: { modulo: banca, nome: "Banca" },
   rendiconto: { modulo: rendiconto, nome: "Rendiconto" },
   unio: { modulo: unio, nome: "Per UNIO" },

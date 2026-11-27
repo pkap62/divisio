@@ -7,6 +7,16 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.15.0 – La pagina Fatture diventa «Scadenzario»**
+- Menu: «Fatture» → **Scadenzario**. Caricamento delle fatture e «Azzera lo scadenzario» come prima.
+- Ogni rata ha un pulsante che è il suo stato: **«Da saldare»** blu (non scaduta o senza data), arancione (scaduta da 1 a 7 giorni), rosso (scaduta da più di 7 giorni);
+  un clic → verde **«Saldata»** con la data di oggi (`segnaSaldata`, `rata.senzaRegistrazione`): in contabilità non entra nulla. Clic sul verde → di nuovo «Da saldare».
+  Note di credito: «Da rimborsare» / «Rimborsata». Colore da `colore()` in `js/dominio/scadenzario.js`.
+- Registrare in contabilità è **facoltativo**, spento per tutti: Impostazioni → «Scadenzario: registrare le fatture in contabilità» (`scadenzario-registra`).
+  Se acceso, sotto le fatture saldate c'è «Registra in contabilità…» (stesso riquadro di prima: cassa, voce proposta e ricordata; `registraSaldata`).
+- Scritta PAGATA sul PDF: la fattura entra già «Saldata»; con la registrazione accesa si propone subito di registrarla.
+- Banca: riconosce anche le fatture «Saldate» non registrate e le collega all'uscita della banca.
+
 **0.14.3 – Banche nell'ordine in cui si scelgono; togliere il doppione di una banca**
 - Come in UNIO, una banca scelta in «Cassa e banche» prende il numero dopo l'ultima (`prossimoCodiceCassa`), non il primo libero;
   casse e banche si mostrano ovunque in ordine di numero (`casseInOrdine`). Il vecchio campo `ordine` non conta più (e si toglie quando due banche si uniscono).
@@ -208,9 +218,9 @@ Il sito contiene solo il programma: i dati della parrocchia restano sul computer
 |---|---|
 | `js/dominio/` | regole contabili, senza interfaccia: importi, piano dei conti, scritture, saldi, Rendiconto, formato UNIO, copia di sicurezza, CSV, unione dei dati tra computer, lettura delle fatture (XML/P7M e testo dei PDF), scadenzario, proposta della voce |
 | `js/dati/` | salvataggio nel browser (IndexedDB), condivisione tramite cartella, lettura dei PDF |
-| `js/ui/` | le pagine: Inizio, Registra, Movimenti, Fatture, Rendiconto, Per UNIO, Impostazioni |
+| `js/ui/` | le pagine: Inizio, Registra, Movimenti, Scadenzario (file `fatture.js`), Rendiconto, Per UNIO, Impostazioni |
 | `js/lib/pdfjs/` | lettore PDF di Mozilla (pdf.js 4.10.38, licenza Apache 2.0) |
-| `tests/` | test automatici; in `tests/esempi/` fatture di prova inventate (XML e PDF) per provare la pagina Fatture |
+| `tests/` | test automatici; in `tests/esempi/` fatture di prova inventate (XML e PDF) per provare la pagina Scadenzario |
 | `docs/` | specifiche, struttura del Rendiconto, piano dei conti di esempio |
 | `prototipo/` | prototipo cliccabile della Fase 0 |
 

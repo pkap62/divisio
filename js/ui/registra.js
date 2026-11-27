@@ -153,7 +153,7 @@ const notaCopia = () => (F.copiaDa && !F.id
   ? `<div class="nota">Copiato da «${esc(F.copiaDa.descr)}» del ${dataIt(F.copiaDa.data)}: controlli data e importo, poi prema Registra.</div>` : "");
 
 const notaFattura = (ctx) => (F.id && ctx.arch.movimento(F.id)?.fattura
-  ? `<div class="nota">Questo movimento viene da una fattura pagata (pagina Fatture). Si può correggere qui; per annullare il pagamento, usi "Torna da pagare" nella pagina Fatture.</div>` : "");
+  ? `<div class="nota">Questo movimento viene da una fattura saldata (pagina Scadenzario). Si può correggere qui; per annullare il pagamento, nella pagina Scadenzario clicchi il pulsante verde «Saldata».</div>` : "");
 
 function intestazione(titolo, testoBottone, azioneBottone) {
   return `<div class="riga"><h2 class="spazio">${titolo}</h2>

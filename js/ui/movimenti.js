@@ -97,7 +97,7 @@ function vistaAzzera(ctx) {
   return `<div class="card evidenza solo-schermo" id="azzera"><h3>Azzera i movimenti del ${anno}</h3>
     <div class="avviso">Verranno cancellati <b>${movimenti.length === 1 ? "1 movimento" : `${movimenti.length} movimenti`}</b> del ${anno}${daUNIO ? ` (di cui ${daUNIO} caricati da UNIO)` : ""},
       compresi i saldi di apertura. Se Divisio è condiviso, spariranno anche dagli altri computer.</div>
-    ${fatture.length ? `<div class="nota">${fatture.length === 1 ? "1 fattura pagata nel" : `${fatture.length} fatture pagate nel`} ${anno} ${fatture.length === 1 ? "tornerà" : "torneranno"} «da pagare» nello scadenzario,
+    ${fatture.length ? `<div class="nota">${fatture.length === 1 ? "1 fattura pagata nel" : `${fatture.length} fatture pagate nel`} ${anno} ${fatture.length === 1 ? "tornerà" : "torneranno"} «da saldare» nello scadenzario,
       perché la loro uscita viene cancellata.</div>` : ""}
     <p>Prima di azzerare, Divisio scarica una <b>copia di sicurezza</b> (cartella Download): con quella, da Impostazioni, si può tornare indietro.</p>
     <label class="spunta-riga"><input type="checkbox" class="spunta-grande" data-cambia="azzeraCapito" ${azzera.capito ? "checked" : ""}>
@@ -157,9 +157,9 @@ export const azioni = {
     const ancheUNIO = inviato ? `\n\nAttenzione: il Rendiconto ${m.data.slice(0, 4)} risulta già inviato da UNIO il ${dataIt(inviato)}; l'eliminazione va fatta anche in UNIO.` : "";
     if (f) {
       // movimento nato da una fattura pagata: la fattura torna "da pagare", nella stessa operazione
-      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà "da pagare" nello scadenzario.${ancheUNIO}`)) return;
+      if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?\n\nViene da una fattura segnata come pagata: la fattura tornerà «Da saldare» nello scadenzario.${ancheUNIO}`)) return;
       await ctx.arch.salvaInsieme({ fatture: [tornaDaPagare(f, m.fattura.rata).fattura], movimentiDaEliminare: [m.id], etichetta: `Eliminazione del movimento «${m.descr}»` });
-      toast("Movimento eliminato; la fattura è di nuovo da pagare");
+      toast("Movimento eliminato; la fattura è di nuovo da saldare");
     } else {
       if (!confirm(`Eliminare il movimento «${m.descr}» del ${dataIt(m.data)}?${ancheUNIO}`)) return;
       await ctx.arch.eliminaMovimento(m.id);

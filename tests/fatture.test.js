@@ -189,7 +189,7 @@ test("fatture PDF: valori scritti sotto le etichette, legature perse, timbro PAG
   uguale(f.pagata, { data: "2026-03-05", modalita: "MP05" });
   uguale([f.fornitore, f.piva], ["", ""], "il nome è solo nel logo: niente di inventato");
   uguale(f.incerti, ["fornitore", "piva"]);
-  contiene(f.avvisi, "segnarla pagata il 05/03/2026");
+  contiene(f.avvisi, "«Saldata» il 05/03/2026");
 });
 
 test("fatture PDF: Divisio ricorda il fornitore corretto a mano e la volta dopo lo riconosce dall'IBAN", () => {

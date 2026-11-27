@@ -158,6 +158,15 @@ test("banca: il pagamento di una fattura dello scadenzario viene riconosciuto", 
   uguale(trovaFattura({ importo: -18300, data: "2026-03-24", descrizione: "bonifico a sconosciuto" }, [fattura]), null);
 });
 
+test("banca: riconosce anche una fattura già «Saldata» nello scadenzario ma non registrata; non quella già registrata", () => {
+  const base1 = { id: "f1", fornitore: "IDRAULICA ESEMPIO S.R.L.", numero: "45", data: "2026-03-21", piva: "01234567890" };
+  const saldata = { ...base1, rate: [{ n: 1, importo: 18300, scadenza: "2026-04-20", stato: "pagata", pagataIl: "2026-03-24", senzaRegistrazione: true }] };
+  const registrata = { ...base1, rate: [{ n: 1, importo: 18300, scadenza: "2026-04-20", stato: "pagata", pagataIl: "2026-03-24", movimentoId: "fattura-f1-1" }] };
+  const riga = { importo: -18300, data: "2026-03-24", descrizione: "bonifico a Idraulica Esempio fattura 45" };
+  uguale(trovaFattura(riga, [saldata])?.fattura.id, "f1");
+  uguale(trovaFattura(riga, [registrata]), null);
+});
+
 test("banca: la scelta ricordata vale per lo stesso nome e la stessa causale", () => {
   const righe = leggi(BPM).righe;
   const p0 = preparaRighe(righe, base);

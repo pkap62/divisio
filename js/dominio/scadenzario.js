@@ -1,6 +1,8 @@
 // Scadenzario delle fatture e collegamento con la contabilità.
 //
-// Regola fondamentale: in contabilità entra SOLO una rata "pagata". Una rata "da pagare" non genera nulla.
+// Regola fondamentale: in contabilità entra SOLO una rata "pagata" (sullo schermo: «Saldata»). Una rata "da pagare" non genera nulla.
+// Dalla 0.15 lo scadenzario è prima di tutto un promemoria: «Da saldare» → un clic → «Saldata», senza registrare nulla
+// (segnaSaldata, rata.senzaRegistrazione). Solo se è accesa l'impostazione, dopo si può registrarla in contabilità (registraSaldata).
 // Ogni rata pagata ha (al massimo) un movimento collegato, con identificativo fisso "fattura-<id>-<rata>":
 // - segnare pagata  → crea il movimento (stessa operazione);
 // - tornare "da pagare" → elimina il movimento (stessa operazione);
@@ -103,11 +105,52 @@ export function segnaPagata(f, n, pagamento) {
   return { fattura: { ...f, rate: f.rate.map((r) => (r.n === n ? nuovaRata : r)) }, movimento };
 }
 
+/**
+ * Segna «Saldata» la rata n come semplice promemoria: in contabilità non entra nulla.
+ * Se l'impostazione lo permette, più avanti la si può registrare con registraSaldata.
+ */
+export function segnaSaldata(f, n, { data, modalita = "" } = {}) {
+  const rata = f.rate.find((r) => r.n === n);
+  if (!rata) throw new Error("Rata inesistente.");
+  if (rata.stato === PAGATA) throw new Error("Questa rata è già segnata come saldata.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data ?? "")) throw new Error("Manca la data del pagamento.");
+  const nuovaRata = { ...rata, stato: PAGATA, pagataIl: data, modalitaPagamento: modalita || rata.modalita || "", cassa: "", voce: "",
+    quotaTeatro: 0, contoTeatro: "", fuori: false, senzaRegistrazione: true, movimentoId: null };
+  return { ...f, rate: f.rate.map((r) => (r.n === n ? nuovaRata : r)) };
+}
+
+/** Rata saldata ma non (ancora) registrata in contabilità. */
+export const daRegistrare = (rata) => rata?.stato === PAGATA && Boolean(rata.senzaRegistrazione);
+
+/** Registra in contabilità una rata già saldata senza registrazione: come segnaPagata (pagamento = {data, cassa, voce, …}). */
+export function registraSaldata(f, n, pagamento) {
+  const rata = f.rate.find((r) => r.n === n);
+  if (!daRegistrare(rata)) throw new Error("Questa rata non è da registrare.");
+  return segnaPagata(tornaDaPagare(f, n).fattura, n, pagamento);
+}
+
+/** Cambia la data in cui una rata saldata (non registrata) è stata pagata. */
+export function cambiaDataSaldata(f, n, data) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data ?? "")) throw new Error("La data non è valida.");
+  if (!daRegistrare(f.rate.find((r) => r.n === n))) throw new Error("Questa rata non è saldata senza registrazione.");
+  return { ...f, rate: f.rate.map((r) => (r.n === n ? { ...r, pagataIl: data } : r)) };
+}
+
+/**
+ * Colore del pulsante nello scadenzario:
+ *  "saldata" (verde) · "rosso": scaduta da più di una settimana · "arancio": scaduta da 1 a 7 giorni · "blu": non ancora scaduta (o senza data)
+ */
+export function colore({ rata, giorni }) {
+  if (rata.stato === PAGATA) return "saldata";
+  if (giorni === null || giorni === undefined || giorni >= 0) return "blu";
+  return giorni < -7 ? "rosso" : "arancio";
+}
+
 /** La rata torna "da pagare": restituisce {fattura, movimentoDaEliminare} (id o null). */
 export function tornaDaPagare(f, n) {
   const rata = f.rate.find((r) => r.n === n);
   if (!rata) throw new Error("Rata inesistente.");
-  const { stato, pagataIl, modalitaPagamento, cassa, voce, quotaTeatro, contoTeatro, fuori, movimentoId, ...resto } = rata;
+  const { stato, pagataIl, modalitaPagamento, cassa, voce, quotaTeatro, contoTeatro, fuori, senzaRegistrazione, movimentoId, ...resto } = rata;
   return { fattura: { ...f, rate: f.rate.map((r) => (r.n === n ? { ...resto, stato: DA_PAGARE } : r)) }, movimentoDaEliminare: movimentoId || null };
 }
 
@@ -152,7 +195,7 @@ export function coerenza(fatture, movimento, movimentiConFattura = []) {
     if (f.eliminato) continue;
     for (const rata of f.rate) {
       const id = idMovimento(f, rata.n);
-      if (rata.stato === PAGATA && !rata.fuori && !movimento(id)) {
+      if (rata.stato === PAGATA && !rata.fuori && !rata.senzaRegistrazione && !movimento(id)) {
         out.push({ fattura: f, rata, problema: "manca", testo: `${descrizione(f, rata)} risulta pagata, ma la sua registrazione in contabilità non c'è più.` });
       }
       if (rata.stato !== PAGATA && movimento(id)) {

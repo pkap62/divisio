@@ -26,6 +26,7 @@
   .indirizzo { font-size: 22px; font-weight: 700; background: var(--blu-chiaro); padding: 12px 16px; border-radius: 10px; display: block; text-align: center; margin: 10px 0 18px; }
   ol, ul { padding-left: 24px; } li { margin: 6px 0; }
   .box { border-radius: 10px; padding: 12px 16px; margin: 14px 0; }
+  .box.novita { font-size: 14px; line-height: 1.5; padding: 9px 14px; margin: 10px 0; }
   .nota { background: var(--blu-chiaro); } .ok { background: var(--verde-chiaro); color: var(--verde); } .attenzione { background: var(--arancio-chiaro); color: var(--arancio); }
   .indice { columns: 2; column-gap: 28px; background: #faf8f3; border-radius: 10px; padding: 12px 16px 12px 36px; }
   table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
@@ -36,6 +37,7 @@
   footer { margin-top: 40px; color: var(--tenue); font-size: 14px; border-top: 1px solid var(--linea); padding-top: 12px; }
   @media print {
     body { background: #fff; font-size: 11pt; } .foglio { padding: 0; max-width: none; }
+    .box.novita { font-size: 9pt; }
     h2 { break-before: auto; break-after: avoid; } h3 { break-after: avoid; } li, .box, tr { break-inside: avoid; } th { break-after: avoid; }
     a { color: inherit; text-decoration: none; } .indice { columns: 2; }
   }
@@ -52,7 +54,7 @@
     <line x1="23" y1="57" x2="43" y2="25" stroke="#e0b252" stroke-width="8" stroke-linecap="round"/></svg></div>
   <p>Contabilità parrocchiale semplice adatta alle parrocchie della Diocesi di Firenze</p>
   <p class="autore">Software ideato da Don Paolo Capecchi e realizzato con Intelligenza artificiale</p>
-  <p class="versione">Versione <span id="versione">0.12.1</span></p>
+  <p class="versione">Versione <span id="versione">0.15.0</span></p>
 </header>
 
 <h1>Guida per iniziare e per l'uso di ogni giorno</h1>
@@ -70,7 +72,7 @@ e come usarlo durante l'anno. Non servono conoscenze tecniche.</p>
   <li><a href="#prova">Anno di prova 2026</a></li>
   <li><a href="#altre">Altre parrocchie</a></li>
   <li><a href="#giorno">Uso di ogni giorno</a></li>
-  <li><a href="#fatture">Fatture e scadenze</a></li>
+  <li><a href="#fatture">Scadenzario</a></li>
   <li><a href="#banca">Estratti conto della banca</a></li>
   <li><a href="#trimestre">I dati in UNIO: due modi</a></li>
   <li><a href="#anno">Fine anno: il Rendiconto</a></li>
@@ -93,43 +95,47 @@ da dove il Rendiconto si invia in Curia come sempre.</p>
 <div class="box attenzione"><b>ATTENZIONE: Divisio è in fase sperimentale.</b> Controlli sempre movimenti, totali e Rendiconto prima di usarli
 (per esempio prima di riportarli in UNIO). Il programma è offerto così com'è: l'autore non si assume responsabilità per eventuali errori.</div>
 
-<div class="box nota"><b>Novità della versione 0.12.1:</b> in Impostazioni → <b>Piano dei conti</b> i sottoconti che nessun movimento usa
+<div class="box nota novita"><b>Novità della versione 0.15:</b> la pagina <b>Fatture</b> si chiama ora <b>Scadenzario</b> (capitolo 10) ed è prima di tutto un promemoria:
+ogni fattura ha un pulsante <b>«Da saldare»</b> blu, arancione o rosso secondo la scadenza, che con un clic diventa verde <b>«Saldata»</b>.
+Registrare le fatture in contabilità è ora <b>facoltativo</b>: si accende in Impostazioni → «Scadenzario: registrare le fatture in contabilità».</div>
+
+<div class="box nota novita"><b>Novità della versione 0.12.1:</b> in Impostazioni → <b>Piano dei conti</b> i sottoconti che nessun movimento usa
 si possono anche <b>eliminare</b> con il cestino rosso (anche sugli altri computer collegati). Il piano dei conti di partenza per una parrocchia nuova non ha più «Rimborso COLF»
 e «Rimborso sacerdote collaboratore»: chi li usa li aggiunge con <span class="bottone">+ Sottoconto</span>.</div>
 
-<div class="box nota"><b>Novità della versione 0.12:</b> la <b>causale come in UNIO</b> (facoltativa) ora si sceglie dall'elenco delle causali della Diocesi
+<div class="box nota novita"><b>Novità della versione 0.12:</b> la <b>causale come in UNIO</b> (facoltativa) ora si sceglie dall'elenco delle causali della Diocesi
 e, come in UNIO, <b>decide quali voci si possono scegliere</b> (es. con «EOO · Offerte ordinarie» compaiono solo le voci delle offerte). L'elenco con le voci di ogni causale
 è in Impostazioni → Causale come in UNIO.</div>
 
-<div class="box nota"><b>Novità della versione 0.11.2:</b> il <b>ripristino di una copia di sicurezza</b> funziona anche quando Divisio è condiviso con Google Drive
+<div class="box nota novita"><b>Novità della versione 0.11.2:</b> il <b>ripristino di una copia di sicurezza</b> funziona anche quando Divisio è condiviso con Google Drive
 (prima i dati della cartella condivisa potevano annullarlo, per esempio dopo «Azzera i movimenti»). In <b>Movimenti</b> i <b>Dettagli</b> si aprono a tutta larghezza.</div>
 
-<div class="box nota"><b>Novità della versione 0.11.1:</b> i movimenti già inseriti in UNIO si caricano dalla pagina <b>Movimenti</b>
+<div class="box nota novita"><b>Novità della versione 0.11.1:</b> i movimenti già inseriti in UNIO si caricano dalla pagina <b>Movimenti</b>
 (<span class="bottone">Carica da UNIO…</span>), con l'anteprima di ogni registrazione: causale, descrizione e dettaglio di ogni riga, come in UNIO.</div>
 
-<div class="box nota"><b>Novità della versione 0.11:</b> in <b>Registra</b> le righe hanno lo sfondo alternato e i campi sono più compatti;
+<div class="box nota novita"><b>Novità della versione 0.11:</b> in <b>Registra</b> le righe hanno lo sfondo alternato e i campi sono più compatti;
 si può aggiungere la <b>causale come in UNIO</b> (facoltativa, si accende in Impostazioni). In <b>Movimenti</b> i totali di entrate e uscite sono ben evidenti in fondo,
 <span class="bottone">Scarica in CSV (Excel)</span> scarica solo i movimenti mostrati, come entrate e uscite, e <span class="bottone">Modifica</span>
 apre anche i movimenti con più righe (pure quelli caricati da UNIO) nella modalità semplice.</div>
 
-<div class="box nota"><b>Novità della versione 0.10.2:</b> in <b>Registra</b> un'entrata o un'uscita può avere <b>più righe</b>
+<div class="box nota novita"><b>Novità della versione 0.10.2:</b> in <b>Registra</b> un'entrata o un'uscita può avere <b>più righe</b>
 (<span class="bottone">+ Aggiungi riga</span>), ognuna con voce, dettaglio e importo, come in UNIO.</div>
 
-<div class="box nota"><b>Novità della versione 0.10.1:</b> il <b>confronto con UNIO</b> è indicato come facoltativo, e il capitolo 12 spiega i <b>due modi</b>
+<div class="box nota novita"><b>Novità della versione 0.10.1:</b> il <b>confronto con UNIO</b> è indicato come facoltativo, e il capitolo 12 spiega i <b>due modi</b>
 per portare i dati in UNIO: ogni trimestre con i file di Divisio, oppure a fine anno a mano nel Rendiconto Parrocchiale di UNIO.</div>
 
-<div class="box nota"><b>Novità della versione 0.10</b> (idee prese dall'Amministrazione di UNIO): nel Rendiconto un <b>promemoria</b> di quello che UNIO chiede
+<div class="box nota novita"><b>Novità della versione 0.10</b> (idee prese dall'Amministrazione di UNIO): nel Rendiconto un <b>promemoria</b> di quello che UNIO chiede
 prima dell'invio e il segno «inviato», con un avviso se poi si corregge quell'anno; la previsione si può <b>ricopiare dall'anno prima</b> (capitolo 13).
 In Movimenti: <b>Registra di nuovo uguale</b> e il <b>saldo dopo ogni movimento</b> di una cassa o banca (capitolo 9).</div>
 
-<div class="box nota"><b>Novità della versione 0.9:</b> le fatture <b>PDF</b> si leggono molto meglio (anche i dati in tabella) e Divisio
+<div class="box nota novita"><b>Novità della versione 0.9:</b> le fatture <b>PDF</b> si leggono molto meglio (anche i dati in tabella) e Divisio
 <b>ricorda le correzioni</b> per ogni fornitore; la scritta <b>PAGATA</b> sul PDF diventa una proposta di pagamento (capitolo 10).
 Si caricano da UNIO anche i movimenti della <b>Prima Nota</b> (capitolo 7). Nuovi pulsanti per <b>azzerare</b> i movimenti di un anno e il confronto con UNIO (capitoli 7 e 12).</div>
 
-<div class="box nota"><b>Novità della versione 0.7:</b> la pagina <b>Banca</b> (capitolo 11): si carica l'estratto conto scaricato dalla banca online (CSV o Excel, di qualunque banca);
+<div class="box nota novita"><b>Novità della versione 0.7:</b> la pagina <b>Banca</b> (capitolo 11): si carica l'estratto conto scaricato dalla banca online (CSV o Excel, di qualunque banca);
 Divisio propone come registrare ogni movimento, riconosce i pagamenti delle fatture e i movimenti già registrati, e impara dalle scelte fatte.</div>
 
-<div class="box nota"><b>Novità della versione 0.6:</b> la pagina <b>Fatture</b> (capitolo 10): si caricano le fatture ricevute (XML di Aruba, anche firmati .p7m, e PDF),
+<div class="box nota novita"><b>Novità della versione 0.6:</b> la pagina <b>Fatture</b> (capitolo 10): si caricano le fatture ricevute (XML di Aruba, anche firmati .p7m, e PDF),
 lo scadenzario mostra cosa pagare e quando, e solo le fatture <b>pagate</b> entrano in contabilità, dopo la conferma della voce di spesa proposta da Divisio.</div>
 
 <h2 id="privacy">2. Dove stanno i dati</h2>
@@ -336,12 +342,12 @@ Se qualcosa non va, <span class="bottone">Togli i movimenti caricati da UNIO</sp
 </table>
 <div class="box ok">Divisio non lascia salvare un movimento sbagliato: ogni registrazione è in partita doppia con Dare = Avere, e la pagina Inizio controlla sempre che i conti tornino.</div>
 
-<h2 id="fatture">10. Fatture e scadenze <span class="chi">tutti</span></h2>
-<p>Le fatture ricevute dai fornitori si caricano in Divisio e restano nello <b>scadenzario</b> come "da pagare".
-<b>In contabilità entra solo una fattura pagata</b>, e solo dopo la sua conferma.</p>
+<h2 id="fatture">10. Scadenzario <span class="chi">tutti</span></h2>
+<p>Le fatture ricevute dai fornitori si caricano in Divisio e restano nello <b>Scadenzario</b> come <b>«Da saldare»</b>: Divisio ricorda quando scadono.
+Quando una fattura è pagata, un clic sul suo pulsante la segna <b>«Saldata»</b>. Se si vuole (è facoltativo), dopo la si può anche registrare in contabilità.</p>
 <h3>Caricare le fatture</h3>
 <ol>
-  <li>Divisio → <b>Fatture</b>. Trascini i file nel riquadro <b>Carica fatture</b>, oppure <span class="bottone">Scegli i file…</span>: anche molti insieme
+  <li>Divisio → <b>Scadenzario</b>. Trascini i file nel riquadro <b>Carica fatture</b>, oppure <span class="bottone">Scegli i file…</span>: anche molti insieme
     (per esempio tutti gli XML del trimestre scaricati da Aruba). Vanno bene <b>.xml</b>, <b>.xml.p7m</b> (firmati) e <b>.pdf</b>.</li>
   <li>Divisio mostra i dati letti: fornitore, partita IVA, numero, data, imponibile, IVA, totale, scadenza e modalità di pagamento.
     I campi <b>in arancione</b> sono incerti: li controlli con l'originale e li corregga; poi spunti <i>Ho controllato</i>.</li>
@@ -354,8 +360,9 @@ i campi vanno scritti a mano guardando il PDF.</div>
   <li><b>Divisio impara:</b> quando aggiunge una fattura PDF, Divisio ricorda per quel fornitore il nome, la partita IVA e <b>dove</b> sono scritti numero, date e importi,
     comprese le correzioni fatte da lei. La volta dopo riconosce il fornitore (dalla partita IVA, dall'IBAN, dall'e-mail o dal sito) e compila i campi da solo.
     Serve soprattutto quando il nome del fornitore è solo nel <b>logo</b>: è un'immagine e non si può leggere, quindi la prima volta va scritto a mano.</li>
-  <li><b>Scritta PAGATA:</b> se sul PDF c'è "PAGATA" (o "PAGATO") con una data, dopo aver aggiunto le fatture Divisio apre subito
-    <span class="bottone">Segna come pagata</span> con quella data: controlli voce e cassa e confermi, oppure <span class="bottone">Annulla</span> se non è stata pagata.</li>
+  <li><b>Scritta PAGATA:</b> se sul PDF c'è "PAGATA" (o "PAGATO") con una data, la fattura entra già <b>«Saldata»</b> con quella data
+    (se non è vero, un clic sul pulsante verde la rimette «Da saldare»). Se è accesa la registrazione in contabilità, Divisio propone subito di registrarla:
+    controlli voce e cassa e confermi, oppure <span class="bottone">Non registrare</span>.</li>
 </ul>
 <ul>
   <li><b>Doppioni:</b> se una fattura (stesso fornitore, numero e data) è già nello scadenzario, o compare due volte tra i file scelti (es. XML e PDF della stessa fattura),
@@ -369,27 +376,42 @@ i campi vanno scritti a mano guardando il PDF.</div>
     non sono mai considerate doppioni, e Divisio ricorda la voce (e, se accesa, la scelta parrocchia / 50% / altra gestione) <b>per ogni contatore</b>:
     per esempio la luce al 50% e il gas tutto della parrocchia.</li>
   <li>I file restano sul computer e Divisio non li conserva: tenga gli originali nella solita cartella.</li>
-  <li>Le fatture <b>a rate</b> hanno una riga per ogni rata, con la sua scadenza. Le <b>note di credito</b> si segnano come "rimborsate" e riducono la spesa.</li>
+  <li>Le fatture <b>a rate</b> hanno una riga per ogni rata, con la sua scadenza e il suo pulsante. Le <b>note di credito</b> hanno il pulsante «Da rimborsare» / «Rimborsata»;
+    se registrate in contabilità, riducono la spesa.</li>
   <li>Se c'è una <b>ritenuta d'acconto</b>, nello scadenzario c'è l'importo da pagare al fornitore; la ritenuta si versa con l'F24 e si registra a mano.</li>
 </ul>
-<h3>Lo scadenzario</h3>
-<p>In ordine di scadenza: in rosso le fatture <b>scadute</b>, in arancione quelle che scadono <b>entro 7 giorni</b>. In alto i totali; i pulsanti
-<span class="bottone">Da pagare</span> <span class="bottone">Pagate</span> <span class="bottone">Tutte</span> scelgono cosa vedere. Anche la pagina Inizio avvisa delle fatture scadute o in scadenza.
+<h3>Le scadenze e il pulsante di ogni fattura</h3>
+<p>Le fatture sono in ordine di scadenza. Accanto a ognuna c'è un pulsante che dice a che punto è:</p>
+<ul>
+  <li><span class="pill-guida" style="background:#1f4e79;color:#fff">Da saldare</span> blu: non è ancora scaduta (o la scadenza non è indicata);</li>
+  <li><span class="pill-guida" style="background:#b35300;color:#fff">Da saldare</span> arancione: è scaduta da non più di una settimana;</li>
+  <li><span class="pill-guida" style="background:#b3261e;color:#fff">Da saldare</span> rosso: è scaduta da più di una settimana;</li>
+  <li><span class="pill-guida" style="background:#2b7448;color:#fff">✓ Saldata</span> verde: è stata pagata. Sotto c'è la data (si cambia in "Dettagli").</li>
+</ul>
+<p>Quando ha pagato una fattura, clicchi il suo pulsante <b>«Da saldare»</b>: diventa verde <b>«Saldata»</b>, con la data di oggi. <b>In contabilità non entra nulla.</b>
+Cliccato per errore? Clicchi il pulsante verde e confermi: torna «Da saldare» (oppure «↶ Annulla» in alto).</p>
+<p>In alto i totali; i pulsanti <span class="bottone">Da saldare</span> <span class="bottone">Saldate</span> <span class="bottone">Tutte</span> scelgono cosa vedere.
+Anche la pagina Inizio avvisa delle fatture scadute o in scadenza.
 In "Dettagli" si vedono tutti i dati, si corregge la scadenza o si toglie una fattura caricata per errore.</p>
-<h3>Segnare una fattura come pagata</h3>
+<h3>Registrare le fatture in contabilità <span class="chi">facoltativo</span></h3>
+<p>All'inizio è spento: lo Scadenzario fa solo da promemoria e le uscite si registrano a parte (in Registra, o dalla pagina Banca).
+Chi vuole che Divisio registri anche le fatture lo accende in Impostazioni → <b>Scadenzario: registrare le fatture in contabilità</b>.
+Da quel momento, sotto ogni fattura «Saldata» compare <span class="bottone">Registra in contabilità…</span> (si può fare subito o più avanti):</p>
 <ol>
-  <li><span class="bottone">Segna come pagata</span>: data del pagamento, come è stata pagata, da quale cassa o banca.</li>
+  <li><span class="bottone">Registra in contabilità…</span>: data del pagamento (già messa), come è stata pagata, da quale cassa o banca.</li>
   <li><b>Voce di spesa:</b> Divisio propone una voce e spiega perché (la scelta fatta l'ultima volta per lo stesso fornitore, le sue fatture già pagate,
     oppure parole della fattura come "luce" o "caldaia"). Se non è sicuro non propone nulla e chiede di sceglierla dall'elenco.</li>
-  <li>Sotto si vede la registrazione in partita doppia che verrà salvata. <span class="bottone">Conferma</span>: la fattura diventa pagata e l'uscita entra in contabilità.</li>
+  <li>Sotto si vede la registrazione in partita doppia che verrà salvata. <span class="bottone">Conferma: registra in contabilità</span>: l'uscita entra in contabilità
+    e sotto il pulsante verde compare «registrata in contabilità».</li>
   <li>Con "Ricorda questa scelta" (già spuntato), la volta successiva per quel fornitore la proposta è già quella giusta.
     L'elenco dei fornitori ricordati è in fondo alla pagina, con quelli di cui Divisio sa leggere il PDF (si possono "dimenticare").</li>
 </ol>
 <ul>
-  <li><b>Errore?</b> Nelle fatture pagate, "Dettagli" → <span class="bottone">Torna da pagare</span>: la fattura torna nello scadenzario e la sua uscita viene tolta dalla contabilità.
+  <li><b>Errore?</b> Clicchi il pulsante verde «Saldata» (oppure "Dettagli" → <span class="bottone">Rimetti «Da saldare»</span>): la fattura torna da saldare e la sua uscita, se c'era, viene tolta dalla contabilità.
     Se l'uscita era già stata portata in UNIO, la pagina Per UNIO preparerà la correzione.</li>
-  <li>Se si elimina da <b>Movimenti</b> un'uscita nata da una fattura, la fattura torna "da pagare".</li>
-  <li>Se scadenzario e contabilità non coincidono (per esempio per una modifica fatta da un altro computer), la pagina Fatture lo segnala in <b>Da sistemare</b> e propone come rimediare.</li>
+  <li>Se si elimina da <b>Movimenti</b> un'uscita nata da una fattura, la fattura torna «Da saldare».</li>
+  <li>Se si spegne la scelta nelle Impostazioni, le fatture già registrate restano in contabilità come sono.</li>
+  <li>Se scadenzario e contabilità non coincidono (per esempio per una modifica fatta da un altro computer), la pagina Scadenzario lo segnala in <b>Da sistemare</b> e propone come rimediare.</li>
 </ul>
 <h3>Attività commerciale (teatro) <span class="chi">facoltativo</span></h3>
 <p>Solo per le parrocchie con un teatro, un cinema o un'altra attività seguita dal commercialista. È spenta: si accende in Impostazioni → <b>Fatture del teatro</b>.
@@ -425,7 +447,8 @@ La scelta viene ricordata per i file successivi della stessa banca.</p>
 <ul>
   <li>Quando sceglie la voce per un movimento, Divisio la mette anche agli <b>altri movimenti dello stesso nome</b> ancora da decidere (per esempio tutti i bonifici mensili di uno stesso offerente).</li>
   <li>I <b>versamenti di contanti</b> sono proposti come spostamento dalla Cassa alla banca: non sono entrate nuove.</li>
-  <li>Se un'uscita corrisponde a una <b>fattura da pagare</b> dello scadenzario (stesso importo e stesso fornitore o numero), Divisio propone di segnarla pagata: la fattura e la sua uscita si sistemano insieme.</li>
+  <li>Se un'uscita corrisponde a una <b>fattura da pagare</b> dello scadenzario (stesso importo e stesso fornitore o numero), Divisio propone di segnarla pagata: la fattura e la sua uscita si sistemano insieme.
+    Vale anche per una fattura già «Saldata» ma non registrata: l'uscita della banca viene collegata a lei.</li>
   <li>I movimenti <b>già presenti in Divisio</b> (caricati da un estratto conto precedente, oppure scritti a mano o da una fattura pagata, con lo stesso importo e date vicine) non vengono registrati di nuovo: sono in "Non registrati". Se è davvero un movimento diverso, lo spunti.</li>
   <li>Anche i <b>possibili doppioni</b> (stesso importo e stessa data di un movimento già in Divisio in un'altra cassa, oppure stesso importo e stessa descrizione a pochi giorni di distanza)
     vanno in "Non registrati", con un avviso arancione. Le spese di ogni mese con lo stesso importo (stipendi, canoni) non sono considerate doppioni.</li>
@@ -435,7 +458,7 @@ La scelta viene ricordata per i file successivi della stessa banca.</p>
 <p><span class="bottone">Registra … movimenti in contabilità</span> salva tutto insieme. <span class="bottone">Scarta l'importazione</span> chiude senza registrare nulla.</p>
 <div class="box attenzione"><b>Controlli sempre le proposte.</b> Divisio impara dalle sue scelte, ma all'inizio molte voci sono da scegliere a mano; le proposte "dalle parole" possono sbagliare.</div>
 <ul>
-  <li><b>Errore?</b> In fondo alla pagina, <b>Estratti conto già caricati</b> → <span class="bottone">Togli dalla contabilità</span> elimina tutti i movimenti registrati da quel file (le fatture pagate tornano "da pagare"). Un singolo movimento si corregge o si elimina dalla pagina Movimenti.</li>
+  <li><b>Errore?</b> In fondo alla pagina, <b>Estratti conto già caricati</b> → <span class="bottone">Togli dalla contabilità</span> elimina tutti i movimenti registrati da quel file (le fatture pagate tornano «Da saldare»). Un singolo movimento si corregge o si elimina dalla pagina Movimenti.</li>
   <li>L'elenco <b>Nomi ricordati dagli estratti conto</b> mostra cosa Divisio ha imparato; ogni nome si può "dimenticare".</li>
   <li>Il file viene letto solo su questo computer e non viene conservato.</li>
 </ul>
@@ -508,8 +531,8 @@ e i due modi non si mescolano nello stesso anno.</div>
 e si può annullare subito con <span class="bottone">↶ Annulla</span>. In UNIO non cambia nulla. Se Divisio è condiviso, i dati cancellati spariscono anche dagli altri computer.</p>
 <table>
   <tr><th>Per cancellare…</th><th>Dove</th></tr>
-  <tr><td>i movimenti di <b>un anno</b></td><td>Movimenti → in fondo <b>Azzera i movimenti del …</b> (le fatture pagate in quell'anno tornano «da pagare»).</td></tr>
-  <tr><td>le <b>fatture</b> dello scadenzario</td><td>Fatture → in fondo <b>Azzera lo scadenzario</b>. Con la spunta (già messa) si tolgono dalla contabilità anche le uscite delle fatture pagate;
+  <tr><td>i movimenti di <b>un anno</b></td><td>Movimenti → in fondo <b>Azzera i movimenti del …</b> (le fatture pagate in quell'anno tornano «Da saldare»).</td></tr>
+  <tr><td>le <b>fatture</b> dello scadenzario</td><td>Scadenzario → in fondo <b>Azzera lo scadenzario</b>. Con la spunta (già messa) si tolgono dalla contabilità anche le uscite delle fatture pagate;
     senza spunta le uscite restano nei Movimenti come movimenti normali.</td></tr>
   <tr><td><b>tutto</b>: movimenti di tutti gli anni e fatture</td><td>Impostazioni → in fondo <b>Ripartire da zero</b>. Si sceglie cosa cancellare: movimenti (anche i saldi di apertura), fatture,
     importazioni segnate per UNIO e segni «Rendiconto inviato», bilanci di previsione e, se si vuole, anche i fornitori e i nomi ricordati
@@ -530,18 +553,18 @@ e si può annullare subito con <span class="bottone">↶ Annulla</span>. In UNIO
   <tr><td>Un PDF non viene letto, o i dati sono sbagliati</td><td>Corregga i campi a mano guardando l'immagine del PDF (o il link "Apri il PDF intero"). Se c'è anche l'XML della stessa fattura, carichi quello: è più preciso.</td></tr>
   <tr><td>L'estratto conto non viene letto</td><td>Nella banca online lo scarichi in formato CSV o Excel (.xlsx). Se Divisio non riconosce le colonne, le indichi in <b>Colonne del file</b>. Un vecchio Excel .xls va salvato come .xlsx o CSV.</td></tr>
   <tr><td>Dopo l'estratto conto il saldo della banca non coincide</td><td>Controlli i saldi di apertura (Impostazioni), i movimenti in "Non registrati" e quelli della banca scritti a mano con un importo diverso.</td></tr>
-  <tr><td>In Fatture compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura "da pagare").</td></tr>
+  <tr><td>Nello Scadenzario compare <b>Da sistemare</b></td><td>Scadenzario e contabilità non coincidono: scelga uno dei pulsanti proposti (registrare di nuovo l'uscita o rimettere la fattura «Da saldare»).</td></tr>
   <tr><td>Scegliendo la banca in Movimenti mancano dei movimenti (per esempio quelli caricati da UNIO)</td><td>Probabilmente la stessa banca aveva due numeri, uno di UNIO e uno di Divisio.
     Chiuda e riapra Divisio: se i due nomi dicono la stessa banca, Divisio li unisce da solo sul numero di UNIO. Se i nomi sono molto diversi,
     dia alla banca lo stesso nome che ha in UNIO (Impostazioni → Cassa e banche) e riapra Divisio.</td></tr>
   <tr><td>Ho fatto un'operazione per sbaglio</td><td><span class="bottone">↶ Annulla</span> in alto a destra (o Ctrl+Z / Cmd+Z). Funziona finché non si chiude o ricarica Divisio;
     dopo, si corregge a mano o si torna a una copia di sicurezza.</td></tr>
-  <tr><td>Una fattura o un movimento vero è segnato come «forse doppione»</td><td>Se è davvero diverso: nelle Fatture <span class="bottone">È una fattura diversa: aggiungila</span>;
+  <tr><td>Una fattura o un movimento vero è segnato come «forse doppione»</td><td>Se è davvero diverso: nello Scadenzario <span class="bottone">È una fattura diversa: aggiungila</span>;
     nella Banca e nel caricamento da UNIO basta spuntarlo.</td></tr>
   <tr><td>Non vedo l'ultima versione</td><td>Chiuda e riapra Divisio (a volte serve aspettare una decina di minuti dalla pubblicazione).</td></tr>
 </table>
 
-<footer>Divisio · guida aggiornata al 26 novembre 2026 (versione 0.14.3) · Il codice del programma è pubblico su github.com/pkap62/divisio.
+<footer>Divisio · guida aggiornata al 27 novembre 2026 (versione 0.15.0) · Il codice del programma è pubblico su github.com/pkap62/divisio.
 I conti di ogni parrocchia restano sui suoi computer e nel suo Google Drive.</footer>
 </div>
 <script type="module">

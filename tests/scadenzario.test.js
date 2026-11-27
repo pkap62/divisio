@@ -1,6 +1,7 @@
 import { test, uguale, vero, contiene } from "./mini.js";
 import { leggiFatturaPA } from "../js/dominio/fatture.js";
-import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, dividi, idMovimento, PAGATA, DA_PAGARE } from "../js/dominio/scadenzario.js";
+import { nuovaFattura, segnaPagata, tornaDaPagare, scadenze, riepilogo, coerenza, dividi, idMovimento, PAGATA, DA_PAGARE,
+  segnaSaldata, daRegistrare, registraSaldata, cambiaDataSaldata, colore } from "../js/dominio/scadenzario.js";
 import { proponiVoce, propostaTeatro } from "../js/dominio/suggerimenti.js";
 import { verificaMovimento, quadra } from "../js/dominio/scritture.js";
 import { sottocontiIniziali } from "../js/dominio/piano.js";
@@ -166,4 +167,42 @@ test("di chi è la fattura: proposta dalla scelta ricordata o dalle parole; altr
   const vecchia = propostaTeatro(luce, { ricordo: { quotaTeatro: 30 } });
   uguale([vecchia.quota, vecchia.chiedi], [null, true], "una vecchia percentuale diversa non si propone più: chiede");
   uguale(propostaTeatro(luce, { ricordo: { voce: "U08-01-01" } }).chiedi, true, "fornitore ricordato solo per la voce: chiede");
+});
+
+test("scadenzario 0.15: «Saldata» senza registrazione non crea uscite e non è un problema", () => {
+  const f = fattura(FIORI, "f1");
+  const s = segnaSaldata(f, 1, { data: "2026-11-20" });
+  uguale(s.rate[0].stato, PAGATA);
+  vero(daRegistrare(s.rate[0]), "da registrare, se si vuole");
+  uguale(s.rate[0].pagataIl, "2026-11-20");
+  uguale(coerenza([s], () => undefined), [], "nessuna uscita attesa");
+  uguale(riepilogo(scadenze([s], "2026-11-27")).daPagare, 0, "non è più da saldare");
+  const { fattura: di, movimentoDaEliminare } = tornaDaPagare(s, 1);
+  uguale(di.rate[0], f.rate[0], "torna com'era");
+  uguale(movimentoDaEliminare, null);
+  contiene([(() => { try { segnaSaldata(s, 1, { data: "2026-11-21" }); return ""; } catch (e) { return e.message; } })()], "già");
+});
+
+test("scadenzario 0.15: una fattura saldata si può registrare dopo, una volta sola", () => {
+  const s = segnaSaldata(fattura(FIORI, "f1"), 1, { data: "2026-11-20", modalita: "MP05" });
+  const { fattura: reg, movimento } = registraSaldata(s, 1, { data: "2026-11-20", cassa: BANCA, voce: "U01-02-02", modalita: "MP05" });
+  uguale(movimento.righe, [{ conto: "U01-02-02", dare: 14640, avere: 0 }, { conto: BANCA, dare: 0, avere: 14640 }]);
+  vero(!daRegistrare(reg.rate[0]), "ora è registrata");
+  uguale(reg.rate[0].senzaRegistrazione, undefined);
+  const tutti = new Map([[movimento.id, movimento]]);
+  uguale(coerenza([reg], (id) => tutti.get(id)), []);
+  contiene([(() => { try { registraSaldata(reg, 1, { data: "2026-11-20", cassa: BANCA, voce: "U01-02-02" }); return ""; } catch (e) { return e.message; } })()], "non è da registrare");
+  uguale(cambiaDataSaldata(s, 1, "2026-11-18").rate[0].pagataIl, "2026-11-18");
+});
+
+test("scadenzario 0.15: colori del pulsante (rosso oltre la settimana, arancione entro, blu non scaduta, verde saldata)", () => {
+  const f = fattura(FIORI, "f1");
+  const con = (scadenza) => scadenze([{ ...f, rate: [{ ...f.rate[0], scadenza }] }], "2026-11-27")[0];
+  uguale(colore(con("2026-11-19")), "rosso", "scaduta da 8 giorni");
+  uguale(colore(con("2026-11-20")), "arancio", "scaduta da 7 giorni");
+  uguale(colore(con("2026-11-26")), "arancio", "scaduta da ieri");
+  uguale(colore(con("2026-11-27")), "blu", "scade oggi");
+  uguale(colore(con("2026-12-20")), "blu");
+  uguale(colore(con("")), "blu", "senza data");
+  uguale(colore(scadenze([segnaSaldata(f, 1, { data: "2026-11-20" })], "2026-11-27")[0]), "saldata");
 });

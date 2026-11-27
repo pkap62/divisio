@@ -16,7 +16,7 @@ import { riepilogo as riepilogoFatture } from "../dominio/scadenzario.js";
 const FUNZIONI = [
   { pagina: "registra", titolo: "Registrare entrate e uscite", testo: "Si scrive con parole proprie e si sceglie la voce: la partita doppia la fa Divisio. Per chi è pratico, anche la partita doppia a mano." },
   { pagina: "movimenti", titolo: "Movimenti", testo: "Cercare, correggere ed eliminare i movimenti; scaricarli in Excel." },
-  { pagina: "fatture", titolo: "Fatture e scadenze", testo: "Legge da sola le fatture elettroniche (XML di Aruba, anche firmate) e i PDF; scadenzario con le fatture scadute o in scadenza; quando una fattura è pagata propone la voce di spesa e la ricorda per il fornitore.", solo: true },
+  { pagina: "fatture", titolo: "Scadenzario", testo: "Legge da sola le fatture elettroniche (XML di Aruba, anche firmate) e i PDF e avvisa quando scadono: pulsante blu, arancione o rosso «Da saldare», che con un clic diventa verde «Saldata». Se si vuole (Impostazioni), le fatture saldate si registrano anche in contabilità.", solo: true },
   { pagina: "banca", titolo: "Estratti conto della banca", testo: "Carica i movimenti scaricati dalla banca online (CSV o Excel, di ogni banca), propone come registrarli, riconosce le fatture pagate e i doppioni, e impara dalle scelte fatte.", solo: true },
   { pagina: "rendiconto", titolo: "Rendiconto parrocchiale", testo: "Tutte le sezioni del Rendiconto della Diocesi di Firenze, da stampare; se si vuole (facoltativo), confronto voce per voce con i saldi esportati da UNIO." },
   { pagina: "unio", titolo: "Per UNIO", testo: "Prepara il file da importare in UNIO ogni trimestre (oppure, a fine anno, si ricopiano a mano le cifre nel Rendiconto di UNIO), una riga per voce, e ricorda i trimestri ancora da portare; dopo una correzione prepara solo le differenze." },
@@ -95,7 +95,7 @@ export function vista({ arch, anno }) {
         ${x.stato === "modificato" ? "ci sono modifiche dopo l'ultima importazione" : "da preparare e importare"}.
         <a href="#" data-azione="perUNIO" data-cassa="${x.cassa}" data-trimestre="${x.trimestre}">Apri</a></div>`).join("")}
       ${pf.length ? `<div class="errore">Fatture: scadenzario e contabilità non coincidono (${pf.length}). <a href="#" data-azione="vai" data-pagina="fatture">Sistema</a></div>` : ""}
-      ${sf.scadute ? `<div class="avviso">Fatture scadute da pagare: <b>${sf.scadute}</b> (${eur(sf.totaleScadute)}). <a href="#" data-azione="vai" data-pagina="fatture">Apri lo scadenzario</a></div>` : ""}
+      ${sf.scadute ? `<div class="avviso">Fatture scadute da saldare: <b>${sf.scadute}</b> (${eur(sf.totaleScadute)}). <a href="#" data-azione="vai" data-pagina="fatture">Apri lo scadenzario</a></div>` : ""}
       ${sf.presto ? `<div class="avviso">Fatture in scadenza entro 7 giorni: <b>${sf.presto}</b> (${eur(sf.totalePresto)}). <a href="#" data-azione="vai" data-pagina="fatture">Apri lo scadenzario</a></div>` : ""}
       ${apertura ? "" : `<div class="avviso">Mancano i saldi di apertura del ${anno}: senza, i saldi di cassa e banca partono da zero.
         <a href="#" data-azione="vai" data-pagina="impostazioni">Inseriscili</a> (anche più avanti).</div>`}
