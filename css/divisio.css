@@ -158,6 +158,7 @@ tbody.totali-movimenti tr.primo td { border-top: 3px solid var(--blu); padding-t
 tbody.totali-movimenti td.n { font-weight: 750; font-size: 19px; }
 tbody.totali-movimenti tr.differenza td { border-top: 1px solid #b9cbe0; padding-bottom: 10px; }
 tbody.totali-movimenti tr.nota-spostamenti td { background: #fff; font-size: 14px; padding-top: 8px; }
+ul.differenze-inizio { margin: 4px 0 0; padding-left: 20px; }
 .zero { color: #9c968a; } .pos { color: var(--verde); } .neg { color: var(--rosso); }
 table.righe { margin-top: 8px; font-size: 15px; }
 table.pd td { vertical-align: middle; }

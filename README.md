@@ -7,6 +7,13 @@ Copre la parte "Amministrazione" di UNIO e prepara i dati per il Rendiconto Parr
 > L'autore non si assume responsabilità per eventuali errori.
 
 ## Novità
+**0.15.1 – Movimenti: perché i totali sono diversi da quelli di Inizio**
+- Sotto «Totale entrate / uscite» una nota spiega, per i movimenti mostrati, perché i totali (soldi entrati e usciti da cassa e banche)
+  non coincidono con «L'anno … finora» di Inizio (entrate e uscite della parrocchia, voci E e U). `differenzeConInizio` in `js/dominio/saldi.js`:
+  - voci che non sono né entrate né uscite (es. Gestione teatro P02-05-04, collette da versare PG), voce per voce;
+  - spese rimborsate (voci U in un'entrata) e entrate restituite (voci E in un'uscita);
+  - movimenti senza cassa né banca (contano in Inizio, non in Movimenti).
+
 **0.15.0 – La pagina Fatture diventa «Scadenzario»**
 - Menu: «Fatture» → **Scadenzario**. Caricamento delle fatture e «Azzera lo scadenzario» come prima.
 - Ogni rata ha un pulsante che è il suo stato: **«Da saldare»** blu (non scaduta o senza data), arancione (scaduta da 1 a 7 giorni), rosso (scaduta da più di 7 giorni);

@@ -3,6 +3,8 @@
 import { analizza, totaliRighe } from "../dominio/scritture.js";
 import { esc, eur, dataIt } from "./util.js";
 import { etichettaCausale } from "../dominio/causali.js";
+import { differenzeConInizio } from "../dominio/saldi.js";
+import { tipoDi } from "../dominio/piano.js";
 
 export function descrivi(m, arch) {
   const a = analizza(m);
@@ -92,10 +94,35 @@ export function tabellaMovimenti(lista, arch, { dettagli = false, progressivo = 
         <td>${d.voce}</td><td>${d.cassa}</td><td class="n ${classe}">${d.segno > 0 ? "+" : d.segno < 0 ? "−" : ""}${eur(d.importo)}</td>${progressivo
           ? `<td class="n ${(progressivo.get(m.id) ?? 0) < 0 ? "neg" : ""}">${progressivo.has(m.id) ? eur(progressivo.get(m.id)) : ""}</td>` : ""}</tr>
         ${aperto ? `<tr class="riga-dettagli"><td colspan="${progressivo ? 6 : 5}">${contenutoDettagli(m, arch)}</td></tr>` : ""}`;
-    }).join("")}${totali ? righeTotali(lista, Boolean(progressivo)) : ""}</table></div>`;
+    }).join("")}${totali ? righeTotali(lista, arch, Boolean(progressivo)) : ""}</table></div>`;
 }
 
-function righeTotali(lista, conSaldo) {
+/**
+ * Nota sotto i totali: perché qui (soldi entrati e usciti da cassa e banche) i totali sono diversi da quelli della pagina Inizio
+ * (entrate e uscite della parrocchia). Una riga per ogni causa trovata nei movimenti mostrati.
+ */
+function notaDifferenze(lista, arch, colonne) {
+  const d = differenzeConInizio(lista);
+  const parti = (x) => [x.entrate ? `${eur(x.entrate)} fra le entrate` : "", x.uscite ? `${eur(x.uscite)} fra le uscite` : ""].filter(Boolean).join(" e ");
+  const righe = [];
+  for (const [conto, x] of [...d.voci].sort(([a], [b]) => a.localeCompare(b))) {
+    if (!x.entrate && !x.uscite) continue;
+    const perche = tipoDi(conto) === "PG" ? "collette da versare alla Diocesi: non sono soldi della parrocchia"
+      : "non è una voce di entrata o di uscita della parrocchia";
+    righe.push(`<b>${esc(arch.nomeConto(conto))}</b> <code>${esc(conto)}</code>: ${parti(x)} (${perche}).`);
+  }
+  if (d.rimborsi) righe.push(`<b>Spese rimborsate</b>: ${eur(d.rimborsi)} fra le entrate; in Inizio riducono le uscite.`);
+  if (d.restituzioni) righe.push(`<b>Entrate restituite</b>: ${eur(d.restituzioni)} fra le uscite; in Inizio riducono le entrate.`);
+  if (d.senzaCassa.entrate || d.senzaCassa.uscite) {
+    righe.push(`<b>Movimenti senza cassa né banca</b>: ${parti(d.senzaCassa)} di Inizio; qui non entrano nei totali, perché nessun soldo è entrato o uscito.`);
+  }
+  if (!righe.length) return "";
+  return `<tr class="nota-spostamenti"><td colspan="${colonne}" class="hint">Perché questi totali sono diversi da «L'anno … finora» della pagina Inizio:
+    qui si contano i soldi entrati e usciti da cassa e banche, in Inizio solo le entrate e le uscite della parrocchia.
+    <ul class="differenze-inizio">${righe.map((r) => `<li>${r}</li>`).join("")}</ul></td></tr>`;
+}
+
+function righeTotali(lista, arch, conSaldo) {
   let entrate = 0, uscite = 0, spostati = 0;
   for (const m of lista) {
     const a = analizza(m);
@@ -108,6 +135,7 @@ function righeTotali(lista, conSaldo) {
     <tr class="primo"><td colspan="4"><b>Totale entrate</b> <span class="hint">(${quanti} mostrati)</span></td><td class="n pos">+${eur(entrate)}</td>${vuota}</tr>
     <tr><td colspan="4"><b>Totale uscite</b></td><td class="n neg">−${eur(uscite)}</td>${vuota}</tr>
     <tr class="differenza"><td colspan="4"><b>Differenza</b> <span class="hint">(entrate meno uscite)</span></td><td class="n ${diff < 0 ? "neg" : diff > 0 ? "pos" : ""}">${diff < 0 ? "−" : diff > 0 ? "+" : ""}${eur(Math.abs(diff))}</td>${vuota}</tr>
+    ${notaDifferenze(lista, arch, conSaldo ? 6 : 5)}
     ${spostati ? `<tr class="nota-spostamenti"><td colspan="${conSaldo ? 6 : 5}" class="hint">Gli spostamenti tra casse e banche (${eur(spostati)}) non sono né entrate né uscite e non entrano nei totali.</td></tr>` : ""}
   </tbody>`;
 }

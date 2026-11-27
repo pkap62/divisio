@@ -1,6 +1,6 @@
 import { test, uguale, vero } from "./mini.js";
-import { scritturaSemplice, scritturaApertura } from "../js/dominio/scritture.js";
-import { riepilogoAnno, totaliPerConto, saldo, movimentiAnno, saldiProgressivi } from "../js/dominio/saldi.js";
+import { scritturaSemplice, scritturaApertura, analizza } from "../js/dominio/scritture.js";
+import { riepilogoAnno, totaliPerConto, saldo, movimentiAnno, saldiProgressivi, differenzeConInizio } from "../js/dominio/saldi.js";
 
 const CASSA = "A02-01-01", BANCA = "A02-01-02";
 let id = 1;
@@ -33,6 +33,34 @@ test("riepilogo dell'anno: entrate, uscite, avanzo, collette", () => {
   uguale(r.colletteDaVersare, 0, "300 dell'anno prima + 560 raccolte − 860 versate");
   uguale(r.patrimonio, 85000 + 1240000 - 30000);
   vero(r.quadra);
+});
+
+test("differenze fra Movimenti e Inizio: collette, voci non di entrata/uscita, rimborsi, senza cassa", () => {
+  const pd = (data, righe) => ({ id: id++, data, descr: "x", tipo: "pd", righe });
+  const anno = [
+    ...anno2026,
+    m("2026-11-20", "entrata", { importo: 100000, voce: "P02-05-04", cassa: BANCA }),          // teatro: soldi entrati
+    m("2026-11-21", "uscita", { importo: 40000, voce: "P02-05-04", cassa: BANCA }),           // teatro: soldi usciti
+    pd("2026-11-22", [{ conto: CASSA, dare: 5000, avere: 0 }, { conto: "U08-01-01", dare: 0, avere: 5000 }]),   // spesa rimborsata
+    pd("2026-11-23", [{ conto: CASSA, dare: 0, avere: 2000 }, { conto: "E01-03-05", dare: 2000, avere: 0 }]),   // offerta restituita
+    pd("2026-11-24", [{ conto: "A03-01-01", dare: 7000, avere: 0 }, { conto: "E01-03-05", dare: 0, avere: 7000 }]), // senza cassa
+  ];
+  const d = differenzeConInizio(anno);
+  uguale(d.voci.get("PG1-01-08").entrate, 56000, "la colletta imperata entrata in cassa, non il saldo di apertura");
+  uguale(d.voci.get("PG1-01-08").uscite, 86000);
+  uguale(d.voci.get("P02-05-04").entrate, 100000);
+  uguale(d.voci.get("P02-05-04").uscite, 40000);
+  uguale(d.rimborsi, 5000);
+  uguale(d.restituzioni, 2000);
+  uguale(d.senzaCassa.entrate, 7000);
+  // con queste differenze si passa dai totali di Movimenti a quelli di Inizio
+  let mE = 0, mU = 0;
+  for (const x of anno) { const a = analizza(x); if (a.segno > 0) mE += a.importo; if (a.segno < 0) mU += a.importo; }
+  const r = riepilogoAnno(anno, 2026);
+  const vE = [...d.voci.values()].reduce((s, x) => s + x.entrate, 0), vU = [...d.voci.values()].reduce((s, x) => s + x.uscite, 0);
+  uguale(mE - vE - d.rimborsi - d.restituzioni + d.senzaCassa.entrate, r.entrate);
+  uguale(mU - vU - d.rimborsi - d.restituzioni + d.senzaCassa.uscite, r.uscite);
+  uguale(differenzeConInizio([{ ...anno2026[5], eliminato: true }]).voci.size, 0, "i movimenti eliminati non contano");
 });
 
 test("i movimenti eliminati non contano", () => {
